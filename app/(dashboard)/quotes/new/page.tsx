@@ -6,6 +6,7 @@ import { QuoteForm }  from "@/components/quotes/QuoteForm";
 import { createQuote } from "@/lib/actions/quotes";
 
 export const metadata: Metadata = { title: "New Quote" };
+export const dynamic = "force-dynamic";
 
 export default async function NewQuotePage() {
   const clients = await prisma.client.findMany({
