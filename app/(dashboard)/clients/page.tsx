@@ -43,7 +43,7 @@ export default async function ClientsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border)]">
-                  {clients.map((client) => (
+                  {clients.map((client: typeof clients[number]) => (
                     <tr key={client.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-5 py-3 font-medium text-[var(--color-text)]">{client.name}</td>
                       <td className="px-5 py-3 text-[var(--color-muted)]">{client.email}</td>

@@ -98,7 +98,7 @@ export default async function InvoicesPage({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border)]">
-                  {invoices.map((inv) => {
+                  {invoices.map((inv: typeof invoices[number]) => {
                     const clientSmsReady =
                       smsEnabled &&
                       inv.client.smsEnabled &&

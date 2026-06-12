@@ -158,7 +158,7 @@ export default async function QuoteDetailPage({ params }: Props) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-border)]">
-                {quote.lineItems.map((li) => (
+                {quote.lineItems.map((li: typeof quote.lineItems[number]) => (
                   <tr key={li.id}>
                     <td className="px-5 py-3 text-[var(--color-text)]">{li.description}</td>
                     <td className="px-5 py-3 text-right text-[var(--color-muted)]">{li.quantity}</td>

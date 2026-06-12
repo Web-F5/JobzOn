@@ -60,7 +60,7 @@ export default async function ServicesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-border)]">
-                {services.map((svc) => (
+                {services.map((svc: typeof services[number]) => (
                   <tr key={svc.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-5 py-3 font-medium text-[var(--color-text)]">{svc.client.name}</td>
                     <td className="px-5 py-3 text-[var(--color-muted)]">{svc.description}</td>

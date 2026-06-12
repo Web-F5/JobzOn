@@ -113,7 +113,7 @@ export default async function DashboardPage() {
               </p>
             ) : (
               <ul className="divide-y divide-[var(--color-border)]">
-                {overdueInvoices.map((inv) => (
+                {overdueInvoices.map((inv: typeof overdueInvoices[number]) => (
                   <li key={inv.id} className="flex items-center justify-between px-5 py-3">
                     <div>
                       <p className="text-sm font-medium text-[var(--color-text)]">{inv.client.name}</p>
@@ -145,7 +145,7 @@ export default async function DashboardPage() {
               </p>
             ) : (
               <ul className="divide-y divide-[var(--color-border)]">
-                {upcomingRenewals.map((svc) => (
+                {upcomingRenewals.map((svc: typeof upcomingRenewals[number]) => (
                   <li key={svc.id} className="flex items-center justify-between px-5 py-3">
                     <div>
                       <p className="text-sm font-medium text-[var(--color-text)]">{svc.client.name}</p>
@@ -185,7 +185,7 @@ export default async function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border)]">
-                  {recentActivity.map((inv) => (
+                  {recentActivity.map((inv: typeof recentActivity[number]) => (
                     <tr key={inv.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-5 py-3 font-mono text-xs text-[var(--color-muted)]">
                         {inv.invoiceNumber}

@@ -116,7 +116,7 @@ export default async function QuotesPage({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border)]">
-                  {quotes.map((q) => (
+                  {quotes.map((q: typeof quotes[number]) => (
                     <tr key={q.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-5 py-3 font-mono text-xs text-[var(--color-muted)]">
                         {q.quoteNumber}

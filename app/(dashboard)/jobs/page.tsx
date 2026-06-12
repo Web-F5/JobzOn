@@ -58,7 +58,7 @@ export default async function JobsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border)]">
-                  {jobsWithClients.map((job) => (
+                  {jobsWithClients.map((job: typeof jobsWithClients[number]) => (
                     <tr key={job.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-5 py-3 font-mono text-xs text-[var(--color-muted)]">
                         {job.jobNumber}
