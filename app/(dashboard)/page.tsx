@@ -1,0 +1,216 @@
+import { Metadata } from "next";
+import { prisma } from "@/lib/prisma";
+import { TopBar } from "@/components/nav/TopBar";
+import { StatCard } from "@/components/ui/Card";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { formatAUD } from "@/lib/gst";
+import { formatDate } from "@/lib/dates";
+
+export const metadata: Metadata = { title: "Dashboard" };
+export const dynamic = "force-dynamic";
+
+async function getDashboardData() {
+  const [
+    invoiceCounts,
+    overdueInvoices,
+    upcomingRenewals,
+    recentActivity,
+  ] = await Promise.all([
+    // Invoice status counts
+    prisma.invoice.groupBy({
+      by: ["status"],
+      _count: { id: true },
+      _sum: { amountTotal: true },
+    }),
+    // Overdue invoices (top 5)
+    prisma.invoice.findMany({
+      where: { status: { in: ["SENT", "OVERDUE"] }, dueDate: { lt: new Date() } },
+      include: { client: true },
+      orderBy: { dueDate: "asc" },
+      take: 5,
+    }),
+    // Services renewing within 45 days
+    prisma.service.findMany({
+      where: {
+        active: true,
+        renewalDate: {
+          gte: new Date(),
+          lte: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
+        },
+      },
+      include: { client: true },
+      orderBy: { renewalDate: "asc" },
+      take: 8,
+    }),
+    // Recent invoices
+    prisma.invoice.findMany({
+      include: { client: true },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+  ]);
+
+  const counts = Object.fromEntries(
+    invoiceCounts.map((r) => [r.status, { count: r._count.id, total: r._sum.amountTotal ?? 0 }])
+  );
+
+  const overdueTotal = overdueInvoices.reduce((s, i) => s + i.amountTotal, 0);
+
+  return { counts, overdueInvoices, overdueTotal, upcomingRenewals, recentActivity };
+}
+
+export default async function DashboardPage() {
+  const { counts, overdueInvoices, overdueTotal, upcomingRenewals, recentActivity } =
+    await getDashboardData();
+
+  return (
+    <>
+      <TopBar title="Dashboard" description="Overview of your invoices, jobs, and renewals" />
+
+      <main className="flex-1 p-6 space-y-6">
+
+        {/* Stat cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            label="Awaiting Payment"
+            value={counts.SENT?.count ?? 0}
+            sub={counts.SENT ? formatAUD(counts.SENT.total) + " outstanding" : "All clear"}
+            accent="blue"
+          />
+          <StatCard
+            label="Overdue"
+            value={counts.OVERDUE?.count ?? 0}
+            sub={overdueTotal > 0 ? formatAUD(overdueTotal) + " overdue" : "All clear"}
+            accent="red"
+          />
+          <StatCard
+            label="Paid This Year"
+            value={counts.PAID?.count ?? 0}
+            sub={counts.PAID ? formatAUD(counts.PAID.total) + " collected" : "$0.00 collected"}
+            accent="green"
+          />
+          <StatCard
+            label="Upcoming Renewals"
+            value={upcomingRenewals.length}
+            sub="within 45 days"
+            accent="orange"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          {/* Overdue invoices */}
+          <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm">
+            <div className="px-5 py-4 border-b border-[var(--color-border)] flex items-center justify-between">
+              <h2 className="font-semibold text-[var(--color-text)]">Overdue Invoices</h2>
+              <a href="/invoices?status=OVERDUE" className="text-xs text-[var(--color-brand)] hover:underline">
+                View all
+              </a>
+            </div>
+            {overdueInvoices.length === 0 ? (
+              <p className="px-5 py-8 text-sm text-center text-[var(--color-muted)]">
+                No overdue invoices 🎉
+              </p>
+            ) : (
+              <ul className="divide-y divide-[var(--color-border)]">
+                {overdueInvoices.map((inv) => (
+                  <li key={inv.id} className="flex items-center justify-between px-5 py-3">
+                    <div>
+                      <p className="text-sm font-medium text-[var(--color-text)]">{inv.client.name}</p>
+                      <p className="text-xs text-[var(--color-muted)]">
+                        {inv.invoiceNumber} · due {formatDate(inv.dueDate)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-red-600">{formatAUD(inv.amountTotal)}</p>
+                      <StatusBadge status={inv.status} />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {/* Upcoming renewals */}
+          <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm">
+            <div className="px-5 py-4 border-b border-[var(--color-border)] flex items-center justify-between">
+              <h2 className="font-semibold text-[var(--color-text)]">Upcoming Renewals</h2>
+              <a href="/services" className="text-xs text-[var(--color-brand)] hover:underline">
+                View calendar
+              </a>
+            </div>
+            {upcomingRenewals.length === 0 ? (
+              <p className="px-5 py-8 text-sm text-center text-[var(--color-muted)]">
+                No renewals in the next 45 days
+              </p>
+            ) : (
+              <ul className="divide-y divide-[var(--color-border)]">
+                {upcomingRenewals.map((svc) => (
+                  <li key={svc.id} className="flex items-center justify-between px-5 py-3">
+                    <div>
+                      <p className="text-sm font-medium text-[var(--color-text)]">{svc.client.name}</p>
+                      <p className="text-xs text-[var(--color-muted)]">{svc.description}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-[var(--color-text)]">
+                        {formatAUD(svc.amountExGst * 1.1)}
+                      </p>
+                      <p className="text-xs text-[var(--color-muted)]">{formatDate(svc.renewalDate)}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+        </div>
+
+        {/* Recent activity */}
+        <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm">
+          <div className="px-5 py-4 border-b border-[var(--color-border)]">
+            <h2 className="font-semibold text-[var(--color-text)]">Recent Invoices</h2>
+          </div>
+          {recentActivity.length === 0 ? (
+            <p className="px-5 py-8 text-sm text-center text-[var(--color-muted)]">No invoices yet</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-[var(--color-muted)] border-b border-[var(--color-border)]">
+                    <th className="px-5 py-3 font-medium">Invoice</th>
+                    <th className="px-5 py-3 font-medium">Client</th>
+                    <th className="px-5 py-3 font-medium">Due</th>
+                    <th className="px-5 py-3 font-medium text-right">Amount</th>
+                    <th className="px-5 py-3 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--color-border)]">
+                  {recentActivity.map((inv) => (
+                    <tr key={inv.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-5 py-3 font-mono text-xs text-[var(--color-muted)]">
+                        {inv.invoiceNumber}
+                      </td>
+                      <td className="px-5 py-3 font-medium text-[var(--color-text)]">
+                        {inv.client.name}
+                      </td>
+                      <td className="px-5 py-3 text-[var(--color-muted)]">
+                        {formatDate(inv.dueDate)}
+                      </td>
+                      <td className="px-5 py-3 text-right font-semibold text-[var(--color-text)]">
+                        {formatAUD(inv.amountTotal)}
+                      </td>
+                      <td className="px-5 py-3">
+                        <StatusBadge status={inv.status} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+      </main>
+    </>
+  );
+}

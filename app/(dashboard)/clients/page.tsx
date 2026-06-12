@@ -1,0 +1,79 @@
+import { Metadata } from "next";
+import { prisma } from "@/lib/prisma";
+import { TopBar } from "@/components/nav/TopBar";
+import { AddClientButton, EditClientButton } from "@/components/clients/ClientFormModal";
+import { PortalLinkButton } from "@/components/clients/PortalLinkButton";
+
+export const metadata: Metadata = { title: "Clients" };
+export const dynamic = "force-dynamic";
+
+export default async function ClientsPage() {
+  const clients = await prisma.client.findMany({
+    include: { _count: { select: { services: true, invoices: true } } },
+    orderBy: { name: "asc" },
+  });
+
+  return (
+    <>
+      <TopBar
+        title="Clients"
+        description="Manage your client accounts and services"
+        actions={<AddClientButton />}
+      />
+
+      <main className="flex-1 p-6">
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">
+          {clients.length === 0 ? (
+            <p className="px-6 py-12 text-sm text-center text-[var(--color-muted)]">
+              No clients yet — add your first client to get started
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-[var(--color-muted)] border-b border-[var(--color-border)] bg-slate-50">
+                    <th className="px-5 py-3 font-medium">Name</th>
+                    <th className="px-5 py-3 font-medium">Email</th>
+                    <th className="px-5 py-3 font-medium">Phone</th>
+                    <th className="px-5 py-3 font-medium text-center">Services</th>
+                    <th className="px-5 py-3 font-medium text-center">Invoices</th>
+                    <th className="px-5 py-3 font-medium text-center">SMS</th>
+                    <th className="px-5 py-3 font-medium">Portal</th>
+                    <th className="px-5 py-3 font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--color-border)]">
+                  {clients.map((client) => (
+                    <tr key={client.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-5 py-3 font-medium text-[var(--color-text)]">{client.name}</td>
+                      <td className="px-5 py-3 text-[var(--color-muted)]">{client.email}</td>
+                      <td className="px-5 py-3 text-[var(--color-muted)]">
+                        {client.phone ?? <span className="text-slate-300">—</span>}
+                      </td>
+                      <td className="px-5 py-3 text-center text-[var(--color-muted)]">{client._count.services}</td>
+                      <td className="px-5 py-3 text-center text-[var(--color-muted)]">{client._count.invoices}</td>
+                      <td className="px-5 py-3 text-center">
+                        <span className={`inline-block w-2 h-2 rounded-full ${client.smsEnabled ? "bg-green-500" : "bg-slate-300"}`} />
+                      </td>
+                      <td className="px-5 py-3">
+                        <PortalLinkButton clientId={client.id} token={client.portalToken} />
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-3">
+                          <EditClientButton client={client} />
+                          <a href={`/services?clientId=${client.id}`} className="text-[var(--color-muted)] hover:underline text-xs">
+                            Services
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </main>
+    </>
+  );
+}

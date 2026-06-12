@@ -1,0 +1,269 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../node_modules/.prisma/client"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── CLIENTS ──────────────────────────────────────────────────────────────────
+
+model Client {
+  id       String  @id @default(cuid())
+  name     String
+  email    String  @unique
+  phone    String?
+  abn      String?
+  address  String?
+  suburb   String?
+  state    String?
+  postcode String?
+
+  smsEnabled  Boolean @default(false)
+  portalToken String? @unique // signed URL token for the client portal
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  services         Service[]
+  invoices         Invoice[]
+  quotes           Quote[]
+}
+
+// ─── SERVICES (recurring — domain, hosting, SSL) ──────────────────────────────
+
+model Service {
+  id          String      @id @default(cuid())
+  clientId    String
+  client      Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  type        ServiceType
+  description String      // e.g. "horsehay.com.au domain renewal"
+  renewalDate DateTime
+  amountExGst Float       // ex-GST AUD
+  active      Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  invoices Invoice[]
+}
+
+enum ServiceType {
+  DOMAIN
+  HOSTING
+  SSL
+  OTHER
+}
+
+// ─── INVOICES ─────────────────────────────────────────────────────────────────
+
+model Invoice {
+  id            String        @id @default(cuid())
+  invoiceNumber String        @unique // INV-2026-001
+  clientId      String
+  client        Client        @relation(fields: [clientId], references: [id])
+  serviceId     String?
+  service       Service?      @relation(fields: [serviceId], references: [id])
+  quoteId       String?       @unique
+  quote         Quote?        @relation(fields: [quoteId], references: [id])
+
+  status    InvoiceStatus @default(PENDING)
+  lineItems InvoiceLineItem[]
+
+  amountExGst Float
+  gst         Float
+  amountTotal Float
+
+  issueDate DateTime  @default(now())
+  dueDate   DateTime
+  sentAt    DateTime?
+  paidAt    DateTime?
+
+  reminderOneSentAt    DateTime?
+  reminderTwoSentAt    DateTime?
+  smsSentAt            DateTime?
+  smsReminderOneSentAt DateTime?
+  smsReminderTwoSentAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model InvoiceLineItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Float   @default(1)
+  unitPrice   Float   // ex-GST
+  subtotal    Float   // quantity × unitPrice, ex-GST
+  sortOrder   Int     @default(0)
+}
+
+enum InvoiceStatus {
+  PENDING    // generated, not yet sent
+  SENT       // emailed to client
+  OVERDUE    // past due date
+  PAID
+  CANCELLED
+}
+
+// ─── QUOTES ───────────────────────────────────────────────────────────────────
+
+model Quote {
+  id          String      @id @default(cuid())
+  quoteNumber String      @unique // QUO-2026-001
+  clientId    String
+  client      Client      @relation(fields: [clientId], references: [id])
+
+  status    QuoteStatus @default(DRAFT)
+  lineItems QuoteLineItem[]
+
+  amountExGst Float @default(0)
+  gst         Float @default(0)
+  amountTotal Float @default(0)
+
+  source      QuoteSource @default(MANUAL)
+  sourceEmail String?     // raw inbound email body if sourced from email
+
+  notes       String?     // internal
+  clientNotes String?     // shown on quote PDF
+
+  expiresAt              DateTime?
+  sentAt                 DateTime?
+  acceptedAt             DateTime?
+  rejectedAt             DateTime?
+  infoRequestSentAt      DateTime?
+  infoResponseReceivedAt DateTime?
+  infoResponseEmail      String?
+
+  invoice Invoice?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model QuoteLineItem {
+  id          String @id @default(cuid())
+  quoteId     String
+  quote       Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Float  @default(1)
+  unitPrice   Float  // ex-GST
+  subtotal    Float  // quantity × unitPrice, ex-GST
+  sortOrder   Int    @default(0)
+}
+
+enum QuoteStatus {
+  DRAFT
+  AWAITING_INFO  // sent request for more info to client
+  READY          // ready to send
+  SENT
+  ACCEPTED       // becomes a Job
+  REJECTED
+  EXPIRED
+  INVOICED
+}
+
+enum QuoteSource {
+  MANUAL   // created in dashboard
+  EMAIL    // parsed from inbound email
+  WEBSITE  // submitted via client's contact form
+}
+
+// ─── JOBS (accepted quotes become jobs) ───────────────────────────────────────
+
+model Job {
+  id        String    @id @default(cuid())
+  jobNumber String    @unique // JOB-2026-001
+  clientId  String
+  quoteId   String    @unique
+
+  title   String
+  status  JobStatus @default(NEW)
+  notes   String?
+
+  additionalTasks JobTask[]
+
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model JobTask {
+  id          String        @id @default(cuid())
+  jobId       String
+  job         Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  description String
+  amountExGst Float
+
+  status             JobTaskStatus @default(PENDING_APPROVAL)
+  approvalSentAt     DateTime?
+  approvalReceivedAt DateTime?
+  approvedByClient   Boolean       @default(false)
+
+  createdAt DateTime @default(now())
+}
+
+enum JobStatus {
+  NEW
+  IN_PROGRESS
+  COMPLETED
+  INVOICED
+  CANCELLED
+}
+
+enum JobTaskStatus {
+  PENDING_APPROVAL // awaiting client sign-off
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+// ─── SERVICE CATALOGUE (default pricing) ──────────────────────────────────────
+
+model ServiceCatalogueItem {
+  id          String      @id @default(cuid())
+  name        String      @unique // e.g. "Shared Hosting", "Domain .com.au"
+  type        ServiceType
+  description String?
+  amountExGst Float
+  active      Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+// ─── SUPPLIER INVOICES (Phase 3) ──────────────────────────────────────────────
+
+model SupplierInvoice {
+  id            String                @id @default(cuid())
+  supplierName  String
+  supplierEmail String?
+  invoiceNumber String?
+  amountExGst   Float
+  gst           Float
+  amountTotal   Float
+  invoiceDate   DateTime
+  dueDate       DateTime?
+  status        SupplierInvoiceStatus @default(RECEIVED)
+  sourceEmail   String?
+  pdfUrl        String?
+  paidAt        DateTime?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+}
+
+enum SupplierInvoiceStatus {
+  RECEIVED
+  PAID
+  DISPUTED
+}
+
+// ─── SEQUENCE COUNTERS (invoice / quote / job numbering per fiscal year) ───────
+
+model SequenceCounter {
+  id           String @id // e.g. "INV-2026", "QUO-2026", "JOB-2026"
+  currentValue Int    @default(0)
+}
