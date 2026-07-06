@@ -198,7 +198,6 @@ export default async function DashboardPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-[var(--color-brand)] hover:underline"
-                          onClick={(e) => e.stopPropagation()}
                         >
                           {inv.invoiceNumber}
                         </a>
