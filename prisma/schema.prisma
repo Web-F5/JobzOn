@@ -261,6 +261,14 @@ enum SupplierInvoiceStatus {
   DISPUTED
 }
 
+// ─── BUSINESS SETTINGS (singleton — id always "default") ─────────────────────
+
+model BusinessSettings {
+  id           String  @id @default("default")
+  logoUrl      String? // Vercel Blob URL for the business logo
+  updatedAt    DateTime @updatedAt
+}
+
 // ─── SEQUENCE COUNTERS (invoice / quote / job numbering per fiscal year) ───────
 
 model SequenceCounter {

@@ -15,6 +15,7 @@ import {
   Page,
   Text,
   View,
+  Image,
   StyleSheet,
 } from "@react-pdf/renderer";
 import type { QuotePdfData } from "./quote-data";
@@ -220,7 +221,13 @@ export function QuoteDocument({ data }: { data: QuotePdfData }) {
 
         {/* Header */}
         <View style={s.header}>
-          <Text style={s.businessName}>{data.businessName}</Text>
+          <View>
+            {data.businessLogoUrl ? (
+              <Image src={data.businessLogoUrl} style={{ height: 36, maxWidth: 120, objectFit: "contain" }} />
+            ) : (
+              <Text style={s.businessName}>{data.businessName}</Text>
+            )}
+          </View>
           <Text style={s.quoteLabel}>QUOTE</Text>
         </View>
 

@@ -25,15 +25,18 @@ export default async function PortalPage({ params, searchParams }: Props) {
   const { token } = await params;
   const { success, cancelled, invoice: paidInvoiceNumber } = await searchParams;
 
-  const client = await prisma.client.findUnique({
-    where: { portalToken: token },
-    include: {
-      invoices: {
-        include: { lineItems: { orderBy: { sortOrder: "asc" } } },
-        orderBy: { issueDate: "desc" },
+  const [client, settings] = await Promise.all([
+    prisma.client.findUnique({
+      where: { portalToken: token },
+      include: {
+        invoices: {
+          include: { lineItems: { orderBy: { sortOrder: "asc" } } },
+          orderBy: { issueDate: "desc" },
+        },
       },
-    },
-  });
+    }),
+    prisma.businessSettings.findUnique({ where: { id: "default" } }),
+  ]);
 
   if (!client) notFound();
 
@@ -41,6 +44,7 @@ export default async function PortalPage({ params, searchParams }: Props) {
   const businessEmail   = process.env.NEXT_PUBLIC_BUSINESS_EMAIL   ?? "";
   const businessPhone   = process.env.NEXT_PUBLIC_BUSINESS_PHONE   ?? "";
   const businessAbn     = process.env.NEXT_PUBLIC_BUSINESS_ABN     ?? "";
+  const businessLogoUrl = settings?.logoUrl ?? null;
 
   const outstanding = client.invoices
     .filter((i) => i.status === "SENT" || i.status === "OVERDUE")
@@ -59,10 +63,17 @@ export default async function PortalPage({ params, searchParams }: Props) {
       <header className="bg-[var(--color-sidebar-bg)] px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[var(--color-brand)] flex items-center justify-center">
-              <span className="text-white font-bold text-sm">J</span>
-            </div>
-            <span className="text-white font-semibold text-base">{businessName}</span>
+            {businessLogoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={businessLogoUrl} alt={businessName} className="h-8 w-auto object-contain" />
+            ) : (
+              <>
+                <div className="w-8 h-8 rounded-lg bg-[var(--color-brand)] flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">J</span>
+                </div>
+                <span className="text-white font-semibold text-base">{businessName}</span>
+              </>
+            )}
           </div>
           <a
             href={`mailto:${businessEmail}`}

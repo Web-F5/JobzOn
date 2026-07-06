@@ -4,9 +4,9 @@
  * in both the route handler and the Resend email attachment.
  */
 
-import { prisma } from "@/lib/prisma";
+import { prisma }                 from "@/lib/prisma";
 import { formatAUD, formatAmount } from "@/lib/gst";
-import { formatDate } from "@/lib/dates";
+import { formatDate }             from "@/lib/dates";
 
 export interface InvoiceLineItemData {
   description: string;
@@ -22,6 +22,7 @@ export interface InvoicePdfData {
   businessEmail: string;
   businessPhone: string;
   businessAddress: string;
+  businessLogoUrl: string | null;
 
   // Internal IDs (not shown on PDF — used by send-invoice.ts)
   clientId: string;
@@ -62,17 +63,20 @@ function buildStripeUrl(invoiceId: string, token: string | null): string | null 
 }
 
 export async function getInvoicePdfData(invoiceId: string): Promise<InvoicePdfData | null> {
-  const invoice = await prisma.invoice.findUnique({
+  const [invoice, settings] = await Promise.all([
+    prisma.invoice.findUnique({
     where: { id: invoiceId },
-    include: {
-      client: { select: {
-        id: true, name: true, email: true, phone: true,
-        abn: true, address: true, suburb: true, state: true,
-        postcode: true, portalToken: true,
-      }},
-      lineItems: { orderBy: { sortOrder: "asc" } },
-    },
-  });
+      include: {
+        client: { select: {
+          id: true, name: true, email: true, phone: true,
+          abn: true, address: true, suburb: true, state: true,
+          postcode: true, portalToken: true,
+        }},
+        lineItems: { orderBy: { sortOrder: "asc" } },
+      },
+    }),
+    prisma.businessSettings.findUnique({ where: { id: "default" } }),
+  ]);
 
   if (!invoice) return null;
 
@@ -92,6 +96,7 @@ export async function getInvoicePdfData(invoiceId: string): Promise<InvoicePdfDa
     businessEmail:   process.env.NEXT_PUBLIC_BUSINESS_EMAIL   ?? "",
     businessPhone:   process.env.NEXT_PUBLIC_BUSINESS_PHONE   ?? "",
     businessAddress: process.env.NEXT_PUBLIC_BUSINESS_ADDRESS ?? "",
+    businessLogoUrl: settings?.logoUrl ?? null,
 
     // Invoice
     invoiceNumber: invoice.invoiceNumber,

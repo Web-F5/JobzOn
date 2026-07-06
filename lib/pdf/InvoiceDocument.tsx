@@ -19,6 +19,7 @@ import {
   Page,
   Text,
   View,
+  Image,
   StyleSheet,
   Font,
 } from "@react-pdf/renderer";
@@ -239,6 +240,13 @@ const s = StyleSheet.create({
     color: BRAND,
   },
 
+  // Logo in header
+  logoImage: {
+    height: 36,
+    maxWidth: 120,
+    objectFit: "contain",
+  },
+
   // Footer
   footer: {
     position: "absolute",
@@ -270,7 +278,13 @@ export function InvoiceDocument({ data }: { data: InvoicePdfData }) {
 
         {/* Header */}
         <View style={s.header}>
-          <Text style={s.businessName}>{data.businessName}</Text>
+          <View>
+            {data.businessLogoUrl ? (
+              <Image src={data.businessLogoUrl} style={s.logoImage} />
+            ) : (
+              <Text style={s.businessName}>{data.businessName}</Text>
+            )}
+          </View>
           <Text style={s.invoiceLabel}>TAX INVOICE</Text>
         </View>
 

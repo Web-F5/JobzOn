@@ -21,6 +21,7 @@ export interface QuotePdfData {
   businessEmail:   string;
   businessPhone:   string;
   businessAddress: string;
+  businessLogoUrl: string | null;
 
   // Quote meta
   quoteNumber: string;
@@ -51,19 +52,22 @@ export interface QuotePdfData {
 }
 
 export async function getQuotePdfData(quoteId: string): Promise<QuotePdfData | null> {
-  const quote = await prisma.quote.findUnique({
-    where: { id: quoteId },
-    include: {
-      client: {
-        select: {
-          name: true, email: true, phone: true,
-          abn: true, address: true, suburb: true,
-          state: true, postcode: true,
+  const [quote, settings] = await Promise.all([
+    prisma.quote.findUnique({
+      where: { id: quoteId },
+      include: {
+        client: {
+          select: {
+            name: true, email: true, phone: true,
+            abn: true, address: true, suburb: true,
+            state: true, postcode: true,
+          },
         },
+        lineItems: { orderBy: { sortOrder: "asc" } },
       },
-      lineItems: { orderBy: { sortOrder: "asc" } },
-    },
-  });
+    }),
+    prisma.businessSettings.findUnique({ where: { id: "default" } }),
+  ]);
 
   if (!quote) return null;
 
@@ -81,6 +85,7 @@ export async function getQuotePdfData(quoteId: string): Promise<QuotePdfData | n
     businessEmail:   process.env.NEXT_PUBLIC_BUSINESS_EMAIL   ?? "",
     businessPhone:   process.env.NEXT_PUBLIC_BUSINESS_PHONE   ?? "",
     businessAddress: process.env.NEXT_PUBLIC_BUSINESS_ADDRESS ?? "",
+    businessLogoUrl: settings?.logoUrl ?? null,
 
     // Quote
     quoteNumber: quote.quoteNumber,
