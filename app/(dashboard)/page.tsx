@@ -76,24 +76,28 @@ export default async function DashboardPage() {
             value={counts.SENT?.count ?? 0}
             sub={counts.SENT ? formatAUD(counts.SENT.total) + " outstanding" : "All clear"}
             accent="blue"
+            href="/invoices?status=SENT"
           />
           <StatCard
             label="Overdue"
             value={counts.OVERDUE?.count ?? 0}
             sub={overdueTotal > 0 ? formatAUD(overdueTotal) + " overdue" : "All clear"}
             accent="red"
+            href="/invoices?status=OVERDUE"
           />
           <StatCard
             label="Paid This Year"
             value={counts.PAID?.count ?? 0}
             sub={counts.PAID ? formatAUD(counts.PAID.total) + " collected" : "$0.00 collected"}
             accent="green"
+            href="/invoices?status=PAID"
           />
           <StatCard
             label="Upcoming Renewals"
             value={upcomingRenewals.length}
             sub="within 45 days"
             accent="orange"
+            href="/services"
           />
         </div>
 
@@ -182,13 +186,22 @@ export default async function DashboardPage() {
                     <th className="px-5 py-3 font-medium">Due</th>
                     <th className="px-5 py-3 font-medium text-right">Amount</th>
                     <th className="px-5 py-3 font-medium">Status</th>
+                    <th className="px-5 py-3 font-medium"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border)]">
                   {recentActivity.map((inv: typeof recentActivity[number]) => (
-                    <tr key={inv.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-5 py-3 font-mono text-xs text-[var(--color-muted)]">
-                        {inv.invoiceNumber}
+                    <tr key={inv.id} className="hover:bg-slate-50 transition-colors cursor-pointer group">
+                      <td className="px-5 py-3 font-mono text-xs">
+                        <a
+                          href={`/api/invoice/${inv.id}/pdf`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[var(--color-brand)] hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {inv.invoiceNumber}
+                        </a>
                       </td>
                       <td className="px-5 py-3 font-medium text-[var(--color-text)]">
                         {inv.client.name}
@@ -201,6 +214,14 @@ export default async function DashboardPage() {
                       </td>
                       <td className="px-5 py-3">
                         <StatusBadge status={inv.status} />
+                      </td>
+                      <td className="px-5 py-3">
+                        <a
+                          href={`/invoices?status=${inv.status}`}
+                          className="text-xs text-[var(--color-muted)] opacity-0 group-hover:opacity-100 hover:text-[var(--color-brand)] hover:underline transition-opacity"
+                        >
+                          View all →
+                        </a>
                       </td>
                     </tr>
                   ))}

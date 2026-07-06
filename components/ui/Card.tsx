@@ -21,6 +21,7 @@ interface StatCardProps {
   value: string | number;
   sub?: string;
   accent?: "default" | "blue" | "green" | "red" | "orange";
+  href?: string;
 }
 
 const accentMap = {
@@ -31,12 +32,26 @@ const accentMap = {
   orange:  "border-l-orange-500",
 };
 
-export function StatCard({ label, value, sub, accent = "default" }: StatCardProps) {
-  return (
-    <Card className={`p-5 border-l-4 ${accentMap[accent]}`}>
+export function StatCard({ label, value, sub, accent = "default", href }: StatCardProps) {
+  const inner = (
+    <>
       <p className="text-sm text-[var(--color-muted)] font-medium">{label}</p>
       <p className="mt-1 text-2xl font-bold text-[var(--color-text)]">{value}</p>
       {sub && <p className="mt-0.5 text-xs text-[var(--color-muted)]">{sub}</p>}
+    </>
+  );
+
+  if (href) {
+    return (
+      <a href={href} className={`block p-5 border-l-4 ${accentMap[accent]} bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm hover:shadow-md transition-shadow`}>
+        {inner}
+      </a>
+    );
+  }
+
+  return (
+    <Card className={`p-5 border-l-4 ${accentMap[accent]}`}>
+      {inner}
     </Card>
   );
 }

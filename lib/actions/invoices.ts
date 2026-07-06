@@ -1,9 +1,12 @@
 "use server";
 
+import { redirect }       from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
+import { prisma }         from "@/lib/prisma";
 import { generateInvoiceForService } from "@/lib/invoice/generate";
 import { sendInvoiceEmail } from "@/lib/email/send-invoice";
+import { nextSequenceNumber } from "@/lib/sequence";
+import { calcGst, calcTotal, round2 } from "@/lib/gst";
 
 export type InvoiceActionState = {
   error?: string;
@@ -81,4 +84,67 @@ export async function manualInvoiceForService(
   revalidatePath("/services");
   revalidatePath("/");
   return { success: true, invoiceId: invoice.id };
+}
+
+/**
+ * Create a manual (ad-hoc) invoice from the +Invoice wizard form.
+ * Line items are passed as JSON in the hidden `lineItemsJson` field.
+ */
+export async function createManualInvoice(
+  _prev: InvoiceActionState,
+  formData: FormData
+): Promise<InvoiceActionState> {
+  const clientId       = formData.get("clientId")       as string;
+  const dueDateStr     = formData.get("dueDate")        as string;
+  const lineItemsJson  = formData.get("lineItemsJson")  as string;
+  const notes          = formData.get("notes")          as string | null;
+
+  if (!clientId)      return { error: "Client is required." };
+  if (!dueDateStr)    return { error: "Due date is required." };
+  if (!lineItemsJson) return { error: "At least one line item is required." };
+
+  let lineItems: { description: string; unitPrice: number; quantity: number }[];
+  try {
+    lineItems = JSON.parse(lineItemsJson);
+  } catch {
+    return { error: "Invalid line items." };
+  }
+
+  if (!lineItems.length) return { error: "At least one line item is required." };
+
+  const dueDate     = new Date(dueDateStr);
+  const amountExGst = round2(lineItems.reduce((s, li) => s + li.unitPrice * li.quantity, 0));
+  const gst         = calcGst(amountExGst);
+  const amountTotal = calcTotal(amountExGst);
+  const invoiceNumber = await nextSequenceNumber("INV");
+
+  let invoiceId: string;
+  try {
+    const invoice = await prisma.invoice.create({
+      data: {
+        invoiceNumber,
+        clientId,
+        dueDate,
+        amountExGst,
+        gst,
+        amountTotal,
+        lineItems: {
+          create: lineItems.map((li, idx) => ({
+            description: li.description,
+            quantity:    li.quantity,
+            unitPrice:   li.unitPrice,
+            subtotal:    round2(li.unitPrice * li.quantity),
+            sortOrder:   idx,
+          })),
+        },
+      },
+    });
+    invoiceId = invoice.id;
+  } catch {
+    return { error: "Failed to create invoice." };
+  }
+
+  revalidatePath("/invoices");
+  revalidatePath("/");
+  redirect("/invoices");
 }

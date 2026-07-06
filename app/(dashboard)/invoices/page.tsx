@@ -50,9 +50,12 @@ export default async function InvoicesPage({
         title="Invoices"
         description="All invoices across your clients"
         actions={
-          <button className="px-4 py-2 bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white text-sm font-medium rounded-lg transition-colors">
+          <a
+            href="/invoices/new"
+            className="px-4 py-2 bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white text-sm font-medium rounded-lg transition-colors"
+          >
             + New Invoice
-          </button>
+          </a>
         }
       />
 
