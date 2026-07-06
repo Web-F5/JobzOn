@@ -20,13 +20,14 @@ import {
 } from "@react-pdf/renderer";
 import type { QuotePdfData } from "./quote-data";
 
-const BRAND   = "#2563eb";
-const DARK    = "#1e293b";
-const MUTED   = "#64748b";
-const BORDER  = "#e2e8f0";
-const ROW_ALT = "#f8fafc";
-const WHITE   = "#ffffff";
-const AMBER   = "#d97706";
+const BRAND      = "#2563eb";
+const DARK       = "#1e293b";
+const MUTED      = "#64748b";
+const BORDER     = "#e2e8f0";
+const ROW_ALT    = "#f8fafc";
+const WHITE      = "#ffffff";
+const AMBER      = "#d97706";
+const HEADER_BG  = "#f8fafc";
 
 const s = StyleSheet.create({
   page: {
@@ -40,7 +41,9 @@ const s = StyleSheet.create({
   },
 
   header: {
-    backgroundColor: DARK,
+    backgroundColor: HEADER_BG,
+    borderBottomWidth: 3,
+    borderBottomColor: AMBER,
     marginHorizontal: -45,
     marginTop: -40,
     paddingVertical: 22,
@@ -53,14 +56,13 @@ const s = StyleSheet.create({
   businessName: {
     fontSize: 20,
     fontFamily: "Helvetica-Bold",
-    color: WHITE,
+    color: DARK,
     letterSpacing: 0.5,
   },
   quoteLabel: {
     fontSize: 11,
     fontFamily: "Helvetica-Bold",
-    color: WHITE,
-    opacity: 0.75,
+    color: AMBER,
     letterSpacing: 1.5,
   },
 

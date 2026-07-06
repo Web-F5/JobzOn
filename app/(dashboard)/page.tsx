@@ -194,9 +194,7 @@ export default async function DashboardPage() {
                     <tr key={inv.id} className="hover:bg-slate-50 transition-colors cursor-pointer group">
                       <td className="px-5 py-3 font-mono text-xs">
                         <a
-                          href={`/api/invoice/${inv.id}/pdf`}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          href={`/invoices/${inv.id}`}
                           className="text-[var(--color-brand)] hover:underline"
                         >
                           {inv.invoiceNumber}

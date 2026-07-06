@@ -115,8 +115,13 @@ export default async function InvoicesPage({
 
                     return (
                       <tr key={inv.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-5 py-3 font-mono text-xs text-[var(--color-muted)]">
-                          {inv.invoiceNumber}
+                        <td className="px-5 py-3 font-mono text-xs">
+                          <a
+                            href={`/invoices/${inv.id}`}
+                            className="text-[var(--color-brand)] hover:underline font-medium"
+                          >
+                            {inv.invoiceNumber}
+                          </a>
                         </td>
                         <td className="px-5 py-3 font-medium text-[var(--color-text)]">
                           <div className="flex items-center gap-1.5">

@@ -26,13 +26,14 @@ import {
 import type { InvoicePdfData } from "./invoice-data";
 
 // ─── Colours (matching app design tokens) ────────────────────────────────────
-const BRAND   = "#2563eb";
-const DARK    = "#1e293b";
-const MUTED   = "#64748b";
-const BORDER  = "#e2e8f0";
-const ROW_ALT = "#f8fafc";
-const WHITE   = "#ffffff";
-const GREEN   = "#16a34a";
+const BRAND      = "#2563eb";
+const DARK       = "#1e293b";
+const MUTED      = "#64748b";
+const BORDER     = "#e2e8f0";
+const ROW_ALT    = "#f8fafc";
+const WHITE      = "#ffffff";
+const GREEN      = "#16a34a";
+const HEADER_BG  = "#f8fafc"; // light header so coloured logos show clearly
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
@@ -48,7 +49,9 @@ const s = StyleSheet.create({
 
   // Header
   header: {
-    backgroundColor: DARK,
+    backgroundColor: HEADER_BG,
+    borderBottomWidth: 3,
+    borderBottomColor: BRAND,
     marginHorizontal: -45,
     marginTop: -40,
     paddingVertical: 22,
@@ -61,14 +64,13 @@ const s = StyleSheet.create({
   businessName: {
     fontSize: 20,
     fontFamily: "Helvetica-Bold",
-    color: WHITE,
+    color: DARK,
     letterSpacing: 0.5,
   },
   invoiceLabel: {
     fontSize: 11,
     fontFamily: "Helvetica-Bold",
-    color: WHITE,
-    opacity: 0.75,
+    color: BRAND,
     letterSpacing: 1.5,
   },
 
