@@ -34,8 +34,9 @@ export async function uploadLogo(
       addRandomSuffix: false,
     });
     url = blob.url;
-  } catch {
-    return { error: "Upload failed. Check BLOB_READ_WRITE_TOKEN is set in Vercel." };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { error: `Upload failed: ${msg}` };
   }
 
   try {
