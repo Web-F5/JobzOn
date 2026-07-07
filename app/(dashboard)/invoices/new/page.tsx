@@ -7,10 +7,17 @@ export const metadata: Metadata = { title: "New Invoice" };
 export const dynamic = "force-dynamic";
 
 export default async function NewInvoicePage() {
-  const clients = await prisma.client.findMany({
-    select: { id: true, name: true },
-    orderBy: { name: "asc" },
-  });
+  const [clients, catalogueItems] = await Promise.all([
+    prisma.client.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.serviceCatalogueItem.findMany({
+      where: { active: true },
+      orderBy: [{ type: "asc" }, { name: "asc" }],
+      select: { id: true, name: true, description: true, amountExGst: true, type: true },
+    }),
+  ]);
 
   return (
     <>
@@ -25,7 +32,7 @@ export default async function NewInvoicePage() {
       />
       <main className="flex-1 p-6">
         <div className="max-w-2xl mx-auto">
-          <NewInvoiceForm clients={clients} />
+          <NewInvoiceForm clients={clients} catalogueItems={catalogueItems} />
         </div>
       </main>
     </>
