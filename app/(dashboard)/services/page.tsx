@@ -8,6 +8,7 @@ import { ManualInvoiceButton } from "@/components/invoices/ManualInvoiceButton";
 import { AddCatalogueItemButton, EditCatalogueItemButton } from "@/components/catalogue/CatalogueFormModal";
 import { SpinningAddButton } from "@/components/catalogue/SpinningAddButton";
 import { ServiceTabSwitcher } from "@/components/services/ServiceTabSwitcher";
+import { NextStepsBar } from "@/components/services/NextStepsBar";
 
 export const metadata: Metadata = { title: "Services & Renewals" };
 export const dynamic = "force-dynamic";
@@ -65,7 +66,10 @@ export default async function ServicesPage({
       />
 
       <main className="flex-1 p-6 space-y-5">
-        <ServiceTabSwitcher active={isClientTab ? "client" : "catalogue"} />
+        <div className="flex items-center gap-4">
+          <ServiceTabSwitcher active={isClientTab ? "client" : "catalogue"} />
+          {catalogueItems.length > 0 && <NextStepsBar />}
+        </div>
 
         {isClientTab ? (
           /* ── Client Services tab ─────────────────────────────────── */
