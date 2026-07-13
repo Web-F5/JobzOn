@@ -85,7 +85,8 @@ export function ServiceForm({
         <FormField
           label="Amount (ex. GST)"
           name="amountExGst"
-          type="number"
+          type="text"
+          inputMode="decimal"
           required
           defaultValue={service?.amountExGst.toString() ?? ""}
           placeholder="120.00"
@@ -129,7 +130,7 @@ export function ServiceForm({
             Cancel
           </Button>
         )}
-        <SubmitButton>{isEdit ? "Save Changes" : "Add Service"}</SubmitButton>
+        <SubmitButton>{isEdit ? "Save Changes" : "Link Service"}</SubmitButton>
       </div>
     </form>
   );

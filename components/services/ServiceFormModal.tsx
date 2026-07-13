@@ -7,6 +7,12 @@ import { Button } from "@/components/ui/Button";
 import { SpinningBorderButton } from "@/components/ui/SpinningBorderButton";
 import type { Client, Service } from "@prisma/client";
 
+const LinkIcon = () => (
+  <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+  </svg>
+);
+
 export function AddServiceButton({
   clients,
   defaultClientId,
@@ -22,11 +28,15 @@ export function AddServiceButton({
   return (
     <>
       {spinning ? (
-        <SpinningBorderButton onClick={() => setOpen(true)}>🔗 Link Another Service</SpinningBorderButton>
+        <SpinningBorderButton onClick={() => setOpen(true)}>
+          <LinkIcon /> Link Service to Client
+        </SpinningBorderButton>
       ) : (
-        <Button onClick={() => setOpen(true)}>+ Add Service</Button>
+        <Button onClick={() => setOpen(true)}>
+          <LinkIcon /> Link Service to Client
+        </Button>
       )}
-      <Modal title="Add Service" open={open} onClose={() => setOpen(false)}>
+      <Modal title="Link Service to Client" open={open} onClose={() => setOpen(false)}>
         <ServiceForm
           clients={clients}
           defaultClientId={defaultClientId}

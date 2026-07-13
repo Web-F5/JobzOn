@@ -92,8 +92,29 @@ export default async function ServicesPage({
                 <tbody className="divide-y divide-[var(--color-border)]">
                   {services.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-5 py-10 text-center text-sm text-[var(--color-muted)]">
-                        No services yet. Add one using the button above.
+                      <td colSpan={7} className="px-5 py-12 text-center">
+                        {catalogueItems.length === 0 ? (
+                          <>
+                            <p className="text-sm text-[var(--color-muted)] mb-4">No Service Types have been added yet. Start here:</p>
+                            <div className="flex justify-center"><SpinningAddButton /></div>
+                          </>
+                        ) : clients.length === 0 ? (
+                          <>
+                            <p className="text-sm text-[var(--color-muted)] mb-4">No Clients have been added yet. Start here:</p>
+                            <div className="flex justify-center">
+                              <a href="/clients?action=add" className="group relative inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-orange-600 hover:text-white bg-white rounded-lg overflow-hidden transition-colors">
+                                <span aria-hidden className="pointer-events-none absolute w-[200%] h-[200%] -top-1/2 -left-1/2" style={{ background: "conic-gradient(from 0deg, transparent 60%, #f97316 80%, transparent 100%)", animation: "border-spin 2.5s linear infinite" }} />
+                                <span aria-hidden className="pointer-events-none absolute inset-[2px] rounded-[6px] bg-white group-hover:bg-orange-500 transition-colors" />
+                                <span className="relative">+ Add Client</span>
+                              </a>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm text-[var(--color-muted)] mb-4">No clients linked to services yet.</p>
+                            <div className="flex justify-center"><AddServiceButton clients={clients} spinning /></div>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ) : (

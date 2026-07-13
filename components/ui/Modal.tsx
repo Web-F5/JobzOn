@@ -8,11 +8,12 @@ interface ModalProps {
   title: string;
   children: React.ReactNode;
   width?: "sm" | "md" | "lg";
+  disableBackdropClose?: boolean;
 }
 
 const WIDTH = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl" };
 
-export function Modal({ open, onClose, title, children, width = "md" }: ModalProps) {
+export function Modal({ open, onClose, title, children, width = "md", disableBackdropClose = false }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -25,14 +26,11 @@ export function Modal({ open, onClose, title, children, width = "md" }: ModalPro
     }
   }, [open]);
 
-  // Close on backdrop click
+  // Only close when clicking the backdrop (the <dialog> element itself, not its children).
+  // Coordinate-based detection breaks with native <select> dropdowns whose option list
+  // renders outside the dialog bounds.
   function handleDialogClick(e: React.MouseEvent<HTMLDialogElement>) {
-    const rect = dialogRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const clickedOutside =
-      e.clientX < rect.left || e.clientX > rect.right ||
-      e.clientY < rect.top  || e.clientY > rect.bottom;
-    if (clickedOutside) onClose();
+    if (!disableBackdropClose && e.target === e.currentTarget) onClose();
   }
 
   if (!open) return null;
