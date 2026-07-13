@@ -51,7 +51,7 @@ export function SpinningAddButton() {
 
           <form action={formAction} className="flex flex-col gap-4">
             <FormField label="Service Type Name" name="name" required placeholder="e.g. Shared Hosting, WordPress Maintenance" />
-            <FormField label="Default Price (ex. GST)" name="amountExGst" type="number" required placeholder="120.00" hint="Can be overridden per invoice" />
+            <FormField label="Default Price (ex. GST)" name="amountExGst" type="text" inputMode="decimal" required placeholder="120.00" hint="Can be overridden per invoice" />
             <FormField label="Description" name="description" placeholder="Optional internal description" />
             <div className="flex justify-end gap-3 pt-2 border-t border-[var(--color-border)]">
               <Button type="button" variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>

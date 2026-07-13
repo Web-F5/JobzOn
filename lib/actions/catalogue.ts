@@ -11,7 +11,7 @@ export async function createCatalogueItem(
 ): Promise<CatalogueFormState> {
   const name        = formData.get("name")        as string;
   const description = formData.get("description") as string | null;
-  const amountExGst = parseFloat(formData.get("amountExGst") as string);
+  const amountExGst = parseFloat((formData.get("amountExGst") as string).replace(/[$,\s]/g, ""));
 
   if (!name?.trim())      return { error: "Name is required." };
   if (isNaN(amountExGst)) return { error: "Default price is required." };
@@ -43,7 +43,7 @@ export async function updateCatalogueItem(
 ): Promise<CatalogueFormState> {
   const name        = formData.get("name")        as string;
   const description = formData.get("description") as string | null;
-  const amountExGst = parseFloat(formData.get("amountExGst") as string);
+  const amountExGst = parseFloat((formData.get("amountExGst") as string).replace(/[$,\s]/g, ""));
   const active      = formData.get("active") === "true";
 
   if (!name?.trim())      return { error: "Name is required." };

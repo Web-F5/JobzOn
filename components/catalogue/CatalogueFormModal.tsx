@@ -132,7 +132,8 @@ function CatalogueItemForm({
       <FormField
         label="Default Price (ex. GST)"
         name="amountExGst"
-        type="number"
+        type="text"
+        inputMode="decimal"
         required
         defaultValue={item?.amountExGst.toString() ?? ""}
         placeholder="120.00"

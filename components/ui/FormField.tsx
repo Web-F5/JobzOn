@@ -2,6 +2,7 @@ interface FormFieldProps {
   label: string;
   name: string;
   type?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   required?: boolean;
   defaultValue?: string;
   placeholder?: string;
@@ -14,6 +15,7 @@ export function FormField({
   label,
   name,
   type = "text",
+  inputMode,
   required,
   defaultValue,
   placeholder,
@@ -46,6 +48,7 @@ export function FormField({
           id={name}
           name={name}
           type={type}
+          inputMode={inputMode}
           required={required}
           defaultValue={defaultValue}
           placeholder={placeholder}
