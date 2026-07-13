@@ -127,8 +127,7 @@ export default async function ServicesPage({
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs text-[var(--color-muted)] border-b border-[var(--color-border)] bg-slate-50">
-                    <th className="px-5 py-3 font-medium">Name</th>
-                    <th className="px-5 py-3 font-medium">Category</th>
+                    <th className="px-5 py-3 font-medium">Service Type Name</th>
                     <th className="px-5 py-3 font-medium">Description</th>
                     <th className="px-5 py-3 font-medium text-right">Default Price (ex. GST)</th>
                     <th className="px-5 py-3 font-medium">Status</th>
@@ -149,11 +148,6 @@ export default async function ServicesPage({
                     catalogueItems.map((item: typeof catalogueItems[number]) => (
                       <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-5 py-3 font-medium text-[var(--color-text)]">{item.name}</td>
-                        <td className="px-5 py-3">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600">
-                            {SERVICE_TYPE_LABEL[item.type] ?? item.type}
-                          </span>
-                        </td>
                         <td className="px-5 py-3 text-[var(--color-muted)]">{item.description ?? "—"}</td>
                         <td className="px-5 py-3 text-right font-semibold text-[var(--color-text)]">
                           {formatAUD(item.amountExGst)}

@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma }         from "@/lib/prisma";
-import type { ServiceType } from "@prisma/client";
 
 export type CatalogueFormState = { error?: string; success?: boolean };
 
@@ -11,7 +10,6 @@ export async function createCatalogueItem(
   formData: FormData
 ): Promise<CatalogueFormState> {
   const name        = formData.get("name")        as string;
-  const type        = formData.get("type")        as ServiceType;
   const description = formData.get("description") as string | null;
   const amountExGst = parseFloat(formData.get("amountExGst") as string);
 
@@ -22,7 +20,7 @@ export async function createCatalogueItem(
     await prisma.serviceCatalogueItem.create({
       data: {
         name:        name.trim(),
-        type,
+        type:        "OTHER", // category concept removed — field kept for schema compat
         description: description?.trim() || null,
         amountExGst,
       },
@@ -44,7 +42,6 @@ export async function updateCatalogueItem(
   formData: FormData
 ): Promise<CatalogueFormState> {
   const name        = formData.get("name")        as string;
-  const type        = formData.get("type")        as ServiceType;
   const description = formData.get("description") as string | null;
   const amountExGst = parseFloat(formData.get("amountExGst") as string);
   const active      = formData.get("active") === "true";
@@ -55,7 +52,7 @@ export async function updateCatalogueItem(
   try {
     await prisma.serviceCatalogueItem.update({
       where: { id },
-      data: { name: name.trim(), type, description: description?.trim() || null, amountExGst, active },
+      data: { name: name.trim(), description: description?.trim() || null, amountExGst, active },
     });
   } catch {
     return { error: "Failed to update service type." };

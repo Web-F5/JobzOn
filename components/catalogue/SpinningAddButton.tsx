@@ -4,15 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createCatalogueItem, type CatalogueFormState } from "@/lib/actions/catalogue";
 import { useActionState } from "react";
-import { FormField, SelectField } from "@/components/ui/FormField";
-import { SubmitButton, Button }   from "@/components/ui/Button";
-
-const SERVICE_TYPES = [
-  { value: "DOMAIN",  label: "Domain" },
-  { value: "HOSTING", label: "Hosting" },
-  { value: "SSL",     label: "SSL Certificate" },
-  { value: "OTHER",   label: "Other" },
-];
+import { FormField } from "@/components/ui/FormField";
+import { SubmitButton, Button } from "@/components/ui/Button";
 
 export function SpinningAddButton() {
   const [open, setOpen] = useState(false);
@@ -57,11 +50,8 @@ export function SpinningAddButton() {
           )}
 
           <form action={formAction} className="flex flex-col gap-4">
-            <FormField label="Service Name" name="name" required placeholder="e.g. Shared Hosting, WordPress Maintenance" />
-            <div className="grid grid-cols-2 gap-4">
-              <SelectField label="Category" name="type" required defaultValue="HOSTING" options={SERVICE_TYPES} />
-              <FormField label="Default Price (ex. GST)" name="amountExGst" type="number" required placeholder="120.00" hint="Can be overridden per invoice" />
-            </div>
+            <FormField label="Service Type Name" name="name" required placeholder="e.g. Shared Hosting, WordPress Maintenance" />
+            <FormField label="Default Price (ex. GST)" name="amountExGst" type="number" required placeholder="120.00" hint="Can be overridden per invoice" />
             <FormField label="Description" name="description" placeholder="Optional internal description" />
             <div className="flex justify-end gap-3 pt-2 border-t border-[var(--color-border)]">
               <Button type="button" variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>

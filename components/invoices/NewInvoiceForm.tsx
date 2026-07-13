@@ -11,7 +11,6 @@ interface CatalogueItem {
   name:        string;
   description: string | null;
   amountExGst: number;
-  type:        string;
 }
 
 interface LineItem {
@@ -47,12 +46,6 @@ export function NewInvoiceForm({ clients, catalogueItems }: Props) {
   defaultDue.setDate(defaultDue.getDate() + 14);
   const defaultDueStr = defaultDue.toISOString().split("T")[0];
 
-  // Group catalogue items by type for <optgroup>
-  const grouped = catalogueItems.reduce<Record<string, CatalogueItem[]>>((acc, item) => {
-    const g = TYPE_LABEL[item.type] ?? item.type;
-    (acc[g] ??= []).push(item);
-    return acc;
-  }, {});
 
   function selectCatalogue(i: number, catalogueId: string) {
     const item = catalogueItems.find((c) => c.id === catalogueId);
@@ -162,14 +155,10 @@ export function NewInvoiceForm({ clients, catalogueItems }: Props) {
                   className={inputCls}
                 >
                   <option value="">— Select a service type —</option>
-                  {Object.entries(grouped).map(([group, items]) => (
-                    <optgroup key={group} label={group}>
-                      {items.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.name} — {fmt(item.amountExGst)}
-                        </option>
-                      ))}
-                    </optgroup>
+                  {catalogueItems.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name} — {fmt(item.amountExGst)}
+                    </option>
                   ))}
                   <option value="">Custom (type manually below)</option>
                 </select>

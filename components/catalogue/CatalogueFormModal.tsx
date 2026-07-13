@@ -8,15 +8,8 @@ import {
   deleteCatalogueItem,
   type CatalogueFormState,
 } from "@/lib/actions/catalogue";
-import { FormField, SelectField } from "@/components/ui/FormField";
-import { SubmitButton, Button }   from "@/components/ui/Button";
-
-const SERVICE_TYPES = [
-  { value: "DOMAIN",  label: "Domain" },
-  { value: "HOSTING", label: "Hosting" },
-  { value: "SSL",     label: "SSL Certificate" },
-  { value: "OTHER",   label: "Other" },
-];
+import { FormField } from "@/components/ui/FormField";
+import { SubmitButton, Button } from "@/components/ui/Button";
 
 // ─── Add button ───────────────────────────────────────────────────────────────
 
@@ -129,31 +122,22 @@ function CatalogueItemForm({
       )}
 
       <FormField
-        label="Service Name"
+        label="Service Type Name"
         name="name"
         required
         defaultValue={item?.name ?? ""}
         placeholder="e.g. Shared Hosting, WordPress Maintenance"
       />
 
-      <div className="grid grid-cols-2 gap-4">
-        <SelectField
-          label="Category"
-          name="type"
-          required
-          defaultValue={item?.type ?? "HOSTING"}
-          options={SERVICE_TYPES}
-        />
-        <FormField
-          label="Default Price (ex. GST)"
-          name="amountExGst"
-          type="number"
-          required
-          defaultValue={item?.amountExGst.toString() ?? ""}
-          placeholder="120.00"
-          hint="Can be overridden per client"
-        />
-      </div>
+      <FormField
+        label="Default Price (ex. GST)"
+        name="amountExGst"
+        type="number"
+        required
+        defaultValue={item?.amountExGst.toString() ?? ""}
+        placeholder="120.00"
+        hint="Can be overridden per client"
+      />
 
       <FormField
         label="Description"

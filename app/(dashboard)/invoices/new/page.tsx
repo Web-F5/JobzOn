@@ -15,7 +15,7 @@ export default async function NewInvoicePage() {
     prisma.serviceCatalogueItem.findMany({
       where: { active: true },
       orderBy: [{ type: "asc" }, { name: "asc" }],
-      select: { id: true, name: true, description: true, amountExGst: true, type: true },
+      select: { id: true, name: true, description: true, amountExGst: true },
     }),
   ]);
 
