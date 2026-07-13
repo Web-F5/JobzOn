@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface AddressFields {
   address: string;
@@ -16,11 +16,8 @@ interface Props {
 }
 
 declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    google: any;
-    initGooglePlaces?: () => void;
-  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  interface Window { google: any; initGooglePlaces?: () => void; }
 }
 
 let scriptLoaded = false;
@@ -43,49 +40,115 @@ function loadGooglePlaces(apiKey: string, onReady: () => void) {
   document.head.appendChild(s);
 }
 
-// Use uncontrolled input — Google Places sets its DOM value directly
+interface Prediction {
+  place_id: string;
+  description: string;
+}
+
 export function AddressAutocomplete({ defaultValue = "", onSelect, inputClassName }: Props) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [value, setValue]             = useState(defaultValue);
+  const [predictions, setPredictions] = useState<Prediction[]>([]);
+  const [open, setOpen]               = useState(false);
+  const [ready, setReady]             = useState(false);
+  const containerRef                  = useRef<HTMLDivElement>(null);
+  const timerRef                      = useRef<ReturnType<typeof setTimeout> | null>(null);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   useEffect(() => {
-    if (!apiKey || !inputRef.current) return;
-
-    loadGooglePlaces(apiKey, () => {
-      if (!inputRef.current) return;
-      const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
-        componentRestrictions: { country: "au" },
-        types: ["address"],
-        fields: ["address_components"],
-      });
-
-      ac.addListener("place_changed", () => {
-        const place = ac.getPlace();
-        if (!place?.address_components) return;
-
-        const get      = (t: string) => place.address_components.find((c: { types: string[]; long_name: string }) => c.types.includes(t))?.long_name  ?? "";
-        const getShort = (t: string) => place.address_components.find((c: { types: string[]; short_name: string }) => c.types.includes(t))?.short_name ?? "";
-
-        const streetNumber = get("street_number");
-        const streetName   = get("route");
-        const suburb       = get("locality") || get("sublocality");
-        const state        = getShort("administrative_area_level_1");
-        const postcode     = get("postal_code");
-        const address      = [streetNumber, streetName].filter(Boolean).join(" ");
-
-        onSelect({ address, suburb, state, postcode });
-      });
-    });
+    if (!apiKey) return;
+    loadGooglePlaces(apiKey, () => setReady(true));
   }, [apiKey]);
 
+  // Close on outside click
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node))
+        setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  function handleChange(val: string) {
+    setValue(val);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (!ready || val.trim().length < 3) { setPredictions([]); setOpen(false); return; }
+
+    timerRef.current = setTimeout(() => {
+      const svc = new window.google.maps.places.AutocompleteService();
+      svc.getPlacePredictions(
+        { input: val, componentRestrictions: { country: "au" }, types: ["address"] },
+        (preds: Prediction[] | null, status: string) => {
+          if (status === "OK" && preds) {
+            setPredictions(preds);
+            setOpen(true);
+          } else {
+            setPredictions([]);
+            setOpen(false);
+          }
+        }
+      );
+    }, 300);
+  }
+
+  function selectPrediction(pred: Prediction) {
+    setOpen(false);
+    setValue(pred.description);
+    setPredictions([]);
+
+    // Fetch full address components to split into fields
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ placeId: pred.place_id }, (results: google.maps.GeocoderResult[], status: string) => {
+      if (status !== "OK" || !results[0]) return;
+      const comps = results[0].address_components;
+      const get      = (t: string) => comps.find((c: google.maps.GeocoderAddressComponent) => c.types.includes(t))?.long_name  ?? "";
+      const getShort = (t: string) => comps.find((c: google.maps.GeocoderAddressComponent) => c.types.includes(t))?.short_name ?? "";
+
+      const address  = [get("street_number"), get("route")].filter(Boolean).join(" ");
+      const suburb   = get("locality") || get("sublocality");
+      const state    = getShort("administrative_area_level_1");
+      const postcode = get("postal_code");
+
+      setValue(address);
+      onSelect({ address, suburb, state, postcode });
+    });
+  }
+
+  if (!apiKey) {
+    return (
+      <input
+        name="address"
+        defaultValue={defaultValue}
+        placeholder="123 Main St"
+        className={inputClassName}
+      />
+    );
+  }
+
   return (
-    <input
-      ref={inputRef}
-      name="address"
-      defaultValue={defaultValue}
-      placeholder={apiKey ? "Start typing an address…" : "123 Main St"}
-      autoComplete="off"
-      className={inputClassName}
-    />
+    <div ref={containerRef} className="relative">
+      <input
+        name="address"
+        value={value}
+        onChange={(e) => handleChange(e.target.value)}
+        placeholder="Start typing an address…"
+        autoComplete="off"
+        className={inputClassName}
+      />
+      {open && predictions.length > 0 && (
+        <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-[var(--color-border)] rounded-lg shadow-lg overflow-hidden">
+          {predictions.map((pred) => (
+            <button
+              key={pred.place_id}
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); selectPrediction(pred); }}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 transition-colors border-b border-[var(--color-border)] last:border-0 text-[var(--color-text)]"
+            >
+              {pred.description}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
