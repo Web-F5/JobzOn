@@ -6,6 +6,7 @@ import { createCatalogueItem, type CatalogueFormState } from "@/lib/actions/cata
 import { useActionState } from "react";
 import { FormField } from "@/components/ui/FormField";
 import { SubmitButton, Button } from "@/components/ui/Button";
+import { SpinningBorderButton } from "@/components/ui/SpinningBorderButton";
 
 export function SpinningAddButton() {
   const [open, setOpen] = useState(false);
@@ -19,21 +20,7 @@ export function SpinningAddButton() {
   return (
     <>
       {/* Spinning-border trigger button */}
-      <button
-        onClick={() => setOpen(true)}
-        className="group relative inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-orange-600 hover:text-white bg-white rounded-lg overflow-hidden transition-colors"
-      >
-        <span
-          aria-hidden
-          className="pointer-events-none absolute w-[200%] h-[200%] -top-1/2 -left-1/2"
-          style={{
-            background: "conic-gradient(from 0deg, transparent 60%, #f97316 80%, transparent 100%)",
-            animation: "border-spin 2.5s linear infinite",
-          }}
-        />
-        <span aria-hidden className="pointer-events-none absolute inset-[2px] rounded-[6px] bg-white group-hover:bg-orange-500 transition-colors" />
-        <span className="relative">+ Add Service Type</span>
-      </button>
+      <SpinningBorderButton onClick={() => setOpen(true)}>+ Add Service Type</SpinningBorderButton>
 
       {/* Modal */}
       <dialog ref={ref} onClose={() => setOpen(false)} className="rounded-xl shadow-2xl border-0 p-0 w-full max-w-md backdrop:bg-black/40">

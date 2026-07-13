@@ -4,14 +4,19 @@ import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { ClientForm } from "./ClientForm";
 import { Button } from "@/components/ui/Button";
+import { SpinningBorderButton } from "@/components/ui/SpinningBorderButton";
 import type { Client } from "@prisma/client";
 
 /** Add Client button + modal */
-export function AddClientButton() {
+export function AddClientButton({ spinning = false }: { spinning?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button onClick={() => setOpen(true)} className="hover:!bg-orange-500">+ Add Client</Button>
+      {spinning ? (
+        <SpinningBorderButton onClick={() => setOpen(true)}>+ Add Client</SpinningBorderButton>
+      ) : (
+        <Button onClick={() => setOpen(true)} className="hover:!bg-orange-500">+ Add Client</Button>
+      )}
       <Modal title="Add Client" open={open} onClose={() => setOpen(false)} width="lg">
         <ClientForm onSuccess={() => setOpen(false)} onCancel={() => setOpen(false)} />
       </Modal>

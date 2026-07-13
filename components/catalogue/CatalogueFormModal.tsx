@@ -10,10 +10,11 @@ import {
 } from "@/lib/actions/catalogue";
 import { FormField } from "@/components/ui/FormField";
 import { SubmitButton, Button } from "@/components/ui/Button";
+import { SpinningBorderButton } from "@/components/ui/SpinningBorderButton";
 
 // ─── Add button ───────────────────────────────────────────────────────────────
 
-export function AddCatalogueItemButton() {
+export function AddCatalogueItemButton({ spinning = false }: { spinning?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDialogElement>(null);
 
@@ -21,12 +22,16 @@ export function AddCatalogueItemButton() {
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="px-4 py-2 bg-[var(--color-brand)] hover:bg-orange-500 text-white text-sm font-medium rounded-lg transition-colors"
-      >
-        + Add Service Type
-      </button>
+      {spinning ? (
+        <SpinningBorderButton onClick={() => setOpen(true)}>+ Add Service Type</SpinningBorderButton>
+      ) : (
+        <button
+          onClick={() => setOpen(true)}
+          className="px-4 py-2 bg-[var(--color-brand)] hover:bg-orange-500 text-white text-sm font-medium rounded-lg transition-colors"
+        >
+          + Add Service Type
+        </button>
+      )}
 
       <dialog ref={ref} onClose={() => setOpen(false)} className="rounded-xl shadow-2xl border-0 p-0 w-full max-w-md backdrop:bg-black/40">
         <div className="p-6">
