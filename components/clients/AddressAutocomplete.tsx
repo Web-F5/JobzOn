@@ -98,11 +98,13 @@ export function AddressAutocomplete({ defaultValue = "", onSelect, inputClassNam
 
     // Fetch full address components to split into fields
     const geocoder = new window.google.maps.Geocoder();
-    geocoder.geocode({ placeId: pred.place_id }, (results: google.maps.GeocoderResult[], status: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    geocoder.geocode({ placeId: pred.place_id }, (results: any[], status: string) => {
       if (status !== "OK" || !results[0]) return;
-      const comps = results[0].address_components;
-      const get      = (t: string) => comps.find((c: google.maps.GeocoderAddressComponent) => c.types.includes(t))?.long_name  ?? "";
-      const getShort = (t: string) => comps.find((c: google.maps.GeocoderAddressComponent) => c.types.includes(t))?.short_name ?? "";
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const comps = results[0].address_components as any[];
+      const get      = (t: string) => comps.find((c) => c.types.includes(t))?.long_name  ?? "";
+      const getShort = (t: string) => comps.find((c) => c.types.includes(t))?.short_name ?? "";
 
       const address  = [get("street_number"), get("route")].filter(Boolean).join(" ");
       const suburb   = get("locality") || get("sublocality");
