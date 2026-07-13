@@ -52,7 +52,7 @@ export default async function ServicesPage({
 
   const topBarActions = isClientTab
     ? <AddServiceButton clients={clients} />
-    : <AddCatalogueItemButton />;
+    : catalogueItems.length > 0 ? <AddCatalogueItemButton /> : null;
 
   return (
     <>

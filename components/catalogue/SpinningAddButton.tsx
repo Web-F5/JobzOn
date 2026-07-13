@@ -28,13 +28,13 @@ export function SpinningAddButton() {
       {/* Spinning-border trigger button */}
       <button
         onClick={() => setOpen(true)}
-        className="relative inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-[var(--color-brand)] bg-white rounded-lg overflow-hidden"
+        className="relative inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-orange-600 bg-white rounded-lg overflow-hidden"
       >
         <span
           aria-hidden
           className="pointer-events-none absolute w-[200%] h-[200%] -top-1/2 -left-1/2"
           style={{
-            background: "conic-gradient(from 0deg, transparent 60%, #2563eb 80%, transparent 100%)",
+            background: "conic-gradient(from 0deg, transparent 60%, #f97316 80%, transparent 100%)",
             animation: "border-spin 2.5s linear infinite",
           }}
         />
