@@ -167,7 +167,7 @@ export function ClientForm({ client, onSuccess, onCancel }: ClientFormProps) {
       <div className="flex flex-col gap-1">
         <label className="text-sm font-medium text-[var(--color-text)]">Street Address</label>
         <AddressAutocomplete
-          defaultValue={address}
+          defaultValue={client?.address ?? ""}
           inputClassName={inputCls}
           onSelect={(fields) => {
             setSuburb(fields.suburb);
