@@ -21,7 +21,7 @@ export function SpinningAddButton() {
       {/* Spinning-border trigger button */}
       <button
         onClick={() => setOpen(true)}
-        className="relative inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-orange-600 bg-white rounded-lg overflow-hidden"
+        className="group relative inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-orange-600 hover:text-white bg-white rounded-lg overflow-hidden transition-colors"
       >
         <span
           aria-hidden
@@ -31,7 +31,7 @@ export function SpinningAddButton() {
             animation: "border-spin 2.5s linear infinite",
           }}
         />
-        <span aria-hidden className="pointer-events-none absolute inset-[2px] rounded-[6px] bg-white" />
+        <span aria-hidden className="pointer-events-none absolute inset-[2px] rounded-[6px] bg-white group-hover:bg-orange-500 transition-colors" />
         <span className="relative">+ Add Service Type</span>
       </button>
 

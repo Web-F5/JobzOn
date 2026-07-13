@@ -9,7 +9,7 @@ export function NextStepsBar() {
       <span className="font-medium shrink-0">Next step:</span>
       <div className="flex items-center gap-2 flex-wrap">
         <AddCatalogueItemButton />
-        <span className="text-blue-300">or</span>
+        <span className="text-blue-500 font-semibold">OR</span>
         <AddClientButton />
       </div>
     </div>

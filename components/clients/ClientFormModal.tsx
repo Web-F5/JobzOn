@@ -11,7 +11,7 @@ export function AddClientButton() {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button onClick={() => setOpen(true)}>+ Add Client</Button>
+      <Button onClick={() => setOpen(true)} className="hover:!bg-orange-500">+ Add Client</Button>
       <Modal title="Add Client" open={open} onClose={() => setOpen(false)} width="lg">
         <ClientForm onSuccess={() => setOpen(false)} onCancel={() => setOpen(false)} />
       </Modal>
