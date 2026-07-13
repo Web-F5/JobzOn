@@ -6,6 +6,7 @@ import { formatDate, isWithinDays, isPast } from "@/lib/dates";
 import { AddServiceButton, EditServiceButton } from "@/components/services/ServiceFormModal";
 import { ManualInvoiceButton } from "@/components/invoices/ManualInvoiceButton";
 import { AddCatalogueItemButton, EditCatalogueItemButton } from "@/components/catalogue/CatalogueFormModal";
+import { SpinningAddButton } from "@/components/catalogue/SpinningAddButton";
 import { ServiceTabSwitcher } from "@/components/services/ServiceTabSwitcher";
 
 export const metadata: Metadata = { title: "Services & Renewals" };
@@ -137,8 +138,11 @@ export default async function ServicesPage({
                 <tbody className="divide-y divide-[var(--color-border)]">
                   {catalogueItems.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-5 py-10 text-center text-sm text-[var(--color-muted)]">
-                        No service types yet. Create one using the button above.
+                      <td colSpan={6} className="px-5 py-14 text-center">
+                        <p className="text-sm text-[var(--color-muted)] mb-5">No service types yet.</p>
+                        <div className="flex justify-center">
+                          <SpinningAddButton />
+                        </div>
                       </td>
                     </tr>
                   ) : (

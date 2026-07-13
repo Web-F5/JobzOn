@@ -65,7 +65,30 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <TopBar title="Dashboard" description="Overview of your invoices, jobs, and renewals" />
+      <TopBar
+        title="Dashboard"
+        description="Overview of your invoices, jobs, and renewals"
+        center={
+          <a
+            href="/services?tab=catalogue"
+            className="relative inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold text-[var(--color-brand)] bg-white rounded-lg overflow-hidden"
+          >
+            {/* Spinning border layer */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute w-[200%] h-[200%] -top-1/2 -left-1/2"
+              style={{
+                background: "conic-gradient(from 0deg, transparent 60%, #2563eb 80%, transparent 100%)",
+                animation: "border-spin 2.5s linear infinite",
+              }}
+            />
+            {/* Mask — fills interior so only the border ring shows */}
+            <span aria-hidden className="pointer-events-none absolute inset-[2px] rounded-[6px] bg-white" />
+            {/* Content */}
+            <span className="relative">✦ Start Here</span>
+          </a>
+        }
+      />
 
       <main className="flex-1 p-6 space-y-6">
 

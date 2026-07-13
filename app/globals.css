@@ -38,6 +38,12 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* ─── Animations ────────────────────────────────────────────────────────────── */
+@keyframes border-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
 /* ─── Base ──────────────────────────────────────────────────────────────────── */
 html {
   background: var(--color-bg);
