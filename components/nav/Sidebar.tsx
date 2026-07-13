@@ -70,7 +70,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex flex-col w-60 shrink-0 min-h-screen bg-[var(--color-sidebar-bg)]">
+    <aside className="flex flex-col w-60 shrink-0 h-screen sticky top-0 bg-[var(--color-sidebar-bg)]">
       {/* Logo */}
       <div className="flex items-center gap-2 px-5 py-5 border-b border-white/10">
         <div className="w-8 h-8 rounded-lg bg-[var(--color-brand)] flex items-center justify-center">
@@ -80,7 +80,7 @@ export function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5">
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
         {navItems.map((item) => {
           const isActive =
             item.href === "/"
