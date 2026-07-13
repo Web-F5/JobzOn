@@ -8,8 +8,8 @@ import { SpinningBorderButton } from "@/components/ui/SpinningBorderButton";
 import type { Client } from "@prisma/client";
 
 /** Add Client button + modal */
-export function AddClientButton({ spinning = false }: { spinning?: boolean }) {
-  const [open, setOpen] = useState(false);
+export function AddClientButton({ spinning = false, defaultOpen = false }: { spinning?: boolean; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <>
       {spinning ? (

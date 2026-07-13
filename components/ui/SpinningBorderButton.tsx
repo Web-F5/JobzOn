@@ -2,18 +2,17 @@
 
 interface SpinningBorderButtonProps {
   onClick?: () => void;
+  href?: string;
   children: React.ReactNode;
   size?: "sm" | "md";
 }
 
-export function SpinningBorderButton({ onClick, children, size = "md" }: SpinningBorderButtonProps) {
+export function SpinningBorderButton({ onClick, href, children, size = "md" }: SpinningBorderButtonProps) {
   const padding = size === "sm" ? "px-4 py-2" : "px-5 py-2.5";
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`group relative inline-flex items-center gap-2 ${padding} text-sm font-semibold text-orange-600 hover:text-white bg-white rounded-lg overflow-hidden transition-colors`}
-    >
+  const cls = `group relative inline-flex items-center gap-2 ${padding} text-sm font-semibold text-orange-600 hover:text-white bg-white rounded-lg overflow-hidden transition-colors`;
+
+  const inner = (
+    <>
       <span
         aria-hidden
         className="pointer-events-none absolute w-[200%] h-[200%] -top-1/2 -left-1/2"
@@ -22,11 +21,17 @@ export function SpinningBorderButton({ onClick, children, size = "md" }: Spinnin
           animation: "border-spin 2.5s linear infinite",
         }}
       />
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-[2px] rounded-[6px] bg-white group-hover:bg-orange-500 transition-colors"
-      />
+      <span aria-hidden className="pointer-events-none absolute inset-[2px] rounded-[6px] bg-white group-hover:bg-orange-500 transition-colors" />
       <span className="relative">{children}</span>
+    </>
+  );
+
+  if (href) {
+    return <a href={href} className={cls}>{inner}</a>;
+  }
+  return (
+    <button type="button" onClick={onClick} className={cls}>
+      {inner}
     </button>
   );
 }

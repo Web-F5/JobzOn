@@ -3,11 +3,19 @@ import { prisma } from "@/lib/prisma";
 import { TopBar } from "@/components/nav/TopBar";
 import { AddClientButton, EditClientButton } from "@/components/clients/ClientFormModal";
 import { PortalLinkButton } from "@/components/clients/PortalLinkButton";
+import { ClientsNextStepsBar } from "@/components/clients/ClientsNextStepsBar";
 
 export const metadata: Metadata = { title: "Clients" };
 export const dynamic = "force-dynamic";
 
-export default async function ClientsPage() {
+export default async function ClientsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ action?: string }>;
+}) {
+  const { action } = await searchParams;
+  const autoAdd = action === "add";
+
   const clients = await prisma.client.findMany({
     include: { _count: { select: { services: true, invoices: true } } },
     orderBy: { name: "asc" },
@@ -18,10 +26,12 @@ export default async function ClientsPage() {
       <TopBar
         title="Clients"
         description="Manage your client accounts and services"
-        actions={<AddClientButton />}
+        actions={<AddClientButton defaultOpen={autoAdd} />}
       />
 
       <main className="flex-1 p-6">
+        {clients.length > 0 && <ClientsNextStepsBar />}
+
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">
           {clients.length === 0 ? (
             <p className="px-6 py-12 text-sm text-center text-[var(--color-muted)]">

@@ -8,7 +8,7 @@ import { ManualInvoiceButton } from "@/components/invoices/ManualInvoiceButton";
 import { AddCatalogueItemButton, EditCatalogueItemButton } from "@/components/catalogue/CatalogueFormModal";
 import { SpinningAddButton } from "@/components/catalogue/SpinningAddButton";
 import { ServiceTabSwitcher } from "@/components/services/ServiceTabSwitcher";
-import { NextStepsBar } from "@/components/services/NextStepsBar";
+import { CatalogueNextStepsBar, ClientServicesNextStepsBar } from "@/components/services/NextStepsBar";
 
 export const metadata: Metadata = { title: "Services & Renewals" };
 export const dynamic = "force-dynamic";
@@ -30,9 +30,10 @@ function RenewalBadge({ renewalDate }: { renewalDate: Date }) {
 export default async function ServicesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; action?: string }>;
 }) {
-  const { tab = "client" } = await searchParams;
+  const { tab = "client", action } = await searchParams;
+  const autoAdd = action === "add";
 
   const [services, clients, catalogueItems] = await Promise.all([
     prisma.service.findMany({
@@ -52,7 +53,7 @@ export default async function ServicesPage({
   const isClientTab = tab !== "catalogue";
 
   const topBarActions = isClientTab
-    ? <AddServiceButton clients={clients} />
+    ? <AddServiceButton clients={clients} defaultOpen={autoAdd} />
     : catalogueItems.length > 0 ? <AddCatalogueItemButton /> : null;
 
   return (
@@ -66,9 +67,10 @@ export default async function ServicesPage({
       />
 
       <main className="flex-1 p-6 space-y-5">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <ServiceTabSwitcher active={isClientTab ? "client" : "catalogue"} />
-          {catalogueItems.length > 0 && <NextStepsBar />}
+          {!isClientTab && catalogueItems.length > 0 && <CatalogueNextStepsBar />}
+          {isClientTab && services.length > 0 && <ClientServicesNextStepsBar clients={clients} />}
         </div>
 
         {isClientTab ? (
