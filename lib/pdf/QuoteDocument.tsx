@@ -325,15 +325,28 @@ export function QuoteDocument({ data }: { data: QuotePdfData }) {
         {!data.isAccepted && (
           <View style={s.acceptBox}>
             <Text style={s.acceptHeading}>How to Accept This Quote</Text>
-            <Text style={s.acceptText}>
-              To accept this quote, please reply to this email or contact us at{" "}
-              {data.businessEmail}
-              {data.businessPhone ? ` or call ${data.businessPhone}` : ""}.
-              Please quote reference <Text style={{ fontFamily: "Helvetica-Bold" }}>{data.quoteNumber}</Text>.
-              {data.expiresDate
-                ? `\n\nThis quote is valid until ${data.expiresDate}.`
-                : ""}
-            </Text>
+            {data.acceptUrl ? (
+              <Text style={s.acceptText}>
+                {"Click the \"Review & Accept This Quote\" button in the email to review and digitally sign off on this quote.\n\n"}
+                {"Alternatively, contact us at "}
+                {data.businessEmail}
+                {data.businessPhone ? ` or call ${data.businessPhone}` : ""}
+                {". Please quote reference "}
+                <Text style={{ fontFamily: "Helvetica-Bold" }}>{data.quoteNumber}</Text>
+                {"."}
+                {data.expiresDate ? `\n\nThis quote is valid until ${data.expiresDate}.` : ""}
+              </Text>
+            ) : (
+              <Text style={s.acceptText}>
+                {"To accept this quote, please contact us at "}
+                {data.businessEmail}
+                {data.businessPhone ? ` or call ${data.businessPhone}` : ""}
+                {". Please quote reference "}
+                <Text style={{ fontFamily: "Helvetica-Bold" }}>{data.quoteNumber}</Text>
+                {"."}
+                {data.expiresDate ? `\n\nThis quote is valid until ${data.expiresDate}.` : ""}
+              </Text>
+            )}
           </View>
         )}
 

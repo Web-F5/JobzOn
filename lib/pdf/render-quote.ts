@@ -10,8 +10,8 @@ import type { DocumentProps } from "@react-pdf/renderer";
 import { QuoteDocument } from "./QuoteDocument";
 import { getQuotePdfData } from "./quote-data";
 
-export async function renderQuoteToBuffer(quoteId: string): Promise<Buffer> {
-  const data = await getQuotePdfData(quoteId);
+export async function renderQuoteToBuffer(quoteId: string, acceptUrl?: string): Promise<Buffer> {
+  const data = await getQuotePdfData(quoteId, acceptUrl);
   if (!data) throw new Error(`Quote not found: ${quoteId}`);
 
   const element = React.createElement(

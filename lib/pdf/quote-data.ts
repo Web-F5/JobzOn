@@ -49,9 +49,12 @@ export interface QuotePdfData {
 
   // Flags
   isAccepted: boolean;
+
+  // Secure acceptance URL (included when sending email, null for plain PDF views)
+  acceptUrl: string | null;
 }
 
-export async function getQuotePdfData(quoteId: string): Promise<QuotePdfData | null> {
+export async function getQuotePdfData(quoteId: string, acceptUrl?: string): Promise<QuotePdfData | null> {
   const [quote, settings] = await Promise.all([
     prisma.quote.findUnique({
       where: { id: quoteId },
@@ -78,13 +81,20 @@ export async function getQuotePdfData(quoteId: string): Promise<QuotePdfData | n
     quote.client.postcode,
   ].filter(Boolean);
 
+  const bizAddressParts = [
+    settings?.address,
+    settings?.suburb,
+    settings?.state,
+    settings?.postcode,
+  ].filter(Boolean);
+
   return {
-    // Business
-    businessName:    process.env.NEXT_PUBLIC_BUSINESS_NAME    ?? "Web F5",
-    businessAbn:     process.env.NEXT_PUBLIC_BUSINESS_ABN     ?? "",
-    businessEmail:   process.env.NEXT_PUBLIC_BUSINESS_EMAIL   ?? "",
-    businessPhone:   process.env.NEXT_PUBLIC_BUSINESS_PHONE   ?? "",
-    businessAddress: process.env.NEXT_PUBLIC_BUSINESS_ADDRESS ?? "",
+    // Business — settings take precedence over env vars
+    businessName:    settings?.businessName ?? process.env.NEXT_PUBLIC_BUSINESS_NAME    ?? "Web F5",
+    businessAbn:     settings?.abn          ?? process.env.NEXT_PUBLIC_BUSINESS_ABN     ?? "",
+    businessEmail:   settings?.emailOutgoing ?? process.env.NEXT_PUBLIC_BUSINESS_EMAIL  ?? "",
+    businessPhone:   settings?.phone         ?? process.env.NEXT_PUBLIC_BUSINESS_PHONE  ?? "",
+    businessAddress: bizAddressParts.join(", ") || process.env.NEXT_PUBLIC_BUSINESS_ADDRESS ?? "",
     businessLogoUrl: settings?.logoUrl ?? null,
 
     // Quote
@@ -118,5 +128,8 @@ export async function getQuotePdfData(quoteId: string): Promise<QuotePdfData | n
 
     // Flags
     isAccepted: quote.status === "ACCEPTED" || quote.status === "INVOICED",
+
+    // Accept URL
+    acceptUrl: acceptUrl ?? null,
   };
 }
