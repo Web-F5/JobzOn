@@ -66,14 +66,16 @@ async function notifyAccepted(
   acceptedByName: string,
   ipAddress: string
 ) {
-  const { resend }   = await import("@/lib/email/resend");
-  const FROM         = process.env.RESEND_FROM_EMAIL         ?? "invoices@webf5.com.au";
-  const NOTIFY_EMAIL = process.env.RESEND_NOTIFY_EMAIL       ?? FROM;
-  const BIZ          = process.env.NEXT_PUBLIC_BUSINESS_NAME ?? "Web F5";
+  const { resend } = await import("@/lib/email/resend");
+  const FROM       = process.env.RESEND_FROM_EMAIL         ?? "invoices@webf5.com.au";
+  const BIZ        = process.env.NEXT_PUBLIC_BUSINESS_NAME ?? "Web F5";
+
+  const settings    = await prisma.businessSettings.findUnique({ where: { id: "default" } });
+  const notifyEmail = settings?.emailQuotes ?? settings?.emailOutgoing ?? FROM;
 
   await resend.emails.send({
     from:    `${BIZ} <${FROM}>`,
-    to:      [NOTIFY_EMAIL],
+    to:      [notifyEmail],
     subject: `✅ Quote ${quoteNumber} accepted by ${clientName}`,
     html: `
       <p><strong>${clientName}</strong> has accepted quote <strong>${quoteNumber}</strong>.</p>
