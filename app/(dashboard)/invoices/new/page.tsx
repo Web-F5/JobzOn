@@ -19,7 +19,7 @@ export default async function NewInvoicePage() {
     }),
     // Only accepted/ready quotes that haven't been invoiced yet
     prisma.quote.findMany({
-      where: { invoice: null, status: { notIn: ["CANCELLED", "REJECTED", "EXPIRED"] } },
+      where: { invoice: null, status: { notIn: ["REJECTED", "EXPIRED", "INVOICED"] } },
       select: {
         id: true,
         quoteNumber: true,
