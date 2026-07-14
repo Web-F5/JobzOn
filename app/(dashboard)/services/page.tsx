@@ -33,7 +33,7 @@ export default async function ServicesPage({
 }: {
   searchParams: Promise<{ tab?: string; action?: string }>;
 }) {
-  const { tab = "client", action } = await searchParams;
+  const { tab = "catalogue", action } = await searchParams;
   const autoAdd = action === "add";
 
   const [services, clients, catalogueItems] = await Promise.all([
@@ -51,7 +51,7 @@ export default async function ServicesPage({
     }),
   ]);
 
-  const isClientTab = tab !== "catalogue";
+  const isClientTab = tab === "client";
 
   const topBarActions = isClientTab
     ? <AddServiceButton clients={clients} catalogueItems={catalogueItems} defaultOpen={autoAdd} />
@@ -70,7 +70,9 @@ export default async function ServicesPage({
       <main className="flex-1 p-6 space-y-5">
         <div className="flex items-center gap-4 flex-wrap">
           <ServiceTabSwitcher active={isClientTab ? "client" : "catalogue"} />
-          {!isClientTab && catalogueItems.length > 0 && <CatalogueNextStepsBar />}
+          {!isClientTab && catalogueItems.length > 0 && (
+            <CatalogueNextStepsBar clients={clients} catalogueItems={catalogueItems} servicesCount={services.length} />
+          )}
           {isClientTab && services.length > 0 && <ClientServicesNextStepsBar clients={clients} catalogueItems={catalogueItems} />}
         </div>
 

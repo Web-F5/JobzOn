@@ -19,23 +19,27 @@ export function AddServiceButton({
   defaultClientId,
   defaultOpen = false,
   spinning = false,
+  variant = "orange",
+  label = "Link Service to Client",
 }: {
   clients: Pick<Client, "id" | "name">[];
   catalogueItems: Pick<ServiceCatalogueItem, "id" | "name" | "description" | "amountExGst" | "type">[];
   defaultClientId?: string;
   defaultOpen?: boolean;
   spinning?: boolean;
+  variant?: "orange" | "green";
+  label?: string;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <>
       {spinning ? (
-        <SpinningBorderButton onClick={() => setOpen(true)}>
-          <LinkIcon /> Link Service to Client
+        <SpinningBorderButton onClick={() => setOpen(true)} variant={variant}>
+          <LinkIcon /> {label}
         </SpinningBorderButton>
       ) : (
         <Button onClick={() => setOpen(true)}>
-          <LinkIcon /> Link Service to Client
+          <LinkIcon /> {label}
         </Button>
       )}
       <Modal title="Link Service to Client" open={open} onClose={() => setOpen(false)}>

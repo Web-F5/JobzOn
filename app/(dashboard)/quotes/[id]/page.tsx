@@ -36,10 +36,10 @@ export default async function QuoteDetailPage({ params }: Props) {
 
   if (!quote) notFound();
 
-  const clients = await prisma.client.findMany({
-    select: { id: true, name: true },
-    orderBy: { name: "asc" },
-  });
+  const [clients, catalogueItems] = await Promise.all([
+    prisma.client.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.serviceCatalogueItem.findMany({ where: { active: true }, orderBy: [{ type: "asc" }, { name: "asc" }] }),
+  ]);
 
   // Bind the update action to this quote ID
   const boundUpdate = updateQuote.bind(null, id);
@@ -198,6 +198,7 @@ export default async function QuoteDetailPage({ params }: Props) {
             <QuoteForm
               quoteId={id}
               clients={clients}
+              catalogueItems={catalogueItems}
               action={boundUpdate}
               initialData={{
                 clientId:    quote.clientId,

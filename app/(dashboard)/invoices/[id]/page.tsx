@@ -7,6 +7,7 @@ import { formatAUD } from "@/lib/gst";
 import { formatDate } from "@/lib/dates";
 import { MarkPaidButton } from "@/components/invoices/MarkPaidButton";
 import { SendSmsButton } from "@/components/invoices/SendSmsButton";
+import { CancelInvoiceButton } from "@/components/invoices/CancelInvoiceButton";
 
 export const dynamic = "force-dynamic";
 
@@ -84,6 +85,9 @@ export default async function InvoiceDetailPage({ params }: Props) {
             </a>
             {isUnpaid && (
               <MarkPaidButton invoiceId={id} />
+            )}
+            {invoice.status !== "CANCELLED" && (
+              <CancelInvoiceButton invoiceId={id} />
             )}
           </div>
         </div>

@@ -14,7 +14,15 @@ import { SpinningBorderButton } from "@/components/ui/SpinningBorderButton";
 
 // ─── Add button ───────────────────────────────────────────────────────────────
 
-export function AddCatalogueItemButton({ spinning = false }: { spinning?: boolean }) {
+export function AddCatalogueItemButton({
+  spinning = false,
+  variant = "orange",
+  label = "+ Add Service Type",
+}: {
+  spinning?: boolean;
+  variant?: "orange" | "green";
+  label?: string;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDialogElement>(null);
 
@@ -23,7 +31,7 @@ export function AddCatalogueItemButton({ spinning = false }: { spinning?: boolea
   return (
     <>
       {spinning ? (
-        <SpinningBorderButton onClick={() => setOpen(true)}>+ Add Service Type</SpinningBorderButton>
+        <SpinningBorderButton onClick={() => setOpen(true)} variant={variant}>{label}</SpinningBorderButton>
       ) : (
         <button
           onClick={() => setOpen(true)}

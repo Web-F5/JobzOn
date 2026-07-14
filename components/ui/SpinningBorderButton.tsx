@@ -5,11 +5,16 @@ interface SpinningBorderButtonProps {
   href?: string;
   children: React.ReactNode;
   size?: "sm" | "md";
+  variant?: "orange" | "green";
 }
 
-export function SpinningBorderButton({ onClick, href, children, size = "md" }: SpinningBorderButtonProps) {
+export function SpinningBorderButton({ onClick, href, children, size = "md", variant = "orange" }: SpinningBorderButtonProps) {
   const padding = size === "sm" ? "px-4 py-2" : "px-5 py-2.5";
-  const cls = `group relative inline-flex items-center gap-2 ${padding} text-sm font-semibold text-orange-600 hover:text-white bg-white rounded-lg overflow-hidden transition-colors`;
+  const isGreen = variant === "green";
+  const textColor = isGreen ? "text-green-600 hover:text-white" : "text-orange-600 hover:text-white";
+  const spinColor = isGreen ? "#16a34a" : "#f97316";
+  const hoverBg  = isGreen ? "group-hover:bg-green-600" : "group-hover:bg-orange-500";
+  const cls = `group relative inline-flex items-center gap-2 ${padding} text-sm font-semibold ${textColor} bg-white rounded-lg overflow-hidden transition-colors`;
 
   const inner = (
     <>
@@ -17,11 +22,11 @@ export function SpinningBorderButton({ onClick, href, children, size = "md" }: S
         aria-hidden
         className="pointer-events-none absolute w-[200%] h-[200%] -top-1/2 -left-1/2"
         style={{
-          background: "conic-gradient(from 0deg, transparent 60%, #f97316 80%, transparent 100%)",
+          background: `conic-gradient(from 0deg, transparent 60%, ${spinColor} 80%, transparent 100%)`,
           animation: "border-spin 2.5s linear infinite",
         }}
       />
-      <span aria-hidden className="pointer-events-none absolute inset-[2px] rounded-[6px] bg-white group-hover:bg-orange-500 transition-colors" />
+      <span aria-hidden className={`pointer-events-none absolute inset-[2px] rounded-[6px] bg-white ${hoverBg} transition-colors`} />
       <span className="relative inline-flex items-center gap-1.5">{children}</span>
     </>
   );
