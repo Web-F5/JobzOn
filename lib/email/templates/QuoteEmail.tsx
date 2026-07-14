@@ -36,7 +36,8 @@ export interface QuoteEmailProps {
   lineItems:   { description: string; amount: string }[];
   clientNotes: string | null;
   // Links
-  pdfUrl: string;
+  pdfUrl:    string;
+  acceptUrl: string; // secure client acceptance page
 }
 
 export function QuoteEmail({
@@ -50,14 +51,9 @@ export function QuoteEmail({
   lineItems,
   clientNotes,
   pdfUrl,
+  acceptUrl,
 }: QuoteEmailProps) {
   const preview = `Quote ${quoteNumber} from ${businessName} — ${total}${expiresDate ? ` · Valid until ${expiresDate}` : ""}`;
-
-  const acceptSubject = encodeURIComponent(`Accepting Quote ${quoteNumber}`);
-  const acceptBody    = encodeURIComponent(
-    `Hi ${businessName},\n\nI'd like to accept quote ${quoteNumber}.\n\nRegards,\n${clientFirstName}`
-  );
-  const acceptHref = `mailto:${businessEmail}?subject=${acceptSubject}&body=${acceptBody}`;
 
   return (
     <EmailLayout
@@ -70,8 +66,9 @@ export function QuoteEmail({
 
       <EmailBody>
         Hi {clientFirstName},{"\n\n"}
-        Please find your quote attached and summarised below. To accept, simply
-        reply to this email or click the button below.
+        Please find your quote attached and summarised below. To accept, click
+        the button below — you{"'"}ll be taken to a secure page where you can
+        review the full quote and sign off with your name.
         {expiresDate ? `\n\nThis quote is valid until ${expiresDate}.` : ""}
       </EmailBody>
 
@@ -117,7 +114,7 @@ export function QuoteEmail({
         </Section>
       )}
 
-      <EmailButton href={acceptHref}>Accept This Quote</EmailButton>
+      <EmailButton href={acceptUrl}>Review &amp; Accept This Quote</EmailButton>
 
       <Section style={{ margin: "8px 0 16px" }}>
         <a

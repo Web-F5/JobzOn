@@ -151,6 +151,9 @@ model Quote {
   infoResponseReceivedAt DateTime?
   infoResponseEmail      String?
 
+  acceptToken    String? @unique // secure token for client acceptance link
+  acceptedByName String?         // typed name captured on acceptance
+
   invoice Invoice?
 
   createdAt DateTime @default(now())

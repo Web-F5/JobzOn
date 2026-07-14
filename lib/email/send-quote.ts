@@ -4,8 +4,10 @@
  * Returns the Resend message ID on success.
  */
 
-import React from "react";
+import React       from "react";
+import { randomUUID } from "crypto";
 import { resend }              from "./resend";
+import { prisma }              from "@/lib/prisma";
 import { renderQuoteToBuffer } from "@/lib/pdf/render-quote";
 import { getQuotePdfData }     from "@/lib/pdf/quote-data";
 import { QuoteEmail }          from "./templates/QuoteEmail";
@@ -24,8 +26,16 @@ export async function sendQuoteEmail(quoteId: string): Promise<string> {
   const data = await getQuotePdfData(quoteId);
   if (!data) throw new Error(`Quote not found: ${quoteId}`);
 
-  const buffer = await renderQuoteToBuffer(quoteId);
-  const pdfUrl = `${APP_URL}/api/quote/${quoteId}/pdf`;
+  // Generate (or reuse) a secure acceptance token
+  const token = randomUUID();
+  await prisma.quote.update({
+    where: { id: quoteId },
+    data:  { acceptToken: token },
+  });
+
+  const buffer     = await renderQuoteToBuffer(quoteId);
+  const pdfUrl     = `${APP_URL}/api/quote/${quoteId}/pdf`;
+  const acceptUrl  = `${APP_URL}/q/${token}`;
 
   const { data: result, error } = await resend.emails.send({
     from: `${BIZ} <${FROM}>`,
@@ -45,6 +55,7 @@ export async function sendQuoteEmail(quoteId: string): Promise<string> {
       })),
       clientNotes: data.clientNotes,
       pdfUrl,
+      acceptUrl,
     }),
     attachments: [
       {
