@@ -82,6 +82,12 @@ model Invoice {
   gst         Float
   amountTotal Float
 
+  // Optional discount (only stored/displayed when applied)
+  discountType   String? // "PERCENTAGE" | "FIXED"
+  discountValue  Float?  // raw input — % or $ depending on type
+  discountAmount Float?  // computed discount in $, stored for PDF
+  discountReason String?
+
   issueDate DateTime  @default(now())
   dueDate   DateTime
   sentAt    DateTime?
@@ -273,7 +279,30 @@ enum SupplierInvoiceStatus {
 model BusinessSettings {
   id           String  @id @default("default")
   logoUrl      String? // Vercel Blob URL for the business logo
-  updatedAt    DateTime @updatedAt
+
+  // Business identity
+  businessName    String?
+  abn             String?
+  phone           String?
+
+  // Business address (town + postcode is sufficient for invoices)
+  address         String?
+  suburb          String?
+  state           String?
+  postcode        String?
+
+  // Contact emails
+  emailOutgoing   String? // shown on invoices/quotes for clients to reply to
+  emailQuotes     String? // where quote requests arrive (if different)
+
+  // Payment / banking
+  bankName        String?
+  bsb             String?
+  bankAccount     String?
+  bankAccountName String?
+  paymentTermsDays Int?   @default(14)
+
+  updatedAt DateTime @updatedAt
 }
 
 // ─── SEQUENCE COUNTERS (invoice / quote / job numbering per fiscal year) ───────

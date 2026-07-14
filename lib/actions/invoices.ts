@@ -99,6 +99,12 @@ export async function createManualInvoice(
   const lineItemsJson  = formData.get("lineItemsJson")  as string;
   const notes          = formData.get("notes")          as string | null;
 
+  // Discount (optional)
+  const discountType   = (formData.get("discountType")   as string | null) || null;
+  const discountValue  = parseFloat(formData.get("discountValue")  as string ?? "") || null;
+  const discountAmount = parseFloat(formData.get("discountAmount") as string ?? "") || null;
+  const discountReason = (formData.get("discountReason") as string | null)?.trim() || null;
+
   if (!clientId)      return { error: "Client is required." };
   if (!dueDateStr)    return { error: "Due date is required." };
   if (!lineItemsJson) return { error: "At least one line item is required." };
@@ -112,10 +118,12 @@ export async function createManualInvoice(
 
   if (!lineItems.length) return { error: "At least one line item is required." };
 
-  const dueDate     = new Date(dueDateStr);
-  const amountExGst = round2(lineItems.reduce((s, li) => s + li.unitPrice * li.quantity, 0));
-  const gst         = calcGst(amountExGst);
-  const amountTotal = calcTotal(amountExGst);
+  const dueDate      = new Date(dueDateStr);
+  const subtotalExGst = round2(lineItems.reduce((s, li) => s + li.unitPrice * li.quantity, 0));
+  const disc          = round2(discountAmount ?? 0);
+  const amountExGst  = round2(subtotalExGst - disc);
+  const gst          = calcGst(amountExGst);
+  const amountTotal  = calcTotal(amountExGst);
   const invoiceNumber = await nextSequenceNumber("INV");
 
   let invoiceId: string;
@@ -128,6 +136,10 @@ export async function createManualInvoice(
         amountExGst,
         gst,
         amountTotal,
+        discountType,
+        discountValue,
+        discountAmount: disc || null,
+        discountReason,
         lineItems: {
           create: lineItems.map((li, idx) => ({
             description: li.description,

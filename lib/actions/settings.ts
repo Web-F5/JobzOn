@@ -28,9 +28,9 @@ export async function uploadLogo(
 
   let url: string;
   try {
-    const ext    = file.name.split(".").pop() ?? "png";
-    const blob   = await put(`logos/business-logo.${ext}`, file, {
-      access:    "public",
+    const ext  = file.name.split(".").pop() ?? "png";
+    const blob = await put(`logos/business-logo.${ext}`, file, {
+      access: "public",
       addRandomSuffix: false,
     });
     url = blob.url;
@@ -64,6 +64,63 @@ export async function removeLogo(_prev: SettingsState): Promise<SettingsState> {
   } catch {
     return { error: "Failed to remove logo." };
   }
+  revalidatePath("/settings");
+  return { success: true };
+}
+
+/** Save business identity + contact + banking details. */
+export async function saveBusinessDetails(
+  _prev: SettingsState,
+  formData: FormData
+): Promise<SettingsState> {
+  const str = (key: string) => (formData.get(key) as string | null)?.trim() || null;
+  const int = (key: string) => {
+    const v = parseInt(formData.get(key) as string ?? "", 10);
+    return isNaN(v) ? null : v;
+  };
+
+  try {
+    await prisma.businessSettings.upsert({
+      where:  { id: "default" },
+      update: {
+        businessName:     str("businessName"),
+        abn:              str("abn"),
+        phone:            str("phone"),
+        address:          str("address"),
+        suburb:           str("suburb"),
+        state:            str("state"),
+        postcode:         str("postcode"),
+        emailOutgoing:    str("emailOutgoing"),
+        emailQuotes:      str("emailQuotes"),
+        bankName:         str("bankName"),
+        bsb:              str("bsb"),
+        bankAccount:      str("bankAccount"),
+        bankAccountName:  str("bankAccountName"),
+        paymentTermsDays: int("paymentTermsDays") ?? 14,
+      },
+      create: {
+        id:               "default",
+        businessName:     str("businessName"),
+        abn:              str("abn"),
+        phone:            str("phone"),
+        address:          str("address"),
+        suburb:           str("suburb"),
+        state:            str("state"),
+        postcode:         str("postcode"),
+        emailOutgoing:    str("emailOutgoing"),
+        emailQuotes:      str("emailQuotes"),
+        bankName:         str("bankName"),
+        bsb:              str("bsb"),
+        bankAccount:      str("bankAccount"),
+        bankAccountName:  str("bankAccountName"),
+        paymentTermsDays: int("paymentTermsDays") ?? 14,
+      },
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { error: `Failed to save: ${msg}` };
+  }
+
   revalidatePath("/settings");
   return { success: true };
 }
