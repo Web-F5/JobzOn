@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+import { UserButton } from "@clerk/nextjs";
 
 interface NavItem {
   label: string;
@@ -142,7 +143,12 @@ export function Sidebar() {
           <span className="flex-1">Settings</span>
           {loadingHref === "/settings" && <Spinner />}
         </Link>
-        <p className="text-xs text-[var(--color-sidebar-text)] opacity-40 px-3 pt-2">Web F5 · Jobzon</p>
+        <div className="flex items-center gap-3 px-3 pt-3">
+          <UserButton
+            appearance={{ elements: { avatarBox: "w-7 h-7" } }}
+          />
+          <p className="text-xs text-[var(--color-sidebar-text)] opacity-40">Web F5 · Jobzon</p>
+        </div>
       </div>
     </aside>
   );
