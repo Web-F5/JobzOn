@@ -18,6 +18,9 @@ import type { Invoice, Service } from "@prisma/client";
 export async function generateInvoiceForService(
   service: Service
 ): Promise<Invoice | null> {
+  // Once-off services are invoiced manually, not by the scheduler.
+  if (!service.renewalDate) return null;
+
   // Idempotency check: is there already a non-cancelled invoice for this
   // service that covers the current renewal cycle?
   // We define "same cycle" as: invoice dueDate is within 60 days of renewalDate
@@ -43,7 +46,7 @@ export async function generateInvoiceForService(
   const amountExGst   = round2(service.amountExGst);
   const gst           = calcGst(amountExGst);
   const amountTotal   = calcTotal(amountExGst);
-  const dueDate       = invoiceDueDate(service.renewalDate);
+  const dueDate       = invoiceDueDate(service.renewalDate!);
 
   const invoice = await prisma.invoice.create({
     data: {
