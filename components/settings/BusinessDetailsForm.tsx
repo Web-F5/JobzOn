@@ -94,13 +94,17 @@ export function BusinessDetailsForm({ initial }: Props) {
 
         <div className="grid grid-cols-[1fr_80px_90px] gap-3">
           <Field label="Suburb / Town" required>
-            <input
-              value={suburb}
-              onChange={(e) => setSuburb(e.target.value)}
-              className={inp}
-              placeholder="Seymour"
-              required
+            <AddressAutocomplete
+              searchType="locality"
+              name="suburb_autocomplete"
+              defaultValue={suburb}
+              onSelect={({ suburb: s, state: st, postcode: p }) => {
+                if (s)  setSuburb(s);
+                if (st) setState_(st);
+                if (p)  setPostcode(p);
+              }}
             />
+            {/* hidden so the form action reads suburb from controlled state via fd.set above */}
           </Field>
           <Field label="State" required>
             <select
@@ -133,10 +137,16 @@ export function BusinessDetailsForm({ initial }: Props) {
           <p className="text-sm text-[var(--color-muted)] mt-0.5">Shown on documents so clients know how to reach you.</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Outgoing Business Email" hint="Printed on invoices & quotes for client replies">
+          <Field
+            label="Outgoing Business Email"
+            hint={"Printed on invoices & quotes for clients to contact you.\nThis is the email that your quotes & invoices will be sent from."}
+          >
             <input name="emailOutgoing" type="email" defaultValue={initial.emailOutgoing ?? ""} className={inp} placeholder="accounts@yourbusiness.com.au" />
           </Field>
-          <Field label="Quote Enquiries Email" hint="Where new quote requests are received (leave blank if same as above)">
+          <Field
+            label="Quote Enquiries Email"
+            hint={"Where your clients send requests for a quote.\n(Leave blank if same as Outgoing Business Email)"}
+          >
             <input name="emailQuotes" type="email" defaultValue={initial.emailQuotes ?? ""} className={inp} placeholder="quotes@yourbusiness.com.au" />
           </Field>
         </div>
@@ -208,7 +218,9 @@ function Field({ label, hint, required, children }: {
         {label}{required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
       {children}
-      {hint && <p className="text-xs text-[var(--color-muted)]">{hint}</p>}
+      {hint && hint.split("\n").map((line, i) => (
+        <p key={i} className="text-xs text-[var(--color-muted)]">{line}</p>
+      ))}
     </div>
   );
 }

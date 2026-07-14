@@ -88,7 +88,14 @@ export function NewInvoiceForm({ clients, catalogueItems, quotes, defaultTermsDa
   function loadQuote(quoteId: string) {
     const q = clientQuotes.find((q) => q.id === quoteId);
     if (!q) return;
-    setLineItems(q.lineItems.map((li) => ({ catalogueId: "", description: li.description, quantity: li.quantity, unitPrice: li.unitPrice })));
+    setLineItems(q.lineItems.map((li) => {
+      const match = catalogueItems.find(
+        (c) =>
+          (c.description ?? c.name) === li.description ||
+          (c.amountExGst === li.unitPrice && catalogueItems.filter((x) => x.amountExGst === li.unitPrice).length === 1)
+      );
+      return { catalogueId: match?.id ?? "", description: li.description, quantity: li.quantity, unitPrice: li.unitPrice };
+    }));
   }
 
   function updateLine(i: number, field: keyof Omit<LineItem, "catalogueId">, value: string | number) {

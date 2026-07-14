@@ -113,6 +113,10 @@ export async function updateQuote(
   const totals = buildTotals(lineItems);
 
   try {
+    // If the quote was READY or SENT, editing it reverts it to DRAFT
+    const existing = await prisma.quote.findUnique({ where: { id }, select: { status: true } });
+    const revertToDraft = existing && ["READY", "SENT"].includes(existing.status);
+
     // Replace all line items atomically
     await prisma.$transaction([
       prisma.quoteLineItem.deleteMany({ where: { quoteId: id } }),
@@ -122,6 +126,7 @@ export async function updateQuote(
           notes:       notes?.trim()       || null,
           clientNotes: clientNotes?.trim() || null,
           expiresAt:   expiresAt ? new Date(expiresAt) : null,
+          ...(revertToDraft ? { status: "DRAFT" } : {}),
           ...totals,
           lineItems: {
             create: lineItems.map((li, i) => ({

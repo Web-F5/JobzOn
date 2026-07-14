@@ -14,6 +14,8 @@ interface Props {
   onSelect: (fields: AddressFields) => void;
   inputClassName?: string;
   name?: string;
+  /** "address" searches full street addresses; "locality" searches suburbs/towns only */
+  searchType?: "address" | "locality";
 }
 
 declare global {
@@ -48,7 +50,7 @@ interface Prediction {
 
 const DEFAULT_CLS = "w-full px-3 py-2 text-sm rounded-lg border border-[var(--color-border)] bg-white focus:outline-none focus:ring-2 focus:ring-blue-300";
 
-export function AddressAutocomplete({ defaultValue = "", onSelect, inputClassName, name = "address" }: Props) {
+export function AddressAutocomplete({ defaultValue = "", onSelect, inputClassName, name = "address", searchType = "address" }: Props) {
   const cls = inputClassName ?? DEFAULT_CLS;
   const [value, setValue]             = useState(defaultValue);
   const [predictions, setPredictions] = useState<Prediction[]>([]);
@@ -81,7 +83,7 @@ export function AddressAutocomplete({ defaultValue = "", onSelect, inputClassNam
     timerRef.current = setTimeout(() => {
       const svc = new window.google.maps.places.AutocompleteService();
       svc.getPlacePredictions(
-        { input: val, componentRestrictions: { country: "au" }, types: ["address"] },
+        { input: val, componentRestrictions: { country: "au" }, types: searchType === "locality" ? ["(cities)"] : ["address"] },
         (preds: Prediction[] | null, status: string) => {
           if (status === "OK" && preds) {
             setPredictions(preds);

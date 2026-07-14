@@ -1,10 +1,11 @@
-import { Metadata }   from "next";
-import Link            from "next/link";
-import { QuoteStatus } from "@prisma/client";
-import { prisma }      from "@/lib/prisma";
-import { TopBar }      from "@/components/nav/TopBar";
-import { formatAUD }   from "@/lib/gst";
-import { formatDate }  from "@/lib/dates";
+import { Metadata }        from "next";
+import Link                from "next/link";
+import { QuoteStatus }     from "@prisma/client";
+import { prisma }          from "@/lib/prisma";
+import { TopBar }          from "@/components/nav/TopBar";
+import { formatAUD }       from "@/lib/gst";
+import { formatDate }      from "@/lib/dates";
+import { QuoteRowActions } from "@/components/quotes/QuoteRowActions";
 
 export const metadata: Metadata = { title: "Quotes" };
 export const dynamic = "force-dynamic";
@@ -118,8 +119,10 @@ export default async function QuotesPage({
                 <tbody className="divide-y divide-[var(--color-border)]">
                   {quotes.map((q: typeof quotes[number]) => (
                     <tr key={q.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-5 py-3 font-mono text-xs text-[var(--color-muted)]">
-                        {q.quoteNumber}
+                      <td className="px-5 py-3 font-mono text-xs">
+                        <Link href={`/quotes/${q.id}`} className="text-[var(--color-brand)] hover:underline">
+                          {q.quoteNumber}
+                        </Link>
                       </td>
                       <td className="px-5 py-3 font-medium text-[var(--color-text)]">
                         {q.client.name}
@@ -139,13 +142,8 @@ export default async function QuotesPage({
                         <QuoteBadge status={q.status} />
                       </td>
                       <td className="px-5 py-3">
-                        <div className="flex items-center gap-3 text-xs">
-                          <Link
-                            href={`/quotes/${q.id}`}
-                            className="text-[var(--color-brand)] hover:underline"
-                          >
-                            View
-                          </Link>
+                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                          <QuoteRowActions quoteId={q.id} status={q.status} />
                           <a
                             href={`/api/quote/${q.id}/pdf`}
                             target="_blank"

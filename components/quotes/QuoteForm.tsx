@@ -62,13 +62,20 @@ export function QuoteForm({ quoteId, initialData, clients, catalogueItems, actio
 
   const [lineItems, setLineItems] = useState<LineItem[]>(() => {
     if (initialData?.lineItems?.length) {
-      return initialData.lineItems.map((li) => ({
-        id:          uid(),
-        catalogueId: "",
-        description: li.description,
-        quantity:    li.quantity,
-        unitPrice:   li.unitPrice,
-      }));
+      return initialData.lineItems.map((li) => {
+        const match = catalogueItems.find(
+          (c) =>
+            (c.description ?? c.name) === li.description ||
+            (c.amountExGst === li.unitPrice && catalogueItems.filter((x) => x.amountExGst === li.unitPrice).length === 1)
+        );
+        return {
+          id:          uid(),
+          catalogueId: match?.id ?? "",
+          description: li.description,
+          quantity:    li.quantity,
+          unitPrice:   li.unitPrice,
+        };
+      });
     }
     return [{ ...BLANK, id: uid() }];
   });
