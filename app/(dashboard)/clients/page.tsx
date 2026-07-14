@@ -16,10 +16,14 @@ export default async function ClientsPage({
   const { action } = await searchParams;
   const autoAdd = action === "add";
 
-  const clients = await prisma.client.findMany({
-    include: { _count: { select: { services: true, invoices: true } } },
-    orderBy: { name: "asc" },
-  });
+  const [clients, quotesCount] = await Promise.all([
+    prisma.client.findMany({
+      include: { _count: { select: { services: true, invoices: true } } },
+      orderBy: { name: "asc" },
+    }),
+    prisma.quote.count(),
+  ]);
+  const hasLinkedService = clients.some((c) => c._count.services > 0);
 
   return (
     <>
@@ -30,7 +34,7 @@ export default async function ClientsPage({
       />
 
       <main className="flex-1 p-6">
-        {clients.length > 0 && <ClientsNextStepsBar />}
+        {clients.length > 0 && <ClientsNextStepsBar hasLinkedService={hasLinkedService} hasQuote={quotesCount > 0} />}
 
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">
           {clients.length === 0 ? (

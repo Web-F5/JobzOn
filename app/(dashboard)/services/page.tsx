@@ -36,7 +36,7 @@ export default async function ServicesPage({
   const { tab = "catalogue", action } = await searchParams;
   const autoAdd = action === "add";
 
-  const [services, clients, catalogueItems] = await Promise.all([
+  const [services, clients, catalogueItems, quotesCount] = await Promise.all([
     prisma.service.findMany({
       where: { active: true },
       include: { client: true },
@@ -49,6 +49,7 @@ export default async function ServicesPage({
     prisma.serviceCatalogueItem.findMany({
       orderBy: [{ type: "asc" }, { name: "asc" }],
     }),
+    prisma.quote.count(),
   ]);
 
   const isClientTab = tab === "client";
@@ -71,9 +72,11 @@ export default async function ServicesPage({
         <div className="flex items-center gap-4 flex-wrap">
           <ServiceTabSwitcher active={isClientTab ? "client" : "catalogue"} />
           {!isClientTab && catalogueItems.length > 0 && (
-            <CatalogueNextStepsBar clients={clients} catalogueItems={catalogueItems} servicesCount={services.length} />
+            <CatalogueNextStepsBar clients={clients} catalogueItems={catalogueItems} servicesCount={services.length} quotesCount={quotesCount} />
           )}
-          {isClientTab && services.length > 0 && <ClientServicesNextStepsBar clients={clients} catalogueItems={catalogueItems} />}
+          {isClientTab && services.length > 0 && (
+            <ClientServicesNextStepsBar clients={clients} catalogueItems={catalogueItems} quotesCount={quotesCount} />
+          )}
         </div>
 
         {isClientTab ? (

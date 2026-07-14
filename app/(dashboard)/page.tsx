@@ -15,6 +15,7 @@ async function getDashboardData() {
     overdueInvoices,
     upcomingRenewals,
     recentActivity,
+    setupCounts,
   ] = await Promise.all([
     // Invoice status counts
     prisma.invoice.groupBy({
@@ -48,6 +49,13 @@ async function getDashboardData() {
       orderBy: { createdAt: "desc" },
       take: 5,
     }),
+    // Setup progress counts
+    Promise.all([
+      prisma.serviceCatalogueItem.count(),
+      prisma.client.count(),
+      prisma.service.count({ where: { active: true } }),
+      prisma.quote.count(),
+    ]),
   ]);
 
   const counts = Object.fromEntries(
@@ -55,39 +63,70 @@ async function getDashboardData() {
   );
 
   const overdueTotal = overdueInvoices.reduce((s, i) => s + i.amountTotal, 0);
+  const [catalogueCount, clientCount, serviceCount, quoteCount] = setupCounts;
 
-  return { counts, overdueInvoices, overdueTotal, upcomingRenewals, recentActivity };
+  return { counts, overdueInvoices, overdueTotal, upcomingRenewals, recentActivity, catalogueCount, clientCount, serviceCount, quoteCount };
 }
 
 export default async function DashboardPage() {
-  const { counts, overdueInvoices, overdueTotal, upcomingRenewals, recentActivity } =
+  const { counts, overdueInvoices, overdueTotal, upcomingRenewals, recentActivity, catalogueCount, clientCount, serviceCount, quoteCount } =
     await getDashboardData();
+
+  const allDone   = catalogueCount > 0 && clientCount > 0 && serviceCount > 0 && quoteCount > 0;
+  const started   = catalogueCount > 0;
+  const btnLabel  = allDone ? "Go to JobzOn Menu" : started ? "Continue Setting Up" : "Start Here";
+  const btnColor  = allDone ? "#16a34a" : "#f97316";
+  const btnHover  = allDone ? "group-hover:bg-green-600" : "group-hover:bg-orange-500";
+  const btnText   = allDone ? "text-green-600" : "text-orange-600";
+  const sideText  = allDone
+    ? "You're all set — your workspace is ready to use."
+    : started
+      ? `to complete your set up process.`
+      : `to get set up.`;
+  const pressText = allDone ? null : started ? "Press" : "Press";
 
   return (
     <>
       <TopBar
         title="Dashboard"
         description="Overview of your invoices, jobs, and renewals"
-        center={
-          <a
-            href="/services?tab=catalogue"
-            className="group relative inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold text-orange-600 hover:text-white bg-white rounded-lg overflow-hidden transition-colors"
-          >
-            <span
-              aria-hidden
-              className="pointer-events-none absolute w-[200%] h-[200%] -top-1/2 -left-1/2"
-              style={{
-                background: "conic-gradient(from 0deg, transparent 60%, #f97316 80%, transparent 100%)",
-                animation: "border-spin 2.5s linear infinite",
-              }}
-            />
-            <span aria-hidden className="pointer-events-none absolute inset-[2px] rounded-[6px] bg-white group-hover:bg-orange-500 transition-colors" />
-            <span className="relative">✦ Start Here</span>
-          </a>
-        }
       />
 
       <main className="flex-1 p-6 space-y-6">
+
+        {/* Setup wizard card */}
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm px-6 py-5 flex flex-col items-center gap-3 text-center">
+          <p className="text-base font-semibold text-[var(--color-text)]">Welcome to JobzOn.</p>
+
+          <div className="flex items-center gap-3 flex-wrap justify-center text-sm text-[var(--color-muted)]">
+            {pressText && <span>{pressText}</span>}
+
+            {/* Setup button */}
+            <a
+              href="/services"
+              className={`group relative inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold ${btnText} hover:text-white bg-white rounded-lg overflow-hidden transition-colors`}
+            >
+              <span
+                aria-hidden
+                className="pointer-events-none absolute w-[200%] h-[200%] -top-1/2 -left-1/2"
+                style={{
+                  background: `conic-gradient(from 0deg, transparent 60%, ${btnColor} 80%, transparent 100%)`,
+                  animation: "border-spin 2.5s linear infinite",
+                }}
+              />
+              <span aria-hidden className={`pointer-events-none absolute inset-[2px] rounded-[6px] bg-white ${btnHover} transition-colors`} />
+              <span className="relative">{btnLabel}</span>
+            </a>
+
+            {sideText && <span>{sideText}</span>}
+          </div>
+
+          {!allDone && (
+            <p className="text-xs text-[var(--color-muted)] max-w-md leading-relaxed">
+              Follow the orange buttons for the next step to setting up your JobzOn workspace. Each time you complete a step the button will change to green and another orange option will appear to show you what to do next.
+            </p>
+          )}
+        </div>
 
         {/* Stat cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

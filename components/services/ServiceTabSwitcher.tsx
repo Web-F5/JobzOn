@@ -5,7 +5,7 @@ import Link from "next/link";
 export function ServiceTabSwitcher({ active }: { active: "client" | "catalogue" }) {
   const tabs = [
     { key: "catalogue", label: "Service Types",    href: "/services" },
-    { key: "client",    label: "Client Services",  href: "/services?tab=client" },
+    { key: "client",    label: "Link a Service to a Client",  href: "/services?tab=client" },
   ];
 
   return (

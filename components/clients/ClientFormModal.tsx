@@ -8,14 +8,24 @@ import { SpinningBorderButton } from "@/components/ui/SpinningBorderButton";
 import type { Client } from "@prisma/client";
 
 /** Add Client button + modal */
-export function AddClientButton({ spinning = false, defaultOpen = false }: { spinning?: boolean; defaultOpen?: boolean }) {
+export function AddClientButton({
+  spinning = false,
+  defaultOpen = false,
+  variant = "orange",
+  label = "+ Add Client",
+}: {
+  spinning?: boolean;
+  defaultOpen?: boolean;
+  variant?: "orange" | "green";
+  label?: string;
+}) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <>
       {spinning ? (
-        <SpinningBorderButton onClick={() => setOpen(true)}>+ Add Client</SpinningBorderButton>
+        <SpinningBorderButton onClick={() => setOpen(true)} variant={variant}>{label}</SpinningBorderButton>
       ) : (
-        <Button onClick={() => setOpen(true)} className="hover:!bg-orange-500">+ Add Client</Button>
+        <Button onClick={() => setOpen(true)} className="hover:!bg-orange-500">{label}</Button>
       )}
       <Modal title="Add Client" open={open} onClose={() => setOpen(false)} width="lg" disableBackdropClose>
         <ClientForm onSuccess={() => setOpen(false)} onCancel={() => setOpen(false)} />

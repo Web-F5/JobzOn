@@ -308,7 +308,13 @@ export function QuoteForm({ quoteId, initialData, clients, catalogueItems, actio
           Cancel
         </button>
         <button type="submit" disabled={pending}
-          className="px-6 py-2 bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-60">
+          className="inline-flex items-center gap-2 px-6 py-2 bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-60">
+          {pending && (
+            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          )}
           {pending ? "Saving…" : quoteId ? "Save Changes" : "Create Quote"}
         </button>
       </div>
