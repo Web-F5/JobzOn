@@ -94,7 +94,7 @@ export async function getQuotePdfData(quoteId: string, acceptUrl?: string): Prom
     businessAbn:     settings?.abn          ?? process.env.NEXT_PUBLIC_BUSINESS_ABN     ?? "",
     businessEmail:   settings?.emailOutgoing ?? process.env.NEXT_PUBLIC_BUSINESS_EMAIL  ?? "",
     businessPhone:   settings?.phone         ?? process.env.NEXT_PUBLIC_BUSINESS_PHONE  ?? "",
-    businessAddress: bizAddressParts.join(", ") || process.env.NEXT_PUBLIC_BUSINESS_ADDRESS ?? "",
+    businessAddress: bizAddressParts.join(", ") || (process.env.NEXT_PUBLIC_BUSINESS_ADDRESS ?? ""),
     businessLogoUrl: settings?.logoUrl ?? null,
 
     // Quote
