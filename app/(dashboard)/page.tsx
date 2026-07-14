@@ -179,7 +179,7 @@ export default async function DashboardPage() {
                       <p className="text-sm font-semibold text-[var(--color-text)]">
                         {formatAUD(svc.amountExGst * 1.1)}
                       </p>
-                      <p className="text-xs text-[var(--color-muted)]">{formatDate(svc.renewalDate)}</p>
+                      <p className="text-xs text-[var(--color-muted)]">{svc.renewalDate ? formatDate(svc.renewalDate) : "Once-off"}</p>
                     </div>
                   </li>
                 ))}
