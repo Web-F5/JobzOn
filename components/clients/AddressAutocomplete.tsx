@@ -12,7 +12,8 @@ interface AddressFields {
 interface Props {
   defaultValue?: string;
   onSelect: (fields: AddressFields) => void;
-  inputClassName: string;
+  inputClassName?: string;
+  name?: string;
 }
 
 declare global {
@@ -45,7 +46,10 @@ interface Prediction {
   description: string;
 }
 
-export function AddressAutocomplete({ defaultValue = "", onSelect, inputClassName }: Props) {
+const DEFAULT_CLS = "w-full px-3 py-2 text-sm rounded-lg border border-[var(--color-border)] bg-white focus:outline-none focus:ring-2 focus:ring-blue-300";
+
+export function AddressAutocomplete({ defaultValue = "", onSelect, inputClassName, name = "address" }: Props) {
+  const cls = inputClassName ?? DEFAULT_CLS;
   const [value, setValue]             = useState(defaultValue);
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [open, setOpen]               = useState(false);
@@ -119,10 +123,10 @@ export function AddressAutocomplete({ defaultValue = "", onSelect, inputClassNam
   if (!apiKey) {
     return (
       <input
-        name="address"
+        name={name}
         defaultValue={defaultValue}
         placeholder="123 Main St"
-        className={inputClassName}
+        className={cls}
       />
     );
   }
@@ -130,12 +134,12 @@ export function AddressAutocomplete({ defaultValue = "", onSelect, inputClassNam
   return (
     <div ref={containerRef} className="relative">
       <input
-        name="address"
+        name={name}
         value={value}
         onChange={(e) => handleChange(e.target.value)}
         placeholder="Start typing an address…"
         autoComplete="off"
-        className={inputClassName}
+        className={cls}
       />
       {open && predictions.length > 0 && (
         <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-[var(--color-border)] rounded-lg shadow-lg overflow-hidden">

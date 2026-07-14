@@ -83,7 +83,6 @@ export function BusinessDetailsForm({ initial }: Props) {
 
         <Field label="Street Address (optional)">
           <AddressAutocomplete
-            name="address"
             defaultValue={initial.address ?? ""}
             onSelect={({ suburb: s, state: st, postcode: p }) => {
               if (s)  setSuburb(s);
