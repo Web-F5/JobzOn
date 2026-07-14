@@ -363,6 +363,21 @@ export function InvoiceDocument({ data }: { data: InvoicePdfData }) {
         {/* Totals */}
         <View style={s.totalsContainer}>
           <View style={s.totalsBox}>
+            {data.discountAmount ? (
+              <View style={s.totalsRow}>
+                <Text style={s.totalsLabel}>Line Items</Text>
+                <Text style={s.totalsValue}>{data.lineSubtotal}</Text>
+              </View>
+            ) : null}
+            {data.discountAmount ? (
+              <View style={s.totalsRow}>
+                <Text style={s.totalsLabel}>
+                  {data.discountLabel}
+                  {data.discountReason ? `  (${data.discountReason})` : ""}
+                </Text>
+                <Text style={[s.totalsValue, { color: "#16a34a" }]}>{data.discountAmount}</Text>
+              </View>
+            ) : null}
             <View style={s.totalsRow}>
               <Text style={s.totalsLabel}>Subtotal (ex. GST)</Text>
               <Text style={s.totalsValue}>{data.subtotalExGst}</Text>

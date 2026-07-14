@@ -161,11 +161,28 @@ export default async function InvoiceDetailPage({ params }: Props) {
 
           {/* Totals */}
           <div className="flex justify-end px-5 py-4 border-t border-[var(--color-border)]">
-            <div className="w-56 space-y-1.5">
-              <div className="flex justify-between text-sm text-[var(--color-muted)]">
+            <div className="w-64 space-y-1.5 text-sm">
+              {invoice.discountAmount ? (
+                <>
+                  <div className="flex justify-between text-[var(--color-muted)]">
+                    <span>Line Items</span>
+                    <span>{formatAUD(invoice.lineItems.reduce((s: number, li: typeof invoice.lineItems[number]) => s + li.subtotal, 0))}</span>
+                  </div>
+                  <div className="flex justify-between text-green-600 font-medium">
+                    <span>
+                      {invoice.discountType === "PERCENTAGE" && invoice.discountValue
+                        ? `Discount (${invoice.discountValue}%)`
+                        : "Discount"}
+                      {invoice.discountReason ? ` — ${invoice.discountReason}` : ""}
+                    </span>
+                    <span>−{formatAUD(invoice.discountAmount)}</span>
+                  </div>
+                </>
+              ) : null}
+              <div className="flex justify-between text-[var(--color-muted)]">
                 <span>Subtotal (ex. GST)</span><span>{formatAUD(invoice.amountExGst)}</span>
               </div>
-              <div className="flex justify-between text-sm text-[var(--color-muted)]">
+              <div className="flex justify-between text-[var(--color-muted)]">
                 <span>GST (10%)</span><span>{formatAUD(invoice.gst)}</span>
               </div>
               <div className="flex justify-between text-base font-bold text-[var(--color-text)] pt-1 border-t border-[var(--color-border)]">

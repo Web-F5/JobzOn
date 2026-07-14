@@ -37,18 +37,22 @@ export interface InvoicePdfData {
   clientEmail: string;
   clientPhone: string;
   clientAbn: string;
-  clientAddress: string; // full formatted address
+  clientAddress: string;
 
   // Line items
   lineItems: InvoiceLineItemData[];
 
   // Totals (formatted strings)
-  subtotalExGst: string;
+  lineSubtotal: string;       // sum of line items before discount
+  discountLabel: string | null; // e.g. "Discount (10%)" or "Discount"
+  discountAmount: string | null; // formatted negative amount, null if no discount
+  discountReason: string | null;
+  subtotalExGst: string;      // after discount, ex-GST
   gst: string;
   total: string;
 
   // Payment instructions
-  paymentReference: string; // e.g. invoice number — client uses this as bank reference
+  paymentReference: string;
   stripePayUrl: string | null;
 
   // Status
@@ -65,7 +69,7 @@ function buildStripeUrl(invoiceId: string, token: string | null): string | null 
 export async function getInvoicePdfData(invoiceId: string): Promise<InvoicePdfData | null> {
   const [invoice, settings] = await Promise.all([
     prisma.invoice.findUnique({
-    where: { id: invoiceId },
+      where: { id: invoiceId },
       include: {
         client: { select: {
           id: true, name: true, email: true, phone: true,
@@ -87,15 +91,37 @@ export async function getInvoicePdfData(invoiceId: string): Promise<InvoicePdfDa
     invoice.client.postcode,
   ].filter(Boolean);
 
+  const bizAddressParts = [
+    settings?.address,
+    settings?.suburb,
+    settings?.state,
+    settings?.postcode,
+  ].filter(Boolean);
+
+  // Compute line item subtotal (before discount)
+  const lineSubtotalRaw = invoice.lineItems.length > 0
+    ? invoice.lineItems.reduce((s, li) => s + li.subtotal, 0)
+    : invoice.amountExGst + (invoice.discountAmount ?? 0);
+
+  // Discount label
+  let discountLabel: string | null = null;
+  if (invoice.discountAmount && invoice.discountAmount > 0) {
+    if (invoice.discountType === "PERCENTAGE" && invoice.discountValue) {
+      discountLabel = `Discount (${invoice.discountValue}%)`;
+    } else {
+      discountLabel = "Discount";
+    }
+  }
+
   return {
     clientId: invoice.clientId,
 
-    // Business
-    businessName:    process.env.NEXT_PUBLIC_BUSINESS_NAME    ?? "Web F5",
-    businessAbn:     process.env.NEXT_PUBLIC_BUSINESS_ABN     ?? "",
-    businessEmail:   process.env.NEXT_PUBLIC_BUSINESS_EMAIL   ?? "",
-    businessPhone:   process.env.NEXT_PUBLIC_BUSINESS_PHONE   ?? "",
-    businessAddress: process.env.NEXT_PUBLIC_BUSINESS_ADDRESS ?? "",
+    // Business — settings take precedence over env vars
+    businessName:    settings?.businessName  ?? process.env.NEXT_PUBLIC_BUSINESS_NAME    ?? "Web F5",
+    businessAbn:     settings?.abn           ?? process.env.NEXT_PUBLIC_BUSINESS_ABN     ?? "",
+    businessEmail:   settings?.emailOutgoing ?? process.env.NEXT_PUBLIC_BUSINESS_EMAIL   ?? "",
+    businessPhone:   settings?.phone         ?? process.env.NEXT_PUBLIC_BUSINESS_PHONE   ?? "",
+    businessAddress: bizAddressParts.join(", ") || (process.env.NEXT_PUBLIC_BUSINESS_ADDRESS ?? ""),
     businessLogoUrl: settings?.logoUrl ?? null,
 
     // Invoice
@@ -110,7 +136,7 @@ export async function getInvoicePdfData(invoiceId: string): Promise<InvoicePdfDa
     clientAbn:     invoice.client.abn   ?? "",
     clientAddress: clientAddressParts.join(", "),
 
-    // Line items — build from stored line items, or fall back to service description
+    // Line items
     lineItems: invoice.lineItems.length > 0
       ? invoice.lineItems.map((li) => ({
           description: li.description,
@@ -126,9 +152,13 @@ export async function getInvoicePdfData(invoiceId: string): Promise<InvoicePdfDa
         }],
 
     // Totals
-    subtotalExGst: formatAUD(invoice.amountExGst),
-    gst:           formatAUD(invoice.gst),
-    total:         formatAUD(invoice.amountTotal),
+    lineSubtotal:   formatAUD(lineSubtotalRaw),
+    discountLabel,
+    discountAmount: discountLabel ? `−${formatAUD(invoice.discountAmount!)}` : null,
+    discountReason: invoice.discountReason ?? null,
+    subtotalExGst:  formatAUD(invoice.amountExGst),
+    gst:            formatAUD(invoice.gst),
+    total:          formatAUD(invoice.amountTotal),
 
     // Payment
     paymentReference: invoice.invoiceNumber,
