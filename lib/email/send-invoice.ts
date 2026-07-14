@@ -5,30 +5,24 @@
  *   - The cron job (/api/cron/invoice-check)
  *   - The manual "Resend" button (/api/invoice/[id]/send)
  *
- * Each function:
- *   1. Fetches invoice + client data
- *   2. Renders the PDF to a Buffer
- *   3. Builds the React Email template
- *   4. Sends via Resend with the PDF attached
- *   5. Returns the Resend message ID on success
+ * Emails are always sent FROM the verified Resend domain address (RESEND_FROM_EMAIL).
+ * Reply-To is set to the business's Outgoing Business Email from Settings so client
+ * replies land in the right inbox.
  */
 
 import React from "react";
 import { resend } from "./resend";
+import { prisma } from "@/lib/prisma";
 import { renderInvoiceToBuffer } from "@/lib/pdf/render-invoice";
 import { getInvoicePdfData } from "@/lib/pdf/invoice-data";
 import { daysBetween } from "@/lib/dates";
 import { portalUrl } from "@/lib/portal";
-import { prisma } from "@/lib/prisma";
 import { InvoiceEmail }      from "./templates/InvoiceEmail";
 import { ReminderOneEmail }  from "./templates/ReminderOneEmail";
 import { ReminderTwoEmail }  from "./templates/ReminderTwoEmail";
 
-const FROM    = process.env.RESEND_FROM_EMAIL  ?? "invoices@webf5.com.au";
+const FROM    = process.env.RESEND_FROM_EMAIL   ?? "jobzon@webf5.com.au";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-const BIZ     = process.env.NEXT_PUBLIC_BUSINESS_NAME    ?? "Web F5";
-const BIZ_EMAIL = process.env.NEXT_PUBLIC_BUSINESS_EMAIL ?? "hello@webf5.com.au";
-const BIZ_ABN   = process.env.NEXT_PUBLIC_BUSINESS_ABN   ?? "";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -38,10 +32,7 @@ function clientFirstName(fullName: string): string {
 
 async function buildAttachment(invoiceId: string, invoiceNumber: string) {
   const buffer = await renderInvoiceToBuffer(invoiceId);
-  return {
-    filename: `${invoiceNumber}.pdf`,
-    content: buffer,
-  };
+  return { filename: `${invoiceNumber}.pdf`, content: buffer };
 }
 
 async function getPortalUrl(clientId: string): Promise<string | null> {
@@ -52,34 +43,42 @@ async function getPortalUrl(clientId: string): Promise<string | null> {
   return client?.portalToken ? portalUrl(client.portalToken) : null;
 }
 
+async function getBusinessDetails() {
+  const settings = await prisma.businessSettings.findUnique({ where: { id: "default" } });
+  return {
+    bizName:  settings?.businessName  ?? process.env.NEXT_PUBLIC_BUSINESS_NAME    ?? "Web F5",
+    bizEmail: settings?.emailOutgoing ?? process.env.NEXT_PUBLIC_BUSINESS_EMAIL   ?? FROM,
+    bizAbn:   settings?.abn           ?? process.env.NEXT_PUBLIC_BUSINESS_ABN     ?? "",
+    replyTo:  settings?.emailOutgoing ?? FROM,
+  };
+}
+
 // ─── Send initial invoice ─────────────────────────────────────────────────────
 
 export async function sendInvoiceEmail(invoiceId: string): Promise<string> {
-  const data = await getInvoicePdfData(invoiceId);
+  const [data, biz] = await Promise.all([getInvoicePdfData(invoiceId), getBusinessDetails()]);
   if (!data) throw new Error(`Invoice not found: ${invoiceId}`);
 
-  const attachment = await buildAttachment(invoiceId, data.invoiceNumber);
-  const pdfUrl        = `${APP_URL}/api/invoice/${invoiceId}/pdf`;
+  const attachment      = await buildAttachment(invoiceId, data.invoiceNumber);
+  const pdfUrl          = `${APP_URL}/api/invoice/${invoiceId}/pdf`;
   const clientPortalUrl = await getPortalUrl(data.clientId);
 
   const { data: result, error } = await resend.emails.send({
-    from: `${BIZ} <${FROM}>`,
-    to:   [data.clientEmail],
+    from:    `${biz.bizName} <${FROM}>`,
+    replyTo: biz.replyTo,
+    to:      [data.clientEmail],
     subject: `Invoice ${data.invoiceNumber} — ${data.dueDate}`,
     react: React.createElement(InvoiceEmail, {
-      businessName:    BIZ,
-      businessEmail:   BIZ_EMAIL,
-      businessAbn:     BIZ_ABN,
+      businessName:    biz.bizName,
+      businessEmail:   biz.bizEmail,
+      businessAbn:     biz.bizAbn,
       clientFirstName: clientFirstName(data.clientName),
       invoiceNumber:   data.invoiceNumber,
       dueDate:         data.dueDate,
       total:           data.total,
-      lineItems:       data.lineItems.map((li) => ({
-        description: li.description,
-        amount: `$${li.subtotal}`,
-      })),
+      lineItems:       data.lineItems.map((li) => ({ description: li.description, amount: `$${li.subtotal}` })),
       pdfUrl,
-      portalUrl: clientPortalUrl,
+      portalUrl:    clientPortalUrl,
       stripePayUrl: data.stripePayUrl,
     }),
     attachments: [attachment],
@@ -92,33 +91,31 @@ export async function sendInvoiceEmail(invoiceId: string): Promise<string> {
 // ─── Send first reminder ──────────────────────────────────────────────────────
 
 export async function sendReminderOneEmail(invoiceId: string): Promise<string> {
-  const data = await getInvoicePdfData(invoiceId);
+  const [data, biz] = await Promise.all([getInvoicePdfData(invoiceId), getBusinessDetails()]);
   if (!data) throw new Error(`Invoice not found: ${invoiceId}`);
 
-  const daysOverdue = daysBetween(new Date(data.dueDate), new Date());
-  const attachment = await buildAttachment(invoiceId, data.invoiceNumber);
-  const pdfUrl         = `${APP_URL}/api/invoice/${invoiceId}/pdf`;
+  const daysOverdue     = daysBetween(new Date(data.dueDate), new Date());
+  const attachment      = await buildAttachment(invoiceId, data.invoiceNumber);
+  const pdfUrl          = `${APP_URL}/api/invoice/${invoiceId}/pdf`;
   const clientPortalUrl = await getPortalUrl(data.clientId);
 
   const { data: result, error } = await resend.emails.send({
-    from: `${BIZ} <${FROM}>`,
-    to:   [data.clientEmail],
+    from:    `${biz.bizName} <${FROM}>`,
+    replyTo: biz.replyTo,
+    to:      [data.clientEmail],
     subject: `Reminder: Invoice ${data.invoiceNumber} is overdue`,
     react: React.createElement(ReminderOneEmail, {
-      businessName:    BIZ,
-      businessEmail:   BIZ_EMAIL,
-      businessAbn:     BIZ_ABN,
+      businessName:    biz.bizName,
+      businessEmail:   biz.bizEmail,
+      businessAbn:     biz.bizAbn,
       clientFirstName: clientFirstName(data.clientName),
       invoiceNumber:   data.invoiceNumber,
       dueDate:         data.dueDate,
       daysOverdue:     Math.max(daysOverdue, 1),
       total:           data.total,
-      lineItems:       data.lineItems.map((li) => ({
-        description: li.description,
-        amount: `$${li.subtotal}`,
-      })),
+      lineItems:       data.lineItems.map((li) => ({ description: li.description, amount: `$${li.subtotal}` })),
       pdfUrl,
-      portalUrl: clientPortalUrl,
+      portalUrl:    clientPortalUrl,
       stripePayUrl: data.stripePayUrl,
     }),
     attachments: [attachment],
@@ -131,33 +128,31 @@ export async function sendReminderOneEmail(invoiceId: string): Promise<string> {
 // ─── Send second (final) reminder ─────────────────────────────────────────────
 
 export async function sendReminderTwoEmail(invoiceId: string): Promise<string> {
-  const data = await getInvoicePdfData(invoiceId);
+  const [data, biz] = await Promise.all([getInvoicePdfData(invoiceId), getBusinessDetails()]);
   if (!data) throw new Error(`Invoice not found: ${invoiceId}`);
 
-  const daysOverdue = daysBetween(new Date(data.dueDate), new Date());
-  const attachment = await buildAttachment(invoiceId, data.invoiceNumber);
-  const pdfUrl         = `${APP_URL}/api/invoice/${invoiceId}/pdf`;
+  const daysOverdue     = daysBetween(new Date(data.dueDate), new Date());
+  const attachment      = await buildAttachment(invoiceId, data.invoiceNumber);
+  const pdfUrl          = `${APP_URL}/api/invoice/${invoiceId}/pdf`;
   const clientPortalUrl = await getPortalUrl(data.clientId);
 
   const { data: result, error } = await resend.emails.send({
-    from: `${BIZ} <${FROM}>`,
-    to:   [data.clientEmail],
+    from:    `${biz.bizName} <${FROM}>`,
+    replyTo: biz.replyTo,
+    to:      [data.clientEmail],
     subject: `Final reminder: Invoice ${data.invoiceNumber} – action required`,
     react: React.createElement(ReminderTwoEmail, {
-      businessName:    BIZ,
-      businessEmail:   BIZ_EMAIL,
-      businessAbn:     BIZ_ABN,
+      businessName:    biz.bizName,
+      businessEmail:   biz.bizEmail,
+      businessAbn:     biz.bizAbn,
       clientFirstName: clientFirstName(data.clientName),
       invoiceNumber:   data.invoiceNumber,
       dueDate:         data.dueDate,
       daysOverdue:     Math.max(daysOverdue, 1),
       total:           data.total,
-      lineItems:       data.lineItems.map((li) => ({
-        description: li.description,
-        amount: `$${li.subtotal}`,
-      })),
+      lineItems:       data.lineItems.map((li) => ({ description: li.description, amount: `$${li.subtotal}` })),
       pdfUrl,
-      portalUrl: clientPortalUrl,
+      portalUrl:    clientPortalUrl,
       stripePayUrl: data.stripePayUrl,
     }),
     attachments: [attachment],

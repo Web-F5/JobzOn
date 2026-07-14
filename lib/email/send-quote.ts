@@ -22,9 +22,8 @@ export async function sendQuoteEmail(quoteId: string): Promise<string> {
   // Load business settings first — all sender details come from here
   const settings = await prisma.businessSettings.findUnique({ where: { id: "default" } });
 
-  const fromEmail = settings?.emailOutgoing
-    ?? process.env.RESEND_FROM_EMAIL
-    ?? "invoices@webf5.com.au";
+  const fromEmail = process.env.RESEND_FROM_EMAIL ?? "jobzon@webf5.com.au";
+  const replyTo   = settings?.emailOutgoing ?? fromEmail;
 
   const bizName  = settings?.businessName ?? process.env.NEXT_PUBLIC_BUSINESS_NAME ?? "Web F5";
   const bizEmail = settings?.emailOutgoing ?? process.env.NEXT_PUBLIC_BUSINESS_EMAIL ?? fromEmail;
@@ -47,8 +46,9 @@ export async function sendQuoteEmail(quoteId: string): Promise<string> {
   const buffer = await renderQuoteToBuffer(quoteId, acceptUrl);
 
   const { data: result, error } = await resend.emails.send({
-    from:    `${bizName} <${fromEmail}>`,
-    to:      [data.clientEmail],
+    from:     `${bizName} <${fromEmail}>`,
+    replyTo:  replyTo,
+    to:       [data.clientEmail],
     subject: `Quote ${data.quoteNumber} from ${bizName} — ${data.total}`,
     react: React.createElement(QuoteEmail, {
       businessName:    bizName,
