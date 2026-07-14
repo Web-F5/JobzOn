@@ -22,7 +22,7 @@ export function SpinningBorderButton({ onClick, href, children, size = "md" }: S
         }}
       />
       <span aria-hidden className="pointer-events-none absolute inset-[2px] rounded-[6px] bg-white group-hover:bg-orange-500 transition-colors" />
-      <span className="relative">{children}</span>
+      <span className="relative inline-flex items-center gap-1.5">{children}</span>
     </>
   );
 

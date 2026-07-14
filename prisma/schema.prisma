@@ -35,16 +35,17 @@ model Client {
 // ─── SERVICES (recurring — domain, hosting, SSL) ──────────────────────────────
 
 model Service {
-  id          String      @id @default(cuid())
-  clientId    String
-  client      Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  type        ServiceType
-  description String      // e.g. "horsehay.com.au domain renewal"
-  renewalDate DateTime
-  amountExGst Float       // ex-GST AUD
-  active      Boolean     @default(true)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id               String           @id @default(cuid())
+  clientId         String
+  client           Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  type             ServiceType
+  description      String
+  renewalDate      DateTime?        // null for once-off services
+  billingFrequency BillingFrequency @default(YEARLY)
+  amountExGst      Float            // ex-GST AUD
+  active           Boolean          @default(true)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   invoices Invoice[]
 }
@@ -54,6 +55,12 @@ enum ServiceType {
   HOSTING
   SSL
   OTHER
+}
+
+enum BillingFrequency {
+  MONTHLY
+  YEARLY
+  ONCE_OFF
 }
 
 // ─── INVOICES ─────────────────────────────────────────────────────────────────

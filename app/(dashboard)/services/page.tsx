@@ -17,7 +17,8 @@ const SERVICE_TYPE_LABEL: Record<string, string> = {
   DOMAIN: "Domain", HOSTING: "Hosting", SSL: "SSL Certificate", OTHER: "Other",
 };
 
-function RenewalBadge({ renewalDate }: { renewalDate: Date }) {
+function RenewalBadge({ renewalDate }: { renewalDate: Date | null }) {
+  if (!renewalDate) return null;
   if (isPast(renewalDate))
     return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Overdue</span>;
   if (isWithinDays(renewalDate, 30))
@@ -39,7 +40,7 @@ export default async function ServicesPage({
     prisma.service.findMany({
       where: { active: true },
       include: { client: true },
-      orderBy: { renewalDate: "asc" },
+      orderBy: [{ renewalDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
     }),
     prisma.client.findMany({
       select: { id: true, name: true },
@@ -53,7 +54,7 @@ export default async function ServicesPage({
   const isClientTab = tab !== "catalogue";
 
   const topBarActions = isClientTab
-    ? <AddServiceButton clients={clients} defaultOpen={autoAdd} />
+    ? <AddServiceButton clients={clients} catalogueItems={catalogueItems} defaultOpen={autoAdd} />
     : catalogueItems.length > 0 ? <AddCatalogueItemButton /> : null;
 
   return (
@@ -70,7 +71,7 @@ export default async function ServicesPage({
         <div className="flex items-center gap-4 flex-wrap">
           <ServiceTabSwitcher active={isClientTab ? "client" : "catalogue"} />
           {!isClientTab && catalogueItems.length > 0 && <CatalogueNextStepsBar />}
-          {isClientTab && services.length > 0 && <ClientServicesNextStepsBar clients={clients} />}
+          {isClientTab && services.length > 0 && <ClientServicesNextStepsBar clients={clients} catalogueItems={catalogueItems} />}
         </div>
 
         {isClientTab ? (
@@ -112,7 +113,7 @@ export default async function ServicesPage({
                         ) : (
                           <>
                             <p className="text-sm text-[var(--color-muted)] mb-4">No clients linked to services yet.</p>
-                            <div className="flex justify-center"><AddServiceButton clients={clients} spinning /></div>
+                            <div className="flex justify-center"><AddServiceButton clients={clients} catalogueItems={catalogueItems} spinning /></div>
                           </>
                         )}
                       </td>
@@ -127,16 +128,18 @@ export default async function ServicesPage({
                             {SERVICE_TYPE_LABEL[svc.type] ?? svc.type}
                           </span>
                         </td>
-                        <td className="px-5 py-3 text-[var(--color-muted)]">{formatDate(svc.renewalDate)}</td>
+                        <td className="px-5 py-3 text-[var(--color-muted)]">
+                          {svc.renewalDate ? formatDate(svc.renewalDate) : <span className="text-slate-300">Once-off</span>}
+                        </td>
                         <td className="px-5 py-3 text-right font-semibold text-[var(--color-text)]">
                           {formatAUD(svc.amountExGst * 1.1)}
                         </td>
                         <td className="px-5 py-3">
-                          <RenewalBadge renewalDate={svc.renewalDate} />
+                          {svc.renewalDate && <RenewalBadge renewalDate={svc.renewalDate} />}
                         </td>
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-3">
-                            <EditServiceButton service={svc} clients={clients} />
+                            <EditServiceButton service={svc} clients={clients} catalogueItems={catalogueItems} />
                             <ManualInvoiceButton serviceId={svc.id} />
                           </div>
                         </td>

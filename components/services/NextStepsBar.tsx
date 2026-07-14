@@ -3,7 +3,7 @@
 import { AddCatalogueItemButton } from "@/components/catalogue/CatalogueFormModal";
 import { SpinningBorderButton } from "@/components/ui/SpinningBorderButton";
 import { AddServiceButton } from "@/components/services/ServiceFormModal";
-import type { Client } from "@prisma/client";
+import type { Client, ServiceCatalogueItem } from "@prisma/client";
 
 const LinkIcon = () => (
   <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -19,19 +19,25 @@ export function CatalogueNextStepsBar() {
       <div className="flex items-center gap-3 flex-wrap">
         <AddCatalogueItemButton spinning />
         <span className="text-blue-500 font-semibold">OR</span>
-        <SpinningBorderButton href="/clients?action=add"><LinkIcon /> Add Client</SpinningBorderButton>
+        <SpinningBorderButton href="/clients?action=add">+ Add Client</SpinningBorderButton>
       </div>
     </div>
   );
 }
 
 // Shown on Client Services tab: link another service, or create a quote
-export function ClientServicesNextStepsBar({ clients }: { clients: Pick<Client, "id" | "name">[] }) {
+export function ClientServicesNextStepsBar({
+  clients,
+  catalogueItems,
+}: {
+  clients: Pick<Client, "id" | "name">[];
+  catalogueItems: Pick<ServiceCatalogueItem, "id" | "name" | "description" | "amountExGst" | "type">[];
+}) {
   return (
     <div className="flex items-center gap-3 px-4 py-2.5 bg-blue-50 border border-blue-100 rounded-xl text-sm text-blue-700">
       <span className="font-medium shrink-0">Next step:</span>
       <div className="flex items-center gap-3 flex-wrap">
-        <AddServiceButton clients={clients} spinning />
+        <AddServiceButton clients={clients} catalogueItems={catalogueItems} spinning />
         <span className="text-blue-500 font-semibold">OR</span>
         <SpinningBorderButton href="/quotes/new">Create Quote</SpinningBorderButton>
       </div>

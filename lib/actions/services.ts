@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import type { ServiceType } from "@prisma/client";
+import type { ServiceType, BillingFrequency } from "@prisma/client";
 
 export type ServiceFormState = {
   error?: string;
@@ -13,19 +13,24 @@ export async function createService(
   _prev: ServiceFormState,
   formData: FormData
 ): Promise<ServiceFormState> {
-  const clientId     = formData.get("clientId")     as string;
-  const type         = formData.get("type")         as ServiceType;
-  const description  = formData.get("description")  as string;
-  const renewalDate  = formData.get("renewalDate")  as string;
-  const amountExGst  = formData.get("amountExGst")  as string;
+  const clientId         = formData.get("clientId")         as string;
+  const type             = formData.get("type")             as ServiceType;
+  const description      = formData.get("description")      as string;
+  const amountExGst      = formData.get("amountExGst")      as string;
+  const billingFrequency = formData.get("billingFrequency") as BillingFrequency;
+  const renewalDate      = formData.get("renewalDate")      as string | null;
 
-  if (!clientId || !type || !description?.trim() || !renewalDate || !amountExGst) {
-    return { error: "All fields are required." };
+  if (!clientId || !type || !description?.trim() || !amountExGst || !billingFrequency) {
+    return { error: "Please select a client, service type, and billing frequency." };
   }
 
-  const amount = parseFloat(amountExGst);
+  const amount = parseFloat(amountExGst.replace(/[$,\s]/g, ""));
   if (isNaN(amount) || amount <= 0) {
     return { error: "Amount must be a positive number." };
+  }
+
+  if (billingFrequency !== "ONCE_OFF" && !renewalDate) {
+    return { error: "Please select a next invoice date." };
   }
 
   try {
@@ -34,7 +39,8 @@ export async function createService(
         clientId,
         type,
         description: description.trim(),
-        renewalDate: new Date(renewalDate),
+        billingFrequency,
+        renewalDate: renewalDate ? new Date(renewalDate) : null,
         amountExGst: amount,
       },
     });
@@ -52,17 +58,18 @@ export async function updateService(
   _prev: ServiceFormState,
   formData: FormData
 ): Promise<ServiceFormState> {
-  const type        = formData.get("type")        as ServiceType;
-  const description = formData.get("description") as string;
-  const renewalDate = formData.get("renewalDate") as string;
-  const amountExGst = formData.get("amountExGst") as string;
-  const active      = formData.get("active") !== "false";
+  const type             = formData.get("type")             as ServiceType;
+  const description      = formData.get("description")      as string;
+  const amountExGst      = formData.get("amountExGst")      as string;
+  const billingFrequency = formData.get("billingFrequency") as BillingFrequency;
+  const renewalDate      = formData.get("renewalDate")      as string | null;
+  const active           = formData.get("active") !== "false";
 
-  if (!type || !description?.trim() || !renewalDate || !amountExGst) {
+  if (!type || !description?.trim() || !amountExGst || !billingFrequency) {
     return { error: "All fields are required." };
   }
 
-  const amount = parseFloat(amountExGst);
+  const amount = parseFloat(amountExGst.replace(/[$,\s]/g, ""));
   if (isNaN(amount) || amount <= 0) {
     return { error: "Amount must be a positive number." };
   }
@@ -73,7 +80,8 @@ export async function updateService(
       data: {
         type,
         description: description.trim(),
-        renewalDate: new Date(renewalDate),
+        billingFrequency,
+        renewalDate: renewalDate ? new Date(renewalDate) : null,
         amountExGst: amount,
         active,
       },
@@ -88,7 +96,6 @@ export async function updateService(
 
 export async function deleteService(id: string): Promise<ServiceFormState> {
   try {
-    // Soft delete — mark inactive rather than hard delete to preserve invoice history
     await prisma.service.update({
       where: { id },
       data: { active: false },

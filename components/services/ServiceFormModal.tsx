@@ -5,7 +5,7 @@ import { Modal } from "@/components/ui/Modal";
 import { ServiceForm } from "./ServiceForm";
 import { Button } from "@/components/ui/Button";
 import { SpinningBorderButton } from "@/components/ui/SpinningBorderButton";
-import type { Client, Service } from "@prisma/client";
+import type { Client, Service, ServiceCatalogueItem } from "@prisma/client";
 
 const LinkIcon = () => (
   <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -15,11 +15,13 @@ const LinkIcon = () => (
 
 export function AddServiceButton({
   clients,
+  catalogueItems,
   defaultClientId,
   defaultOpen = false,
   spinning = false,
 }: {
   clients: Pick<Client, "id" | "name">[];
+  catalogueItems: Pick<ServiceCatalogueItem, "id" | "name" | "description" | "amountExGst" | "type">[];
   defaultClientId?: string;
   defaultOpen?: boolean;
   spinning?: boolean;
@@ -39,6 +41,7 @@ export function AddServiceButton({
       <Modal title="Link Service to Client" open={open} onClose={() => setOpen(false)}>
         <ServiceForm
           clients={clients}
+          catalogueItems={catalogueItems}
           defaultClientId={defaultClientId}
           onSuccess={() => setOpen(false)}
           onCancel={() => setOpen(false)}
@@ -51,9 +54,11 @@ export function AddServiceButton({
 export function EditServiceButton({
   service,
   clients,
+  catalogueItems,
 }: {
   service: Service;
   clients: Pick<Client, "id" | "name">[];
+  catalogueItems: Pick<ServiceCatalogueItem, "id" | "name" | "description" | "amountExGst" | "type">[];
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -68,6 +73,7 @@ export function EditServiceButton({
         <ServiceForm
           service={service}
           clients={clients}
+          catalogueItems={catalogueItems}
           onSuccess={() => setOpen(false)}
           onCancel={() => setOpen(false)}
         />
