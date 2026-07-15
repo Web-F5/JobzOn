@@ -38,7 +38,7 @@ export async function createClient(
     });
   } catch (err: unknown) {
     if (err instanceof Error && err.message.includes("Unique constraint")) {
-      return { error: "A client with that email already exists." };
+      return { error: "A client with that email already exists in your account." };
     }
     return { error: "Failed to create client. Please try again." };
   }
