@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { TopBar } from "@/components/nav/TopBar";
 import { NewInvoiceForm } from "@/components/invoices/NewInvoiceForm";
@@ -7,19 +8,22 @@ export const metadata: Metadata = { title: "New Invoice" };
 export const dynamic = "force-dynamic";
 
 export default async function NewInvoicePage() {
+  const { userId } = await auth();
+
   const [clients, catalogueItems, quotes, settings] = await Promise.all([
     prisma.client.findMany({
+      where: { userId: userId ?? "" },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
     prisma.serviceCatalogueItem.findMany({
-      where: { active: true },
+      where: { userId: userId ?? "", active: true },
       orderBy: [{ type: "asc" }, { name: "asc" }],
       select: { id: true, name: true, description: true, amountExGst: true },
     }),
     // Only accepted/ready quotes that haven't been invoiced yet
     prisma.quote.findMany({
-      where: { invoice: null, status: { notIn: ["REJECTED", "EXPIRED", "INVOICED"] } },
+      where: { userId: userId ?? "", invoice: null, status: { notIn: ["REJECTED", "EXPIRED", "INVOICED"] } },
       select: {
         id: true,
         quoteNumber: true,
@@ -32,7 +36,7 @@ export default async function NewInvoicePage() {
       },
       orderBy: { createdAt: "desc" },
     }),
-    prisma.businessSettings.findUnique({ where: { id: "default" } }),
+    prisma.businessSettings.findUnique({ where: { id: userId ?? "" } }),
   ]);
 
   return (

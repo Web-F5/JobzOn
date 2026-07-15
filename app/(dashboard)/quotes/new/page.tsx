@@ -1,5 +1,6 @@
 import { Metadata }   from "next";
 import { redirect }   from "next/navigation";
+import { auth }       from "@clerk/nextjs/server";
 import { prisma }     from "@/lib/prisma";
 import { TopBar }     from "@/components/nav/TopBar";
 import { QuoteForm }  from "@/components/quotes/QuoteForm";
@@ -9,9 +10,11 @@ export const metadata: Metadata = { title: "New Quote" };
 export const dynamic = "force-dynamic";
 
 export default async function NewQuotePage() {
+  const { userId } = await auth();
+
   const [clients, catalogueItems] = await Promise.all([
-    prisma.client.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
-    prisma.serviceCatalogueItem.findMany({ where: { active: true }, orderBy: [{ type: "asc" }, { name: "asc" }] }),
+    prisma.client.findMany({ where: { userId: userId ?? "" }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.serviceCatalogueItem.findMany({ where: { userId: userId ?? "", active: true }, orderBy: [{ type: "asc" }, { name: "asc" }] }),
   ]);
 
   if (clients.length === 0) {

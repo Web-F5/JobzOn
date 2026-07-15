@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma }         from "@/lib/prisma";
+import { requireUserId }  from "@/lib/auth";
 
 export type CatalogueFormState = { error?: string; success?: boolean };
 
@@ -9,6 +10,7 @@ export async function createCatalogueItem(
   _prev: CatalogueFormState,
   formData: FormData
 ): Promise<CatalogueFormState> {
+  const userId      = await requireUserId();
   const name        = formData.get("name")        as string;
   const description = formData.get("description") as string | null;
   const amountExGst = parseFloat((formData.get("amountExGst") as string).replace(/[$,\s]/g, ""));
@@ -19,8 +21,9 @@ export async function createCatalogueItem(
   try {
     await prisma.serviceCatalogueItem.create({
       data: {
+        userId,
         name:        name.trim(),
-        type:        "OTHER", // category concept removed — field kept for schema compat
+        type:        "OTHER",
         description: description?.trim() || null,
         amountExGst,
       },
@@ -41,6 +44,7 @@ export async function updateCatalogueItem(
   _prev: CatalogueFormState,
   formData: FormData
 ): Promise<CatalogueFormState> {
+  const userId      = await requireUserId();
   const name        = formData.get("name")        as string;
   const description = formData.get("description") as string | null;
   const amountExGst = parseFloat((formData.get("amountExGst") as string).replace(/[$,\s]/g, ""));
@@ -51,8 +55,8 @@ export async function updateCatalogueItem(
 
   try {
     await prisma.serviceCatalogueItem.update({
-      where: { id },
-      data: { name: name.trim(), description: description?.trim() || null, amountExGst, active },
+      where: { id, userId },
+      data:  { name: name.trim(), description: description?.trim() || null, amountExGst, active },
     });
   } catch {
     return { error: "Failed to update service type." };
@@ -63,8 +67,9 @@ export async function updateCatalogueItem(
 }
 
 export async function deleteCatalogueItem(id: string): Promise<CatalogueFormState> {
+  const userId = await requireUserId();
   try {
-    await prisma.serviceCatalogueItem.delete({ where: { id } });
+    await prisma.serviceCatalogueItem.delete({ where: { id, userId } });
   } catch {
     return { error: "Cannot delete — this service type may be in use." };
   }

@@ -12,8 +12,9 @@ datasource db {
 
 model Client {
   id       String  @id @default(cuid())
+  userId   String
   name     String
-  email    String  @unique
+  email    String
   phone    String?
   abn      String?
   address  String?
@@ -22,7 +23,7 @@ model Client {
   postcode String?
 
   smsEnabled  Boolean @default(false)
-  portalToken String? @unique // signed URL token for the client portal
+  portalToken String? @unique
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -30,12 +31,15 @@ model Client {
   services         Service[]
   invoices         Invoice[]
   quotes           Quote[]
+
+  @@unique([userId, email])
 }
 
 // ─── SERVICES (recurring — domain, hosting, SSL) ──────────────────────────────
 
 model Service {
   id               String           @id @default(cuid())
+  userId           String
   clientId         String
   client           Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
   type             ServiceType
@@ -67,7 +71,8 @@ enum BillingFrequency {
 
 model Invoice {
   id            String        @id @default(cuid())
-  invoiceNumber String        @unique // INV-2026-001
+  userId        String
+  invoiceNumber String        @unique
   clientId      String
   client        Client        @relation(fields: [clientId], references: [id])
   serviceId     String?
@@ -126,7 +131,8 @@ enum InvoiceStatus {
 
 model Quote {
   id          String      @id @default(cuid())
-  quoteNumber String      @unique // QUO-2026-001
+  userId      String
+  quoteNumber String      @unique
   clientId    String
   client      Client      @relation(fields: [clientId], references: [id])
 
@@ -242,13 +248,16 @@ enum JobTaskStatus {
 
 model ServiceCatalogueItem {
   id          String      @id @default(cuid())
-  name        String      @unique // e.g. "Shared Hosting", "Domain .com.au"
+  userId      String
+  name        String
   type        ServiceType
   description String?
   amountExGst Float
   active      Boolean     @default(true)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+
+  @@unique([userId, name])
 }
 
 // ─── SUPPLIER INVOICES (Phase 3) ──────────────────────────────────────────────
@@ -277,10 +286,10 @@ enum SupplierInvoiceStatus {
   DISPUTED
 }
 
-// ─── BUSINESS SETTINGS (singleton — id always "default") ─────────────────────
+// ─── BUSINESS SETTINGS (one per user — id = Clerk userId) ────────────────────
 
 model BusinessSettings {
-  id           String  @id @default("default")
+  id           String  @id  // Clerk userId
   logoUrl      String? // Vercel Blob URL for the business logo
 
   // Business identity
@@ -311,6 +320,7 @@ model BusinessSettings {
 // ─── SEQUENCE COUNTERS (invoice / quote / job numbering per fiscal year) ───────
 
 model SequenceCounter {
-  id           String @id // e.g. "INV-2026", "QUO-2026", "JOB-2026"
+  id           String @id // e.g. "user_xxx:INV-2026"
+  userId       String
   currentValue Int    @default(0)
 }

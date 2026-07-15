@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { TopBar } from "@/components/nav/TopBar";
 import { formatAUD } from "@/lib/gst";
@@ -35,21 +36,24 @@ export default async function ServicesPage({
 }) {
   const { tab = "catalogue", action } = await searchParams;
   const autoAdd = action === "add";
+  const { userId } = await auth();
 
   const [services, clients, catalogueItems, quotesCount] = await Promise.all([
     prisma.service.findMany({
-      where: { active: true },
+      where: { userId: userId ?? "", active: true },
       include: { client: true },
       orderBy: [{ renewalDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
     }),
     prisma.client.findMany({
+      where: { userId: userId ?? "" },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
     prisma.serviceCatalogueItem.findMany({
+      where: { userId: userId ?? "" },
       orderBy: [{ type: "asc" }, { name: "asc" }],
     }),
-    prisma.quote.count(),
+    prisma.quote.count({ where: { userId: userId ?? "" } }),
   ]);
 
   const isClientTab = tab === "client";

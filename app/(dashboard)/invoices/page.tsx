@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { auth } from "@clerk/nextjs/server";
 import { InvoiceStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { TopBar } from "@/components/nav/TopBar";
@@ -29,9 +30,10 @@ export default async function InvoicesPage({
 }) {
   const { status } = await searchParams;
   const activeStatus = (status?.toUpperCase() ?? "ALL") as InvoiceStatus | "ALL";
+  const { userId } = await auth();
 
   const invoices = await prisma.invoice.findMany({
-    where: activeStatus === "ALL" ? {} : { status: activeStatus as InvoiceStatus },
+    where: activeStatus === "ALL" ? { userId: userId ?? "" } : { userId: userId ?? "", status: activeStatus as InvoiceStatus },
     include: {
       client: {
         select: {

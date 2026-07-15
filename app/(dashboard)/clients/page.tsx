@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { TopBar } from "@/components/nav/TopBar";
 import { AddClientButton, EditClientButton } from "@/components/clients/ClientFormModal";
@@ -15,13 +16,15 @@ export default async function ClientsPage({
 }) {
   const { action } = await searchParams;
   const autoAdd = action === "add";
+  const { userId } = await auth();
 
   const [clients, quotesCount] = await Promise.all([
     prisma.client.findMany({
+      where: { userId: userId ?? "" },
       include: { _count: { select: { services: true, invoices: true } } },
       orderBy: { name: "asc" },
     }),
-    prisma.quote.count(),
+    prisma.quote.count({ where: { userId: userId ?? "" } }),
   ]);
   const hasLinkedService = clients.some((c) => c._count.services > 0);
 

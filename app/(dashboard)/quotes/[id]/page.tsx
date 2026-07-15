@@ -1,6 +1,7 @@
 import { Metadata }    from "next";
 import { notFound }    from "next/navigation";
 import Link            from "next/link";
+import { auth }        from "@clerk/nextjs/server";
 import { prisma }      from "@/lib/prisma";
 import { TopBar }      from "@/components/nav/TopBar";
 import { formatAUD }   from "@/lib/gst";
@@ -17,16 +18,18 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const q = await prisma.quote.findUnique({ where: { id } });
+  const { userId } = await auth();
+  const q = await prisma.quote.findUnique({ where: { id, userId: userId ?? "" } });
   if (!q) return { title: "Quote not found" };
   return { title: `${q.quoteNumber}` };
 }
 
 export default async function QuoteDetailPage({ params }: Props) {
   const { id } = await params;
+  const { userId } = await auth();
 
   const quote = await prisma.quote.findUnique({
-    where: { id },
+    where: { id, userId: userId ?? "" },
     include: {
       client:    { select: { id: true, name: true, email: true } },
       lineItems: { orderBy: { sortOrder: "asc" } },
@@ -37,8 +40,8 @@ export default async function QuoteDetailPage({ params }: Props) {
   if (!quote) notFound();
 
   const [clients, catalogueItems] = await Promise.all([
-    prisma.client.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
-    prisma.serviceCatalogueItem.findMany({ where: { active: true }, orderBy: [{ type: "asc" }, { name: "asc" }] }),
+    prisma.client.findMany({ where: { userId: userId ?? "" }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.serviceCatalogueItem.findMany({ where: { userId: userId ?? "", active: true }, orderBy: [{ type: "asc" }, { name: "asc" }] }),
   ]);
 
   // Bind the update action to this quote ID

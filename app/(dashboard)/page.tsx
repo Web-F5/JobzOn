@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { TopBar } from "@/components/nav/TopBar";
 import { StatCard } from "@/components/ui/Card";
@@ -9,7 +10,7 @@ import { formatDate } from "@/lib/dates";
 export const metadata: Metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
 
-async function getDashboardData() {
+async function getDashboardData(userId: string) {
   const [
     invoiceCounts,
     overdueInvoices,
@@ -20,12 +21,13 @@ async function getDashboardData() {
     // Invoice status counts
     prisma.invoice.groupBy({
       by: ["status"],
+      where: { userId },
       _count: { id: true },
       _sum: { amountTotal: true },
     }),
     // Overdue invoices (top 5)
     prisma.invoice.findMany({
-      where: { status: { in: ["SENT", "OVERDUE"] }, dueDate: { lt: new Date() } },
+      where: { userId, status: { in: ["SENT", "OVERDUE"] }, dueDate: { lt: new Date() } },
       include: { client: true },
       orderBy: { dueDate: "asc" },
       take: 5,
@@ -33,6 +35,7 @@ async function getDashboardData() {
     // Services renewing within 45 days
     prisma.service.findMany({
       where: {
+        userId,
         active: true,
         renewalDate: {
           gte: new Date(),
@@ -45,16 +48,17 @@ async function getDashboardData() {
     }),
     // Recent invoices
     prisma.invoice.findMany({
+      where: { userId },
       include: { client: true },
       orderBy: { createdAt: "desc" },
       take: 5,
     }),
     // Setup progress counts
     Promise.all([
-      prisma.serviceCatalogueItem.count(),
-      prisma.client.count(),
-      prisma.service.count({ where: { active: true } }),
-      prisma.quote.count(),
+      prisma.serviceCatalogueItem.count({ where: { userId } }),
+      prisma.client.count({ where: { userId } }),
+      prisma.service.count({ where: { userId, active: true } }),
+      prisma.quote.count({ where: { userId } }),
     ]),
   ]);
 
@@ -69,8 +73,9 @@ async function getDashboardData() {
 }
 
 export default async function DashboardPage() {
+  const { userId } = await auth();
   const { counts, overdueInvoices, overdueTotal, upcomingRenewals, recentActivity, catalogueCount, clientCount, serviceCount, quoteCount } =
-    await getDashboardData();
+    await getDashboardData(userId ?? "");
 
   const allDone   = catalogueCount > 0 && clientCount > 0 && serviceCount > 0 && quoteCount > 0;
   const started   = catalogueCount > 0;

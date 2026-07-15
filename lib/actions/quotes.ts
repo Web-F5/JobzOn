@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma }         from "@/lib/prisma";
+import { requireUserId }  from "@/lib/auth";
 import { nextSequenceNumber } from "@/lib/sequence";
 import { calcGst }        from "@/lib/gst";
 
@@ -49,6 +50,7 @@ export async function createQuote(
   _prev: QuoteFormState,
   formData: FormData
 ): Promise<QuoteFormState> {
+  const userId      = await requireUserId();
   const clientId    = formData.get("clientId")     as string;
   const notes       = formData.get("notes")        as string | null;
   const clientNotes = formData.get("clientNotes")  as string | null;
@@ -63,10 +65,11 @@ export async function createQuote(
   const totals = buildTotals(lineItems);
 
   try {
-    const quoteNumber = await nextSequenceNumber("QUO");
+    const quoteNumber = await nextSequenceNumber("QUO", userId);
 
     const quote = await prisma.quote.create({
       data: {
+        userId,
         quoteNumber,
         clientId: clientId.trim(),
         status:   "DRAFT",
@@ -102,6 +105,7 @@ export async function updateQuote(
   _prev: QuoteFormState,
   formData: FormData
 ): Promise<QuoteFormState> {
+  const userId       = await requireUserId();
   const notes        = formData.get("notes")        as string | null;
   const clientNotes  = formData.get("clientNotes")  as string | null;
   const expiresAt    = formData.get("expiresAt")    as string | null;
@@ -114,14 +118,14 @@ export async function updateQuote(
 
   try {
     // If the quote was READY or SENT, editing it reverts it to DRAFT
-    const existing = await prisma.quote.findUnique({ where: { id }, select: { status: true } });
+    const existing = await prisma.quote.findUnique({ where: { id, userId }, select: { status: true } });
     const revertToDraft = existing && ["READY", "SENT"].includes(existing.status);
 
     // Replace all line items atomically
     await prisma.$transaction([
       prisma.quoteLineItem.deleteMany({ where: { quoteId: id } }),
       prisma.quote.update({
-        where: { id },
+        where: { id, userId },
         data: {
           notes:       notes?.trim()       || null,
           clientNotes: clientNotes?.trim() || null,
@@ -153,8 +157,9 @@ export async function updateQuote(
 // ─── Delete ───────────────────────────────────────────────────────────────────
 
 export async function deleteQuote(id: string): Promise<QuoteFormState> {
+  const userId = await requireUserId();
   try {
-    await prisma.quote.delete({ where: { id } });
+    await prisma.quote.delete({ where: { id, userId } });
   } catch {
     return { error: "Cannot delete quote — it may already be invoiced." };
   }
@@ -167,8 +172,9 @@ export async function deleteQuote(id: string): Promise<QuoteFormState> {
 
 /** Mark a quote as READY to send. */
 export async function markQuoteReady(id: string): Promise<QuoteFormState> {
+  const userId = await requireUserId();
   try {
-    await prisma.quote.update({ where: { id }, data: { status: "READY" } });
+    await prisma.quote.update({ where: { id, userId }, data: { status: "READY" } });
     revalidatePath("/quotes");
     revalidatePath(`/quotes/${id}`);
     return { success: true };
@@ -179,9 +185,10 @@ export async function markQuoteReady(id: string): Promise<QuoteFormState> {
 
 /** Mark a quote as SENT (called after emailing). */
 export async function markQuoteSent(id: string): Promise<QuoteFormState> {
+  const userId = await requireUserId();
   try {
     await prisma.quote.update({
-      where: { id },
+      where: { id, userId },
       data: { status: "SENT", sentAt: new Date() },
     });
     revalidatePath("/quotes");
@@ -194,9 +201,10 @@ export async function markQuoteSent(id: string): Promise<QuoteFormState> {
 
 /** Accept a quote manually (dashboard button). */
 export async function acceptQuote(id: string): Promise<QuoteFormState> {
+  const userId = await requireUserId();
   try {
     await prisma.quote.update({
-      where: { id },
+      where: { id, userId },
       data: { status: "ACCEPTED", acceptedAt: new Date() },
     });
     revalidatePath("/quotes");
@@ -209,9 +217,10 @@ export async function acceptQuote(id: string): Promise<QuoteFormState> {
 
 /** Mark a quote as REJECTED. */
 export async function rejectQuote(id: string): Promise<QuoteFormState> {
+  const userId = await requireUserId();
   try {
     await prisma.quote.update({
-      where: { id },
+      where: { id, userId },
       data: { status: "REJECTED", rejectedAt: new Date() },
     });
     revalidatePath("/quotes");
@@ -237,8 +246,9 @@ export async function rejectQuote(id: string): Promise<QuoteFormState> {
 export async function convertQuoteToInvoice(
   quoteId: string
 ): Promise<{ error?: string; invoiceId?: string }> {
+  const userId = await requireUserId();
   const quote = await prisma.quote.findUnique({
-    where: { id: quoteId },
+    where: { id: quoteId, userId },
     include: {
       lineItems: { orderBy: { sortOrder: "asc" } },
       client: true,
@@ -251,7 +261,7 @@ export async function convertQuoteToInvoice(
   if (quote.status === "INVOICED") return { error: "This quote has already been invoiced." };
 
   try {
-    const invoiceNumber = await nextSequenceNumber("INV");
+    const invoiceNumber = await nextSequenceNumber("INV", userId);
 
     // Due date: 14 days from today
     const dueDate = new Date();
@@ -259,6 +269,7 @@ export async function convertQuoteToInvoice(
 
     const invoice = await prisma.invoice.create({
       data: {
+        userId,
         invoiceNumber,
         clientId:    quote.clientId,
         quoteId:     quote.id,

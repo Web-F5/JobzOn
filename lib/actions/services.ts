@@ -1,18 +1,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
+import { prisma }         from "@/lib/prisma";
+import { requireUserId }  from "@/lib/auth";
 import type { ServiceType, BillingFrequency } from "@prisma/client";
 
-export type ServiceFormState = {
-  error?: string;
-  success?: boolean;
-};
+export type ServiceFormState = { error?: string; success?: boolean };
 
 export async function createService(
   _prev: ServiceFormState,
   formData: FormData
 ): Promise<ServiceFormState> {
+  const userId           = await requireUserId();
   const clientId         = formData.get("clientId")         as string;
   const type             = formData.get("type")             as ServiceType;
   const description      = formData.get("description")      as string;
@@ -25,9 +24,7 @@ export async function createService(
   }
 
   const amount = parseFloat(amountExGst.replace(/[$,\s]/g, ""));
-  if (isNaN(amount) || amount <= 0) {
-    return { error: "Amount must be a positive number." };
-  }
+  if (isNaN(amount) || amount <= 0) return { error: "Amount must be a positive number." };
 
   if (billingFrequency !== "ONCE_OFF" && !renewalDate) {
     return { error: "Please select a next invoice date." };
@@ -36,12 +33,13 @@ export async function createService(
   try {
     await prisma.service.create({
       data: {
+        userId,
         clientId,
         type,
-        description: description.trim(),
+        description:      description.trim(),
         billingFrequency,
-        renewalDate: renewalDate ? new Date(renewalDate) : null,
-        amountExGst: amount,
+        renewalDate:      renewalDate ? new Date(renewalDate) : null,
+        amountExGst:      amount,
       },
     });
   } catch {
@@ -58,6 +56,7 @@ export async function updateService(
   _prev: ServiceFormState,
   formData: FormData
 ): Promise<ServiceFormState> {
+  const userId           = await requireUserId();
   const type             = formData.get("type")             as ServiceType;
   const description      = formData.get("description")      as string;
   const amountExGst      = formData.get("amountExGst")      as string;
@@ -70,19 +69,17 @@ export async function updateService(
   }
 
   const amount = parseFloat(amountExGst.replace(/[$,\s]/g, ""));
-  if (isNaN(amount) || amount <= 0) {
-    return { error: "Amount must be a positive number." };
-  }
+  if (isNaN(amount) || amount <= 0) return { error: "Amount must be a positive number." };
 
   try {
     await prisma.service.update({
-      where: { id },
+      where: { id, userId },
       data: {
         type,
-        description: description.trim(),
+        description:      description.trim(),
         billingFrequency,
-        renewalDate: renewalDate ? new Date(renewalDate) : null,
-        amountExGst: amount,
+        renewalDate:      renewalDate ? new Date(renewalDate) : null,
+        amountExGst:      amount,
         active,
       },
     });
@@ -95,15 +92,15 @@ export async function updateService(
 }
 
 export async function deleteService(id: string): Promise<ServiceFormState> {
+  const userId = await requireUserId();
   try {
     await prisma.service.update({
-      where: { id },
-      data: { active: false },
+      where: { id, userId },
+      data:  { active: false },
     });
   } catch {
     return { error: "Failed to remove service." };
   }
-
   revalidatePath("/services");
   return { success: true };
 }

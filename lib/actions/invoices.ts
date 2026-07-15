@@ -3,6 +3,7 @@
 import { redirect }       from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma }         from "@/lib/prisma";
+import { requireUserId }  from "@/lib/auth";
 import { generateInvoiceForService } from "@/lib/invoice/generate";
 import { sendInvoiceEmail } from "@/lib/email/send-invoice";
 import { nextSequenceNumber } from "@/lib/sequence";
@@ -16,9 +17,10 @@ export type InvoiceActionState = {
 
 /** Mark an invoice as paid */
 export async function markInvoicePaid(id: string): Promise<InvoiceActionState> {
+  const userId = await requireUserId();
   try {
     await prisma.invoice.update({
-      where: { id },
+      where: { id, userId },
       data:  { status: "PAID", paidAt: new Date() },
     });
   } catch {
@@ -32,9 +34,10 @@ export async function markInvoicePaid(id: string): Promise<InvoiceActionState> {
 
 /** Cancel an invoice */
 export async function cancelInvoice(id: string): Promise<InvoiceActionState> {
+  const userId = await requireUserId();
   try {
     await prisma.invoice.update({
-      where: { id },
+      where: { id, userId },
       data:  { status: "CANCELLED" },
     });
   } catch {
@@ -94,6 +97,7 @@ export async function createManualInvoice(
   _prev: InvoiceActionState,
   formData: FormData
 ): Promise<InvoiceActionState> {
+  const userId         = await requireUserId();
   const clientId       = formData.get("clientId")       as string;
   const dueDateStr     = formData.get("dueDate")        as string;
   const lineItemsJson  = formData.get("lineItemsJson")  as string;
@@ -124,12 +128,13 @@ export async function createManualInvoice(
   const amountExGst  = round2(subtotalExGst - disc);
   const gst          = calcGst(amountExGst);
   const amountTotal  = calcTotal(amountExGst);
-  const invoiceNumber = await nextSequenceNumber("INV");
+  const invoiceNumber = await nextSequenceNumber("INV", userId);
 
   let invoiceId: string;
   try {
     const invoice = await prisma.invoice.create({
       data: {
+        userId,
         invoiceNumber,
         clientId,
         dueDate,

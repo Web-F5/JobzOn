@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { TopBar } from "@/components/nav/TopBar";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -19,8 +20,9 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
+  const { userId } = await auth();
   const invoice = await prisma.invoice.findUnique({
-    where: { id },
+    where: { id, userId: userId ?? "" },
     select: { invoiceNumber: true, client: { select: { name: true } } },
   });
   if (!invoice) return { title: "Invoice Not Found" };
@@ -29,9 +31,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function InvoiceDetailPage({ params }: Props) {
   const { id } = await params;
+  const { userId } = await auth();
 
   const invoice = await prisma.invoice.findUnique({
-    where: { id },
+    where: { id, userId: userId ?? "" },
     include: {
       client: true,
       lineItems: { orderBy: { sortOrder: "asc" } },
