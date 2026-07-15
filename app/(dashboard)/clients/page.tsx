@@ -41,9 +41,10 @@ export default async function ClientsPage({
 
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">
           {clients.length === 0 ? (
-            <p className="px-6 py-12 text-sm text-center text-[var(--color-muted)]">
-              No clients yet — add your first client to get started
-            </p>
+            <div className="px-6 py-14 flex flex-col items-center gap-4 text-center">
+              <p className="text-sm text-[var(--color-muted)]">No clients yet — add your first client to get started.</p>
+              <AddClientButton defaultOpen={false} spinning />
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
