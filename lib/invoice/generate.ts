@@ -42,7 +42,7 @@ export async function generateInvoiceForService(
     return null; // already invoiced this cycle
   }
 
-  const invoiceNumber = await nextSequenceNumber("INV");
+  const invoiceNumber = await nextSequenceNumber("INV", service.userId);
   const amountExGst   = round2(service.amountExGst);
   const gst           = calcGst(amountExGst);
   const amountTotal   = calcTotal(amountExGst);
@@ -50,6 +50,7 @@ export async function generateInvoiceForService(
 
   const invoice = await prisma.invoice.create({
     data: {
+      userId:       service.userId,
       invoiceNumber,
       clientId:     service.clientId,
       serviceId:    service.id,
