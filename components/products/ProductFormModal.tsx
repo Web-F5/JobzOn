@@ -105,9 +105,11 @@ function ProductForm({
 export function AddProductButton({
   spinning = false,
   variant = "orange",
+  label,
 }: {
   spinning?: boolean;
   variant?: "orange" | "green";
+  label?: string;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDialogElement>(null);
@@ -117,7 +119,7 @@ export function AddProductButton({
   return (
     <>
       {spinning ? (
-        <SpinningBorderButton onClick={() => setOpen(true)} variant={variant}>+ Add Product</SpinningBorderButton>
+        <SpinningBorderButton onClick={() => setOpen(true)} variant={variant}>{label ?? "+ Add Product"}</SpinningBorderButton>
       ) : (
         <button
           onClick={() => setOpen(true)}

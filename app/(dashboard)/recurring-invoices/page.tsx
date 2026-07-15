@@ -96,7 +96,7 @@ export default async function RecurringInvoicesPage({
                     <td colSpan={7} className="px-5 py-12 text-center">
                       {!hasCatalogue ? (
                         <div className="space-y-4">
-                          <p className="text-sm text-[var(--color-muted)]">Please add a Service or Product before creating a Recurring Invoice.</p>
+                          <p className="text-base text-[var(--color-muted)]">Please add a Service or Product before creating a Recurring Invoice.</p>
                           <div className="flex items-center justify-center gap-4 flex-wrap">
                             <SpinningBorderButton href="/services">+ Add your first Service</SpinningBorderButton>
                             <span className="text-[var(--color-muted)] text-sm font-medium">OR</span>
@@ -105,14 +105,14 @@ export default async function RecurringInvoicesPage({
                         </div>
                       ) : clients.length === 0 ? (
                         <div className="space-y-4">
-                          <p className="text-sm text-[var(--color-muted)]">Please add a Client before creating a Recurring Invoice.</p>
+                          <p className="text-base text-[var(--color-muted)]">Please add a Client before creating a Recurring Invoice.</p>
                           <div className="flex justify-center">
                             <SpinningBorderButton href="/clients?action=add">+ Add your first Client</SpinningBorderButton>
                           </div>
                         </div>
                       ) : (
                         <div className="space-y-4">
-                          <p className="text-sm text-[var(--color-muted)]">No recurring invoices set up yet.</p>
+                          <p className="text-base text-[var(--color-muted)]">No recurring invoices set up yet.</p>
                           <div className="flex justify-center">
                             <AddServiceButton clients={clients} catalogueItems={catalogueItems} spinning variant="orange" />
                           </div>

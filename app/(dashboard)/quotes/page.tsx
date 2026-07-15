@@ -109,7 +109,7 @@ export default async function QuotesPage({
             <div className="px-6 py-16 text-center space-y-4">
               {!hasCatalogue ? (
                 <>
-                  <p className="text-[var(--color-muted)] text-sm">Please add a Service or Product before creating a Quote.</p>
+                  <p className="text-[var(--color-muted)] text-base">Please add a Service or Product before creating a Quote.</p>
                   <div className="flex items-center justify-center gap-4 flex-wrap">
                     <SpinningBorderButton href="/services">+ Add your first Service</SpinningBorderButton>
                     <span className="text-[var(--color-muted)] text-sm font-medium">OR</span>
@@ -118,12 +118,12 @@ export default async function QuotesPage({
                 </>
               ) : clientCount === 0 ? (
                 <>
-                  <p className="text-[var(--color-muted)] text-sm">Please add a Client before creating a Quote.</p>
+                  <p className="text-[var(--color-muted)] text-base">Please add a Client before creating a Quote.</p>
                   <SpinningBorderButton href="/clients?action=add">+ Add your first Client</SpinningBorderButton>
                 </>
               ) : (
                 <>
-                  <p className="text-[var(--color-muted)] text-sm">No quotes created yet</p>
+                  <p className="text-[var(--color-muted)] text-base">No quotes created yet</p>
                   <div className="flex justify-center">
                     <SpinningBorderButton href="/quotes/new">
                       <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">

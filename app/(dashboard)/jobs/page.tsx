@@ -37,8 +37,8 @@ export default async function JobsPage() {
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">
           {jobs.length === 0 ? (
             <div className="px-6 py-16 text-center">
-              <p className="text-sm text-[var(--color-muted)]">No jobs yet</p>
-              <p className="text-xs text-[var(--color-muted)] mt-1">
+              <p className="text-base text-[var(--color-muted)]">No jobs yet</p>
+              <p className="text-sm text-[var(--color-muted)] mt-1">
                 Jobs are automatically created when a quote is accepted
               </p>
             </div>
