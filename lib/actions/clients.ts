@@ -37,10 +37,12 @@ export async function createClient(
       },
     });
   } catch (err: unknown) {
-    if (err instanceof Error && err.message.includes("Unique constraint")) {
-      return { error: "A client with that email already exists in your account." };
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[createClient] userId:", userId, "error:", msg);
+    if (msg.includes("Unique constraint")) {
+      return { error: `DEBUG: ${msg}` };
     }
-    return { error: "Failed to create client. Please try again." };
+    return { error: `DEBUG: ${msg}` };
   }
 
   revalidatePath("/clients");
