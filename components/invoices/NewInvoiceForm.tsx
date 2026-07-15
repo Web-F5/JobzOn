@@ -36,14 +36,23 @@ interface LineItem {
 
 const BLANK_LINE: LineItem = { catalogueId: "", description: "", quantity: 1, unitPrice: 0 };
 
+interface ProductItem {
+  id:           string;
+  name:         string;
+  description:  string | null;
+  unit:         string;
+  defaultPrice: number;
+}
+
 interface Props {
-  clients:        { id: string; name: string }[];
-  catalogueItems: CatalogueItem[];
-  quotes:         ClientQuote[];
+  clients:          { id: string; name: string }[];
+  catalogueItems:   CatalogueItem[];
+  products?:        ProductItem[];
+  quotes:           ClientQuote[];
   defaultTermsDays: number;
 }
 
-export function NewInvoiceForm({ clients, catalogueItems, quotes, defaultTermsDays }: Props) {
+export function NewInvoiceForm({ clients, catalogueItems, products = [], quotes, defaultTermsDays }: Props) {
   const [lineItems, setLineItems]     = useState<LineItem[]>([{ ...BLANK_LINE }]);
   const [selectedClientId, setClient] = useState("");
   const [applyDiscount, setApply]     = useState(false);
@@ -74,13 +83,22 @@ export function NewInvoiceForm({ clients, catalogueItems, quotes, defaultTermsDa
   defaultDue.setDate(defaultDue.getDate() + (defaultTermsDays || 14));
   const defaultDueStr = defaultDue.toISOString().split("T")[0];
 
-  function selectCatalogue(i: number, catalogueId: string) {
-    const item = catalogueItems.find((c) => c.id === catalogueId);
+  function selectCatalogue(i: number, value: string) {
     setLineItems((prev) => {
       const next = [...prev];
-      next[i] = item
-        ? { catalogueId, description: item.description ?? item.name, quantity: 1, unitPrice: item.amountExGst }
-        : { ...BLANK_LINE };
+      if (value.startsWith("s:")) {
+        const item = catalogueItems.find((c) => c.id === value.slice(2));
+        next[i] = item
+          ? { catalogueId: value, description: item.description ?? item.name, quantity: 1, unitPrice: item.amountExGst }
+          : { ...BLANK_LINE };
+      } else if (value.startsWith("p:")) {
+        const p = products.find((p) => p.id === value.slice(2));
+        next[i] = p
+          ? { catalogueId: value, description: p.description ?? p.name, quantity: 1, unitPrice: p.defaultPrice }
+          : { ...BLANK_LINE };
+      } else {
+        next[i] = { ...BLANK_LINE };
+      }
       return next;
     });
   }
@@ -200,20 +218,25 @@ export function NewInvoiceForm({ clients, catalogueItems, quotes, defaultTermsDa
                 )}
               </div>
 
-              {/* Service type picker */}
+              {/* Catalogue picker */}
               <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium text-[var(--color-muted)]">Service Type</label>
-                  <a href="/services" target="_blank" rel="noopener noreferrer"
-                    className="text-xs text-[var(--color-muted)] hover:text-[var(--color-brand)] hover:underline">
-                    {catalogueItems.length === 0 ? "No service types yet — create one →" : "Can't find it? Manage service types →"}
-                  </a>
-                </div>
+                <label className="text-xs font-medium text-[var(--color-muted)]">From Catalogue</label>
                 <select value={li.catalogueId} onChange={(e) => selectCatalogue(i, e.target.value)} className={inputCls}>
-                  <option value="">— Select a service type —</option>
-                  {catalogueItems.map((item) => (
-                    <option key={item.id} value={item.id}>{item.name} — {fmt(item.amountExGst)}</option>
-                  ))}
+                  <option value="">— Select from catalogue —</option>
+                  {catalogueItems.length > 0 && (
+                    <optgroup label="Services">
+                      {catalogueItems.map((item) => (
+                        <option key={item.id} value={`s:${item.id}`}>{item.name} — {fmt(item.amountExGst)}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {products.length > 0 && (
+                    <optgroup label="Products">
+                      {products.map((p) => (
+                        <option key={p.id} value={`p:${p.id}`}>{p.name} — {fmt(p.defaultPrice)} / {p.unit}</option>
+                      ))}
+                    </optgroup>
+                  )}
                   <option value="">Custom (type manually below)</option>
                 </select>
               </div>

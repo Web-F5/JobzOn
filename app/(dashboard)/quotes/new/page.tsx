@@ -12,9 +12,10 @@ export const dynamic = "force-dynamic";
 export default async function NewQuotePage() {
   const { userId } = await auth();
 
-  const [clients, catalogueItems] = await Promise.all([
+  const [clients, catalogueItems, products] = await Promise.all([
     prisma.client.findMany({ where: { userId: userId ?? "" }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.serviceCatalogueItem.findMany({ where: { userId: userId ?? "", active: true }, orderBy: [{ type: "asc" }, { name: "asc" }] }),
+    prisma.product.findMany({ where: { userId: userId ?? "", active: true }, orderBy: { name: "asc" }, select: { id: true, name: true, description: true, unit: true, defaultPrice: true } }),
   ]);
 
   if (clients.length === 0) {
@@ -29,7 +30,7 @@ export default async function NewQuotePage() {
       />
       <main className="flex-1 p-6">
         <div className="max-w-3xl mx-auto">
-          <QuoteForm clients={clients} catalogueItems={catalogueItems} action={createQuote} />
+          <QuoteForm clients={clients} catalogueItems={catalogueItems} products={products} action={createQuote} />
         </div>
       </main>
     </>

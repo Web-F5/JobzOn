@@ -288,6 +288,24 @@ enum SupplierInvoiceStatus {
 
 // ─── BUSINESS SETTINGS (one per user — id = Clerk userId) ────────────────────
 
+// ─── PRODUCTS ─────────────────────────────────────────────────────────────────
+
+model Product {
+  id           String  @id @default(cuid())
+  userId       String
+  name         String
+  description  String?
+  unit         String  @default("each")
+  defaultPrice Float
+  active       Boolean @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, name])
+}
+
+// ─── BUSINESS SETTINGS ────────────────────────────────────────────────────────
+
 model BusinessSettings {
   id           String  @id  // Clerk userId
   logoUrl      String? // Vercel Blob URL for the business logo

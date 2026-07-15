@@ -24,6 +24,14 @@ interface CatalogueItem {
   amountExGst: number;
 }
 
+interface ProductItem {
+  id:           string;
+  name:         string;
+  description:  string | null;
+  unit:         string;
+  defaultPrice: number;
+}
+
 interface QuoteFormProps {
   quoteId?:     string;
   initialData?: {
@@ -35,6 +43,7 @@ interface QuoteFormProps {
   };
   clients:        Client[];
   catalogueItems: CatalogueItem[];
+  products?:      ProductItem[];
   action: (prev: QuoteFormState, formData: FormData) => Promise<QuoteFormState>;
 }
 
@@ -55,7 +64,7 @@ function fmt(n: number) {
 
 const BLANK: LineItem = { id: "", catalogueId: "", description: "", quantity: 1, unitPrice: 0 };
 
-export function QuoteForm({ quoteId, initialData, clients, catalogueItems, action }: QuoteFormProps) {
+export function QuoteForm({ quoteId, initialData, clients, catalogueItems, products = [], action }: QuoteFormProps) {
   const router = useRouter();
   const [state, formAction] = useActionState<QuoteFormState, FormData>(action, {});
   const [pending, startTransition] = useTransition();
@@ -90,11 +99,16 @@ export function QuoteForm({ quoteId, initialData, clients, catalogueItems, actio
 
   const { exGst, gst, total } = calcTotals(lineItems);
 
-  function selectCatalogue(id: string, catalogueId: string) {
-    const item = catalogueItems.find((c) => c.id === catalogueId);
+  function selectCatalogue(id: string, value: string) {
     setLineItems((prev) => prev.map((li) => {
       if (li.id !== id) return li;
-      if (item) return { ...li, catalogueId, description: item.description ?? item.name, unitPrice: item.amountExGst };
+      if (value.startsWith("s:")) {
+        const item = catalogueItems.find((c) => c.id === value.slice(2));
+        if (item) return { ...li, catalogueId: value, description: item.description ?? item.name, unitPrice: item.amountExGst };
+      } else if (value.startsWith("p:")) {
+        const p = products.find((p) => p.id === value.slice(2));
+        if (p) return { ...li, catalogueId: value, description: p.description ?? p.name, unitPrice: p.defaultPrice };
+      }
       return { ...li, catalogueId: "", description: "", unitPrice: 0 };
     }));
   }
@@ -188,30 +202,33 @@ export function QuoteForm({ quoteId, initialData, clients, catalogueItems, actio
                   )}
                 </div>
 
-                {/* Service Type picker */}
+                {/* Catalogue picker */}
                 <div className="flex flex-col gap-1">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-medium text-[var(--color-muted)]">Service Type</label>
-                    <a
-                      href="/services"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-[var(--color-muted)] hover:text-[var(--color-brand)] hover:underline"
-                    >
-                      {catalogueItems.length === 0 ? "No service types yet — create one →" : "Can't find it? Manage service types →"}
-                    </a>
-                  </div>
+                  <label className="text-xs font-medium text-[var(--color-muted)]">From Catalogue</label>
                   <select
                     value={li.catalogueId}
                     onChange={(e) => selectCatalogue(li.id, e.target.value)}
                     className={inp + " cursor-pointer"}
                   >
-                    <option value="">— Select a service type —</option>
-                    {catalogueItems.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name} — {fmt(item.amountExGst)}
-                      </option>
-                    ))}
+                    <option value="">— Select from catalogue —</option>
+                    {catalogueItems.length > 0 && (
+                      <optgroup label="Services">
+                        {catalogueItems.map((item) => (
+                          <option key={item.id} value={`s:${item.id}`}>
+                            {item.name} — {fmt(item.amountExGst)}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {products.length > 0 && (
+                      <optgroup label="Products">
+                        {products.map((p) => (
+                          <option key={p.id} value={`p:${p.id}`}>
+                            {p.name} — {fmt(p.defaultPrice)} / {p.unit}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                     <option value="">Custom (type manually below)</option>
                   </select>
                 </div>

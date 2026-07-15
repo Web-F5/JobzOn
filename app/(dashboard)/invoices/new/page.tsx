@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function NewInvoicePage() {
   const { userId } = await auth();
 
-  const [clients, catalogueItems, quotes, settings] = await Promise.all([
+  const [clients, catalogueItems, products, quotes, settings] = await Promise.all([
     prisma.client.findMany({
       where: { userId: userId ?? "" },
       select: { id: true, name: true },
@@ -20,6 +20,11 @@ export default async function NewInvoicePage() {
       where: { userId: userId ?? "", active: true },
       orderBy: [{ type: "asc" }, { name: "asc" }],
       select: { id: true, name: true, description: true, amountExGst: true },
+    }),
+    prisma.product.findMany({
+      where: { userId: userId ?? "", active: true },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, description: true, unit: true, defaultPrice: true },
     }),
     // Only accepted/ready quotes that haven't been invoiced yet
     prisma.quote.findMany({
@@ -55,6 +60,7 @@ export default async function NewInvoicePage() {
           <NewInvoiceForm
             clients={clients}
             catalogueItems={catalogueItems}
+            products={products}
             quotes={quotes}
             defaultTermsDays={settings?.paymentTermsDays ?? 14}
           />
