@@ -7,6 +7,7 @@ import { TopBar }          from "@/components/nav/TopBar";
 import { formatAUD }       from "@/lib/gst";
 import { formatDate }      from "@/lib/dates";
 import { QuoteRowActions } from "@/components/quotes/QuoteRowActions";
+import { SpinningBorderButton } from "@/components/ui/SpinningBorderButton";
 
 export const metadata: Metadata = { title: "Quotes" };
 export const dynamic = "force-dynamic";
@@ -54,11 +55,18 @@ export default async function QuotesPage({
   const activeStatus = (status?.toUpperCase() ?? "ALL") as QuoteStatus | "ALL";
   const { userId } = await auth();
 
-  const quotes = await prisma.quote.findMany({
-    where: activeStatus === "ALL" ? { userId: userId ?? "" } : { userId: userId ?? "", status: activeStatus as QuoteStatus },
-    include: { client: { select: { name: true } } },
-    orderBy: { createdAt: "desc" },
-  });
+  const [quotes, clientCount, catalogueCount, productCount] = await Promise.all([
+    prisma.quote.findMany({
+      where: activeStatus === "ALL" ? { userId: userId ?? "" } : { userId: userId ?? "", status: activeStatus as QuoteStatus },
+      include: { client: { select: { name: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.client.count({ where: { userId: userId ?? "" } }),
+    prisma.serviceCatalogueItem.count({ where: { userId: userId ?? "", active: true } }),
+    prisma.product.count({ where: { userId: userId ?? "", active: true } }),
+  ]);
+
+  const hasCatalogue = catalogueCount > 0 || productCount > 0;
 
   return (
     <>
@@ -98,11 +106,34 @@ export default async function QuotesPage({
         {/* Table */}
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">
           {quotes.length === 0 ? (
-            <div className="px-6 py-16 text-center">
-              <p className="text-[var(--color-muted)] text-sm mb-3">No quotes yet</p>
-              <Link href="/quotes/new" className="text-sm text-[var(--color-brand)] hover:underline font-medium">
-                Create your first quote →
-              </Link>
+            <div className="px-6 py-16 text-center space-y-4">
+              {!hasCatalogue ? (
+                <>
+                  <p className="text-[var(--color-muted)] text-sm">Please add a Service or Product before creating a Quote.</p>
+                  <div className="flex items-center justify-center gap-4 flex-wrap">
+                    <SpinningBorderButton href="/services">+ Add your first Service</SpinningBorderButton>
+                    <span className="text-[var(--color-muted)] text-sm font-medium">OR</span>
+                    <SpinningBorderButton href="/products">+ Add your first Product</SpinningBorderButton>
+                  </div>
+                </>
+              ) : clientCount === 0 ? (
+                <>
+                  <p className="text-[var(--color-muted)] text-sm">Please add a Client before creating a Quote.</p>
+                  <SpinningBorderButton href="/clients?action=add">+ Add your first Client</SpinningBorderButton>
+                </>
+              ) : (
+                <>
+                  <p className="text-[var(--color-muted)] text-sm">No quotes created yet</p>
+                  <div className="flex justify-center">
+                    <SpinningBorderButton href="/quotes/new">
+                      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                      </svg>
+                      Create Your First Quote
+                    </SpinningBorderButton>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">

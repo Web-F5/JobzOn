@@ -8,6 +8,7 @@ import { formatAUD } from "@/lib/gst";
 import { formatDate } from "@/lib/dates";
 import { MarkPaidButton } from "@/components/invoices/MarkPaidButton";
 import { SendSmsButton } from "@/components/invoices/SendSmsButton";
+import { SpinningBorderButton } from "@/components/ui/SpinningBorderButton";
 
 export const metadata: Metadata = { title: "Invoices" };
 export const dynamic = "force-dynamic";
@@ -32,19 +33,26 @@ export default async function InvoicesPage({
   const activeStatus = (status?.toUpperCase() ?? "ALL") as InvoiceStatus | "ALL";
   const { userId } = await auth();
 
-  const invoices = await prisma.invoice.findMany({
-    where: activeStatus === "ALL" ? { userId: userId ?? "" } : { userId: userId ?? "", status: activeStatus as InvoiceStatus },
-    include: {
-      client: {
-        select: {
-          name:       true,
-          smsEnabled: true,
-          phone:      true,
+  const [invoices, clientCount, catalogueCount, productCount] = await Promise.all([
+    prisma.invoice.findMany({
+      where: activeStatus === "ALL" ? { userId: userId ?? "" } : { userId: userId ?? "", status: activeStatus as InvoiceStatus },
+      include: {
+        client: {
+          select: {
+            name:       true,
+            smsEnabled: true,
+            phone:      true,
+          },
         },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.client.count({ where: { userId: userId ?? "" } }),
+    prisma.serviceCatalogueItem.count({ where: { userId: userId ?? "", active: true } }),
+    prisma.product.count({ where: { userId: userId ?? "", active: true } }),
+  ]);
+
+  const hasCatalogue = catalogueCount > 0 || productCount > 0;
 
   return (
     <>
@@ -84,9 +92,35 @@ export default async function InvoicesPage({
         {/* Table */}
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">
           {invoices.length === 0 ? (
-            <p className="px-6 py-12 text-sm text-center text-[var(--color-muted)]">
-              No invoices found
-            </p>
+            <div className="px-6 py-16 text-center space-y-4">
+              {!hasCatalogue ? (
+                <>
+                  <p className="text-[var(--color-muted)] text-sm">Please add a Service or Product before creating an Invoice.</p>
+                  <div className="flex items-center justify-center gap-4 flex-wrap">
+                    <SpinningBorderButton href="/services">+ Add your first Service</SpinningBorderButton>
+                    <span className="text-[var(--color-muted)] text-sm font-medium">OR</span>
+                    <SpinningBorderButton href="/products">+ Add your first Product</SpinningBorderButton>
+                  </div>
+                </>
+              ) : clientCount === 0 ? (
+                <>
+                  <p className="text-[var(--color-muted)] text-sm">Please add a Client before creating an Invoice.</p>
+                  <SpinningBorderButton href="/clients?action=add">+ Add your first Client</SpinningBorderButton>
+                </>
+              ) : (
+                <>
+                  <p className="text-[var(--color-muted)] text-sm">No invoices created yet</p>
+                  <div className="flex justify-center">
+                    <SpinningBorderButton href="/invoices/new">
+                      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Create Your First Invoice
+                    </SpinningBorderButton>
+                  </div>
+                </>
+              )}
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">

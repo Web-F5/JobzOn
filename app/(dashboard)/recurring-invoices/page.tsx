@@ -37,7 +37,7 @@ export default async function RecurringInvoicesPage({
   const autoAdd = action === "add";
   const { userId } = await auth();
 
-  const [services, clients, catalogueItems, quotesCount] = await Promise.all([
+  const [services, clients, catalogueItems, quotesCount, productCount] = await Promise.all([
     prisma.service.findMany({
       where: { userId: userId ?? "", active: true },
       include: { client: true },
@@ -53,7 +53,10 @@ export default async function RecurringInvoicesPage({
       orderBy: [{ type: "asc" }, { name: "asc" }],
     }),
     prisma.quote.count({ where: { userId: userId ?? "" } }),
+    prisma.product.count({ where: { userId: userId ?? "", active: true } }),
   ]);
+
+  const hasCatalogue = catalogueItems.length > 0 || productCount > 0;
 
   return (
     <>
@@ -61,7 +64,7 @@ export default async function RecurringInvoicesPage({
         title="Recurring Invoices"
         description="Client services that generate invoices automatically on renewal"
         actions={
-          clients.length > 0 && catalogueItems.length > 0
+          clients.length > 0 && hasCatalogue
             ? <AddServiceButton clients={clients} catalogueItems={catalogueItems} defaultOpen={autoAdd} />
             : null
         }
@@ -91,25 +94,29 @@ export default async function RecurringInvoicesPage({
                 {services.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-5 py-12 text-center">
-                      {catalogueItems.length === 0 ? (
-                        <>
-                          <p className="text-sm text-[var(--color-muted)] mb-4">No services defined yet. Add a service first:</p>
-                          <div className="flex justify-center"><SpinningAddButton /></div>
-                        </>
-                      ) : clients.length === 0 ? (
-                        <>
-                          <p className="text-sm text-[var(--color-muted)] mb-4">No clients yet. Add a client first:</p>
-                          <div className="flex justify-center">
-                            <SpinningBorderButton href="/clients?action=add">+ Add Client</SpinningBorderButton>
+                      {!hasCatalogue ? (
+                        <div className="space-y-4">
+                          <p className="text-sm text-[var(--color-muted)]">Please add a Service or Product before creating a Recurring Invoice.</p>
+                          <div className="flex items-center justify-center gap-4 flex-wrap">
+                            <SpinningBorderButton href="/services">+ Add your first Service</SpinningBorderButton>
+                            <span className="text-[var(--color-muted)] text-sm font-medium">OR</span>
+                            <SpinningBorderButton href="/products">+ Add your first Product</SpinningBorderButton>
                           </div>
-                        </>
+                        </div>
+                      ) : clients.length === 0 ? (
+                        <div className="space-y-4">
+                          <p className="text-sm text-[var(--color-muted)]">Please add a Client before creating a Recurring Invoice.</p>
+                          <div className="flex justify-center">
+                            <SpinningBorderButton href="/clients?action=add">+ Add your first Client</SpinningBorderButton>
+                          </div>
+                        </div>
                       ) : (
-                        <>
-                          <p className="text-sm text-[var(--color-muted)] mb-4">No recurring invoices set up yet.</p>
+                        <div className="space-y-4">
+                          <p className="text-sm text-[var(--color-muted)]">No recurring invoices set up yet.</p>
                           <div className="flex justify-center">
                             <AddServiceButton clients={clients} catalogueItems={catalogueItems} spinning variant="orange" />
                           </div>
-                        </>
+                        </div>
                       )}
                     </td>
                   </tr>
