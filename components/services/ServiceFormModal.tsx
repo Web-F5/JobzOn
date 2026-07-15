@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/Button";
 import { SpinningBorderButton } from "@/components/ui/SpinningBorderButton";
 import type { Client, Service, ServiceCatalogueItem } from "@prisma/client";
 
-const LinkIcon = () => (
+const RecurringIcon = () => (
   <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
   </svg>
 );
 
@@ -20,7 +20,7 @@ export function AddServiceButton({
   defaultOpen = false,
   spinning = false,
   variant = "orange",
-  label = "Link Service to Client",
+  label = "Setup a Recurring Invoice",
 }: {
   clients: Pick<Client, "id" | "name">[];
   catalogueItems: Pick<ServiceCatalogueItem, "id" | "name" | "description" | "amountExGst" | "type">[];
@@ -35,14 +35,14 @@ export function AddServiceButton({
     <>
       {spinning ? (
         <SpinningBorderButton onClick={() => setOpen(true)} variant={variant}>
-          <LinkIcon /> {label}
+          <RecurringIcon /> {label}
         </SpinningBorderButton>
       ) : (
         <Button onClick={() => setOpen(true)}>
-          <LinkIcon /> {label}
+          <RecurringIcon /> {label}
         </Button>
       )}
-      <Modal title="Link Service to Client" open={open} onClose={() => setOpen(false)}>
+      <Modal title="Setup a Recurring Invoice" open={open} onClose={() => setOpen(false)}>
         <ServiceForm
           clients={clients}
           catalogueItems={catalogueItems}

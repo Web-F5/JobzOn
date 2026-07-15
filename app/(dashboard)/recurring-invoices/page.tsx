@@ -107,7 +107,7 @@ export default async function RecurringInvoicesPage({
                         <>
                           <p className="text-sm text-[var(--color-muted)] mb-4">No recurring invoices set up yet.</p>
                           <div className="flex justify-center">
-                            <AddServiceButton clients={clients} catalogueItems={catalogueItems} spinning />
+                            <AddServiceButton clients={clients} catalogueItems={catalogueItems} spinning variant="orange" />
                           </div>
                         </>
                       )}
