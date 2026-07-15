@@ -79,7 +79,7 @@ export default async function ClientsPage({
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
                           <EditClientButton client={client} />
-                          <a href={`/services?clientId=${client.id}`} className="text-[var(--color-muted)] hover:underline text-xs">
+                          <a href={`/recurring-invoices?clientId=${client.id}`} className="text-[var(--color-muted)] hover:underline text-xs">
                             Services
                           </a>
                         </div>

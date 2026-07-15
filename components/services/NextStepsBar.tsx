@@ -53,7 +53,7 @@ export function CatalogueNextStepsBar({
       <div className="flex items-center gap-3 flex-wrap">
 
         {/* Add Service Type — always green here (bar only shows when catalogueItems > 0) */}
-        <AddCatalogueItemButton spinning variant="green" label="+ Add Another Service Type" />
+        <AddCatalogueItemButton spinning variant="green" label="+ Add Another Service" />
 
         <Or />
 
@@ -71,7 +71,7 @@ export function CatalogueNextStepsBar({
               catalogueItems={catalogueItems}
               spinning
               variant={hasServices ? "green" : "orange"}
-              label="Link a Service to a Client"
+              label="+ Add Recurring Invoice"
             />
           </>
         )}
@@ -100,7 +100,7 @@ export function CatalogueNextStepsBar({
   );
 }
 
-// Shown on "Link a Service to a Client" tab
+// Shown on "+ Add Recurring Invoice" tab
 export function ClientServicesNextStepsBar({
   clients,
   catalogueItems,
@@ -118,7 +118,7 @@ export function ClientServicesNextStepsBar({
     <div className="flex items-center gap-3 px-4 py-2.5 bg-blue-50 border border-blue-100 rounded-xl text-sm text-blue-700">
       <span className="font-medium shrink-0">{label}</span>
       <div className="flex items-center gap-3 flex-wrap">
-        <AddServiceButton clients={clients} catalogueItems={catalogueItems} spinning variant="green" label="Link a Service to a Client" />
+        <AddServiceButton clients={clients} catalogueItems={catalogueItems} spinning variant="green" label="+ Add Recurring Invoice" />
         <Or />
         <SpinningBorderButton href="/quotes/new" variant={hasQuotes ? "green" : "orange"}>
           <DocIcon /> {hasQuotes ? "Create Another Quote" : "Create Quote"}

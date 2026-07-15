@@ -17,7 +17,7 @@ import { SpinningBorderButton } from "@/components/ui/SpinningBorderButton";
 export function AddCatalogueItemButton({
   spinning = false,
   variant = "orange",
-  label = "+ Add Service Type",
+  label = "+ Add Service",
 }: {
   spinning?: boolean;
   variant?: "orange" | "green";
@@ -37,14 +37,14 @@ export function AddCatalogueItemButton({
           onClick={() => setOpen(true)}
           className="px-4 py-2 bg-[var(--color-brand)] hover:bg-orange-500 text-white text-sm font-medium rounded-lg transition-colors"
         >
-          + Add Service Type
+          + Add Service
         </button>
       )}
 
       <dialog ref={ref} onClose={() => setOpen(false)} className="rounded-xl shadow-2xl border-0 p-0 w-full max-w-md backdrop:bg-black/40">
         <div className="p-6">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-semibold text-[var(--color-text)]">New Service Type</h2>
+            <h2 className="text-lg font-semibold text-[var(--color-text)]">New Service</h2>
             <button onClick={() => setOpen(false)} className="text-[var(--color-muted)] hover:text-[var(--color-text)] text-xl leading-none">×</button>
           </div>
           <CatalogueItemForm onSuccess={() => setOpen(false)} onCancel={() => setOpen(false)} />
@@ -88,7 +88,7 @@ export function EditCatalogueItemButton({ item }: { item: CatalogueItem }) {
       <dialog ref={ref} onClose={() => setOpen(false)} className="rounded-xl shadow-2xl border-0 p-0 w-full max-w-md backdrop:bg-black/40">
         <div className="p-6">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-semibold text-[var(--color-text)]">Edit Service Type</h2>
+            <h2 className="text-lg font-semibold text-[var(--color-text)]">Edit Service</h2>
             <button onClick={() => setOpen(false)} className="text-[var(--color-muted)] hover:text-[var(--color-text)] text-xl leading-none">×</button>
           </div>
           <CatalogueItemForm item={item} onSuccess={() => setOpen(false)} onCancel={() => setOpen(false)} />
@@ -135,7 +135,7 @@ function CatalogueItemForm({
       )}
 
       <FormField
-        label="Service Type Name"
+        label="Service Name"
         name="name"
         required
         defaultValue={item?.name ?? ""}
@@ -184,7 +184,7 @@ function CatalogueItemForm({
 
       <div className="flex justify-end gap-3 pt-2 border-t border-[var(--color-border)]">
         <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
-        <SubmitButton>{isEdit ? "Save Changes" : "Create Service Type"}</SubmitButton>
+        <SubmitButton>{isEdit ? "Save Changes" : "Create Service"}</SubmitButton>
       </div>
     </form>
   );

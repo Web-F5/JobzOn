@@ -20,13 +20,13 @@ export function SpinningAddButton() {
   return (
     <>
       {/* Spinning-border trigger button */}
-      <SpinningBorderButton onClick={() => setOpen(true)}>+ Add Service Type</SpinningBorderButton>
+      <SpinningBorderButton onClick={() => setOpen(true)}>+ Add Service</SpinningBorderButton>
 
       {/* Modal */}
       <dialog ref={ref} onClose={() => setOpen(false)} className="rounded-xl shadow-2xl border-0 p-0 w-full max-w-md backdrop:bg-black/40">
         <div className="p-6">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-semibold text-[var(--color-text)]">New Service Type</h2>
+            <h2 className="text-lg font-semibold text-[var(--color-text)]">New Service</h2>
             <button onClick={() => setOpen(false)} className="text-[var(--color-muted)] hover:text-[var(--color-text)] text-xl leading-none">×</button>
           </div>
 
@@ -37,12 +37,12 @@ export function SpinningAddButton() {
           )}
 
           <form action={formAction} className="flex flex-col gap-4">
-            <FormField label="Service Type Name" name="name" required placeholder="e.g. Shared Hosting, WordPress Maintenance" />
+            <FormField label="Service Name" name="name" required placeholder="e.g. Shared Hosting, WordPress Maintenance" />
             <FormField label="Default Price (ex. GST)" name="amountExGst" type="text" inputMode="decimal" required placeholder="120.00" hint="Can be overridden per invoice" />
             <FormField label="Description" name="description" placeholder="Optional internal description" />
             <div className="flex justify-end gap-3 pt-2 border-t border-[var(--color-border)]">
               <Button type="button" variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
-              <SubmitButton>Create Service Type</SubmitButton>
+              <SubmitButton>Create Service</SubmitButton>
             </div>
           </form>
         </div>

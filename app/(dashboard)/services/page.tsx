@@ -3,212 +3,97 @@ import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { TopBar } from "@/components/nav/TopBar";
 import { formatAUD } from "@/lib/gst";
-import { formatDate, isWithinDays, isPast } from "@/lib/dates";
-import { AddServiceButton, EditServiceButton } from "@/components/services/ServiceFormModal";
-import { ManualInvoiceButton } from "@/components/invoices/ManualInvoiceButton";
 import { AddCatalogueItemButton, EditCatalogueItemButton } from "@/components/catalogue/CatalogueFormModal";
 import { SpinningAddButton } from "@/components/catalogue/SpinningAddButton";
-import { ServiceTabSwitcher } from "@/components/services/ServiceTabSwitcher";
-import { CatalogueNextStepsBar, ClientServicesNextStepsBar } from "@/components/services/NextStepsBar";
+import { CatalogueNextStepsBar } from "@/components/services/NextStepsBar";
 
-export const metadata: Metadata = { title: "Services & Renewals" };
+export const metadata: Metadata = { title: "Services" };
 export const dynamic = "force-dynamic";
 
-const SERVICE_TYPE_LABEL: Record<string, string> = {
-  DOMAIN: "Domain", HOSTING: "Hosting", SSL: "SSL Certificate", OTHER: "Other",
-};
-
-function RenewalBadge({ renewalDate }: { renewalDate: Date | null }) {
-  if (!renewalDate) return null;
-  if (isPast(renewalDate))
-    return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Overdue</span>;
-  if (isWithinDays(renewalDate, 30))
-    return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">Due soon</span>;
-  if (isWithinDays(renewalDate, 60))
-    return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Upcoming</span>;
-  return null;
-}
-
-export default async function ServicesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ tab?: string; action?: string }>;
-}) {
-  const { tab = "catalogue", action } = await searchParams;
-  const autoAdd = action === "add";
+export default async function ServicesPage() {
   const { userId } = await auth();
 
-  const [services, clients, catalogueItems, quotesCount] = await Promise.all([
-    prisma.service.findMany({
-      where: { userId: userId ?? "", active: true },
-      include: { client: true },
-      orderBy: [{ renewalDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
+  const [catalogueItems, clients, servicesCount, quotesCount] = await Promise.all([
+    prisma.serviceCatalogueItem.findMany({
+      where: { userId: userId ?? "" },
+      orderBy: [{ type: "asc" }, { name: "asc" }],
     }),
     prisma.client.findMany({
       where: { userId: userId ?? "" },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
-    prisma.serviceCatalogueItem.findMany({
-      where: { userId: userId ?? "" },
-      orderBy: [{ type: "asc" }, { name: "asc" }],
-    }),
+    prisma.service.count({ where: { userId: userId ?? "", active: true } }),
     prisma.quote.count({ where: { userId: userId ?? "" } }),
   ]);
-
-  const isClientTab = tab === "client";
-
-  const topBarActions = isClientTab
-    ? <AddServiceButton clients={clients} catalogueItems={catalogueItems} defaultOpen={autoAdd} />
-    : catalogueItems.length > 0 ? <AddCatalogueItemButton /> : null;
 
   return (
     <>
       <TopBar
-        title="Services & Renewals"
-        description={isClientTab
-          ? "All active client services sorted by renewal date"
-          : "Define reusable service types that can be assigned to clients"}
-        actions={topBarActions}
+        title="Services"
+        description="Define reusable services that can be added to quotes, invoices and recurring billing"
+        actions={catalogueItems.length > 0 ? <AddCatalogueItemButton /> : null}
       />
 
       <main className="flex-1 p-6 space-y-5">
-        <div className="flex items-center gap-4 flex-wrap">
-          <ServiceTabSwitcher active={isClientTab ? "client" : "catalogue"} />
-          {!isClientTab && catalogueItems.length > 0 && (
-            <CatalogueNextStepsBar clients={clients} catalogueItems={catalogueItems} servicesCount={services.length} quotesCount={quotesCount} />
-          )}
-          {isClientTab && services.length > 0 && (
-            <ClientServicesNextStepsBar clients={clients} catalogueItems={catalogueItems} quotesCount={quotesCount} />
-          )}
-        </div>
 
-        {isClientTab ? (
-          /* ── Client Services tab ─────────────────────────────────── */
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs text-[var(--color-muted)] border-b border-[var(--color-border)] bg-slate-50">
-                    <th className="px-5 py-3 font-medium">Client</th>
-                    <th className="px-5 py-3 font-medium">Description</th>
-                    <th className="px-5 py-3 font-medium">Type</th>
-                    <th className="px-5 py-3 font-medium">Renewal Date</th>
-                    <th className="px-5 py-3 font-medium text-right">Amount (inc. GST)</th>
-                    <th className="px-5 py-3 font-medium">Status</th>
-                    <th className="px-5 py-3 font-medium">Actions</th>
+        {catalogueItems.length > 0 && (
+          <CatalogueNextStepsBar
+            clients={clients}
+            catalogueItems={catalogueItems}
+            servicesCount={servicesCount}
+            quotesCount={quotesCount}
+          />
+        )}
+
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs text-[var(--color-muted)] border-b border-[var(--color-border)] bg-slate-50">
+                  <th className="px-5 py-3 font-medium">Service Name</th>
+                  <th className="px-5 py-3 font-medium">Description</th>
+                  <th className="px-5 py-3 font-medium text-right">Default Price (ex. GST)</th>
+                  <th className="px-5 py-3 font-medium">Status</th>
+                  <th className="px-5 py-3 font-medium"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--color-border)]">
+                {catalogueItems.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-5 py-14 text-center">
+                      <p className="text-sm text-[var(--color-muted)] mb-5">No services yet — add your first service to get started.</p>
+                      <div className="flex justify-center">
+                        <SpinningAddButton />
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--color-border)]">
-                  {services.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="px-5 py-12 text-center">
-                        {catalogueItems.length === 0 ? (
-                          <>
-                            <p className="text-sm text-[var(--color-muted)] mb-4">No Service Types have been added yet. Start here:</p>
-                            <div className="flex justify-center"><SpinningAddButton /></div>
-                          </>
-                        ) : clients.length === 0 ? (
-                          <>
-                            <p className="text-sm text-[var(--color-muted)] mb-4">No Clients have been added yet. Start here:</p>
-                            <div className="flex justify-center">
-                              <a href="/clients?action=add" className="group relative inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-orange-600 hover:text-white bg-white rounded-lg overflow-hidden transition-colors">
-                                <span aria-hidden className="pointer-events-none absolute w-[200%] h-[200%] -top-1/2 -left-1/2" style={{ background: "conic-gradient(from 0deg, transparent 60%, #f97316 80%, transparent 100%)", animation: "border-spin 2.5s linear infinite" }} />
-                                <span aria-hidden className="pointer-events-none absolute inset-[2px] rounded-[6px] bg-white group-hover:bg-orange-500 transition-colors" />
-                                <span className="relative">+ Add Client</span>
-                              </a>
-                            </div>
-                          </>
+                ) : (
+                  catalogueItems.map((item: typeof catalogueItems[number]) => (
+                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-5 py-3 font-medium text-[var(--color-text)]">{item.name}</td>
+                      <td className="px-5 py-3 text-[var(--color-muted)]">{item.description ?? "—"}</td>
+                      <td className="px-5 py-3 text-right font-semibold text-[var(--color-text)]">
+                        {formatAUD(item.amountExGst)}
+                      </td>
+                      <td className="px-5 py-3">
+                        {item.active ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Active</span>
                         ) : (
-                          <>
-                            <p className="text-sm text-[var(--color-muted)] mb-4">No clients linked to services yet.</p>
-                            <div className="flex justify-center"><AddServiceButton clients={clients} catalogueItems={catalogueItems} spinning /></div>
-                          </>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500">Inactive</span>
                         )}
                       </td>
-                    </tr>
-                  ) : (
-                    services.map((svc: typeof services[number]) => (
-                      <tr key={svc.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-5 py-3 font-medium text-[var(--color-text)]">{svc.client.name}</td>
-                        <td className="px-5 py-3 text-[var(--color-muted)]">{svc.description}</td>
-                        <td className="px-5 py-3">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600">
-                            {SERVICE_TYPE_LABEL[svc.type] ?? svc.type}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3 text-[var(--color-muted)]">
-                          {svc.renewalDate ? formatDate(svc.renewalDate) : <span className="text-slate-300">Once-off</span>}
-                        </td>
-                        <td className="px-5 py-3 text-right font-semibold text-[var(--color-text)]">
-                          {formatAUD(svc.amountExGst * 1.1)}
-                        </td>
-                        <td className="px-5 py-3">
-                          {svc.renewalDate && <RenewalBadge renewalDate={svc.renewalDate} />}
-                        </td>
-                        <td className="px-5 py-3">
-                          <div className="flex items-center gap-3">
-                            <EditServiceButton service={svc} clients={clients} catalogueItems={catalogueItems} />
-                            <ManualInvoiceButton serviceId={svc.id} />
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ) : (
-          /* ── Service Types (Catalogue) tab ───────────────────────── */
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs text-[var(--color-muted)] border-b border-[var(--color-border)] bg-slate-50">
-                    <th className="px-5 py-3 font-medium">Service Type Name</th>
-                    <th className="px-5 py-3 font-medium">Description</th>
-                    <th className="px-5 py-3 font-medium text-right">Default Price (ex. GST)</th>
-                    <th className="px-5 py-3 font-medium">Status</th>
-                    <th className="px-5 py-3 font-medium"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--color-border)]">
-                  {catalogueItems.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-5 py-14 text-center">
-                        <p className="text-sm text-[var(--color-muted)] mb-5">No service types yet.</p>
-                        <div className="flex justify-center">
-                          <SpinningAddButton />
-                        </div>
+                      <td className="px-5 py-3">
+                        <EditCatalogueItemButton item={item} />
                       </td>
                     </tr>
-                  ) : (
-                    catalogueItems.map((item: typeof catalogueItems[number]) => (
-                      <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-5 py-3 font-medium text-[var(--color-text)]">{item.name}</td>
-                        <td className="px-5 py-3 text-[var(--color-muted)]">{item.description ?? "—"}</td>
-                        <td className="px-5 py-3 text-right font-semibold text-[var(--color-text)]">
-                          {formatAUD(item.amountExGst)}
-                        </td>
-                        <td className="px-5 py-3">
-                          {item.active ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Active</span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500">Inactive</span>
-                          )}
-                        </td>
-                        <td className="px-5 py-3">
-                          <EditCatalogueItemButton item={item} />
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        )}
+        </div>
+
       </main>
     </>
   );
