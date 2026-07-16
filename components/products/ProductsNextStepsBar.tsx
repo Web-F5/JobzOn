@@ -30,7 +30,7 @@ export function ProductsNextStepsBar({
   const hasQuotes  = quotesCount > 0;
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5 bg-[#334155] border-l-4 border-l-[#cbd5e1] rounded-xl text-sm text-white/60">
+    <div className="flex items-center gap-3 px-4 py-2.5 bg-[#334155] border-l-4 border-l-[#2563eb] rounded-xl text-sm text-white/60">
       <span className="font-medium shrink-0">Next steps:</span>
       <div className="flex items-center gap-3 flex-wrap">
 
