@@ -22,33 +22,24 @@ export function ClientsNextStepsBar({
   hasLinkedService: boolean;
   hasQuote: boolean;
 }) {
-  const buttonCount = 1 + 1 + (hasLinkedService ? 1 : 0);
-  const label = buttonCount > 1 ? "Next steps:" : "Next step:";
-
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5 bg-blue-50 border border-blue-100 rounded-xl text-sm text-blue-700 mb-4">
-      <span className="font-medium shrink-0">{label}</span>
+    <div className="flex items-center gap-3 px-4 py-2.5 bg-[#111111] border border-white/10 rounded-xl text-sm text-white/60 mb-4">
+      <span className="font-medium shrink-0">Next steps:</span>
       <div className="flex items-center gap-3 flex-wrap">
 
-        {/* Add Another Client — always green here (bar only shows when clients.length > 0) */}
-        <AddClientButton spinning variant="green" label="+ Add Another Client" />
+        <AddClientButton spinning variant="green" label="+ Add Another Client" dark />
 
-        <span className="text-blue-500 font-semibold shrink-0">OR</span>
+        <span className="text-white/40 font-semibold shrink-0">OR</span>
 
-        {/* Setup a Recurring Invoice — green once a service is linked */}
-        <SpinningBorderButton
-          href="/recurring-invoices?action=add"
-          variant={hasLinkedService ? "green" : "orange"}
-        >
+        <SpinningBorderButton href="/recurring-invoices?action=add" variant={hasLinkedService ? "green" : "orange"} dark>
           <RecurringIcon />
           Setup a Recurring Invoice
         </SpinningBorderButton>
 
-        {/* Create Quote — appears once a service is linked */}
         {hasLinkedService && (
           <>
-            <span className="text-blue-500 font-semibold shrink-0">OR</span>
-            <SpinningBorderButton href="/quotes/new" variant={hasQuote ? "green" : "orange"}>
+            <span className="text-white/40 font-semibold shrink-0">OR</span>
+            <SpinningBorderButton href="/quotes/new" variant={hasQuote ? "green" : "orange"} dark>
               <DocIcon />
               {hasQuote ? "Create Another Quote" : "Create Quote"}
             </SpinningBorderButton>

@@ -93,28 +93,28 @@ export default async function RecurringInvoicesPage({
               <tbody className="divide-y divide-[var(--color-border)]">
                 {services.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-5 py-12 text-center">
+                    <td colSpan={7} className="px-5 py-12 text-center bg-[#111111]">
                       {!hasCatalogue ? (
                         <div className="space-y-4">
-                          <p className="text-base text-[var(--color-muted)]">Please add a Service or Product before creating a Recurring Invoice.</p>
+                          <p className="text-base text-white/60">Please add a Service or Product before creating a Recurring Invoice.</p>
                           <div className="flex items-center justify-center gap-4 flex-wrap">
-                            <SpinningBorderButton href="/services">+ Add your first Service</SpinningBorderButton>
-                            <span className="text-[var(--color-muted)] text-sm font-medium">OR</span>
-                            <SpinningBorderButton href="/products">+ Add your first Product</SpinningBorderButton>
+                            <SpinningBorderButton href="/services" dark>+ Add your first Service</SpinningBorderButton>
+                            <span className="text-white/40 text-sm font-medium">OR</span>
+                            <SpinningBorderButton href="/products" dark>+ Add your first Product</SpinningBorderButton>
                           </div>
                         </div>
                       ) : clients.length === 0 ? (
                         <div className="space-y-4">
-                          <p className="text-base text-[var(--color-muted)]">Please add a Client before creating a Recurring Invoice.</p>
+                          <p className="text-base text-white/60">Please add a Client before creating a Recurring Invoice.</p>
                           <div className="flex justify-center">
-                            <SpinningBorderButton href="/clients?action=add">+ Add your first Client</SpinningBorderButton>
+                            <SpinningBorderButton href="/clients?action=add" dark>+ Add your first Client</SpinningBorderButton>
                           </div>
                         </div>
                       ) : (
                         <div className="space-y-4">
-                          <p className="text-base text-[var(--color-muted)]">No recurring invoices set up yet.</p>
+                          <p className="text-base text-white/60">No recurring invoices set up yet.</p>
                           <div className="flex justify-center">
-                            <AddServiceButton clients={clients} catalogueItems={catalogueItems} spinning variant="orange" />
+                            <AddServiceButton clients={clients} catalogueItems={catalogueItems} spinning variant="orange" dark />
                           </div>
                         </div>
                       )}

@@ -18,10 +18,12 @@ export function AddCatalogueItemButton({
   spinning = false,
   variant = "orange",
   label = "+ Add Service",
+  dark = false,
 }: {
   spinning?: boolean;
   variant?: "orange" | "green";
   label?: string;
+  dark?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDialogElement>(null);
@@ -31,7 +33,7 @@ export function AddCatalogueItemButton({
   return (
     <>
       {spinning ? (
-        <SpinningBorderButton onClick={() => setOpen(true)} variant={variant}>{label}</SpinningBorderButton>
+        <SpinningBorderButton onClick={() => setOpen(true)} variant={variant} dark={dark}>{label}</SpinningBorderButton>
       ) : (
         <button
           onClick={() => setOpen(true)}

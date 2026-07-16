@@ -106,10 +106,12 @@ export function AddProductButton({
   spinning = false,
   variant = "orange",
   label,
+  dark = false,
 }: {
   spinning?: boolean;
   variant?: "orange" | "green";
   label?: string;
+  dark?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDialogElement>(null);
@@ -119,7 +121,7 @@ export function AddProductButton({
   return (
     <>
       {spinning ? (
-        <SpinningBorderButton onClick={() => setOpen(true)} variant={variant}>{label ?? "+ Add Product"}</SpinningBorderButton>
+        <SpinningBorderButton onClick={() => setOpen(true)} variant={variant} dark={dark}>{label ?? "+ Add Product"}</SpinningBorderButton>
       ) : (
         <button
           onClick={() => setOpen(true)}

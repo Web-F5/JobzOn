@@ -30,22 +30,22 @@ export function ProductsNextStepsBar({
   const hasQuotes  = quotesCount > 0;
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5 bg-blue-50 border border-blue-100 rounded-xl text-sm text-blue-700">
+    <div className="flex items-center gap-3 px-4 py-2.5 bg-[#111111] border border-white/10 rounded-xl text-sm text-white/60">
       <span className="font-medium shrink-0">Next steps:</span>
       <div className="flex items-center gap-3 flex-wrap">
 
-        <AddProductButton spinning variant="green" label="+ Add Another Product" />
+        <AddProductButton spinning variant="green" label="+ Add Another Product" dark />
 
         <Or />
 
-        <SpinningBorderButton href="/clients?action=add" variant={hasClients ? "green" : "orange"}>
+        <SpinningBorderButton href="/clients?action=add" variant={hasClients ? "green" : "orange"} dark>
           + {hasClients ? "Add Another Client" : "Add Client"}
         </SpinningBorderButton>
 
         {hasClients && (
           <>
             <Or />
-            <SpinningBorderButton href="/quotes/new" variant={hasQuotes ? "green" : "orange"}>
+            <SpinningBorderButton href="/quotes/new" variant={hasQuotes ? "green" : "orange"} dark>
               <DocIcon /> {hasQuotes ? "Create Another Quote" : "Create Quote"}
             </SpinningBorderButton>
           </>
@@ -54,7 +54,7 @@ export function ProductsNextStepsBar({
         {hasQuotes && (
           <>
             <Or />
-            <SpinningBorderButton href="/invoices/new" variant="orange">
+            <SpinningBorderButton href="/invoices/new" variant="orange" dark>
               <InvoiceIcon /> Create an Invoice
             </SpinningBorderButton>
           </>

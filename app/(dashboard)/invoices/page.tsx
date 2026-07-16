@@ -92,26 +92,26 @@ export default async function InvoicesPage({
         {/* Table */}
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">
           {invoices.length === 0 ? (
-            <div className="px-6 py-16 text-center space-y-4">
+            <div className="px-6 py-16 text-center space-y-4 bg-[#111111]">
               {!hasCatalogue ? (
                 <>
-                  <p className="text-[var(--color-muted)] text-base">Please add a Service or Product before creating an Invoice.</p>
+                  <p className="text-white/60 text-base">Please add a Service or Product before creating an Invoice.</p>
                   <div className="flex items-center justify-center gap-4 flex-wrap">
-                    <SpinningBorderButton href="/services">+ Add your first Service</SpinningBorderButton>
-                    <span className="text-[var(--color-muted)] text-sm font-medium">OR</span>
-                    <SpinningBorderButton href="/products">+ Add your first Product</SpinningBorderButton>
+                    <SpinningBorderButton href="/services" dark>+ Add your first Service</SpinningBorderButton>
+                    <span className="text-white/40 text-sm font-medium">OR</span>
+                    <SpinningBorderButton href="/products" dark>+ Add your first Product</SpinningBorderButton>
                   </div>
                 </>
               ) : clientCount === 0 ? (
                 <>
-                  <p className="text-[var(--color-muted)] text-base">Please add a Client before creating an Invoice.</p>
-                  <SpinningBorderButton href="/clients?action=add">+ Add your first Client</SpinningBorderButton>
+                  <p className="text-white/60 text-base">Please add a Client before creating an Invoice.</p>
+                  <SpinningBorderButton href="/clients?action=add" dark>+ Add your first Client</SpinningBorderButton>
                 </>
               ) : (
                 <>
-                  <p className="text-[var(--color-muted)] text-base">No invoices created yet</p>
+                  <p className="text-white/60 text-base">No invoices created yet</p>
                   <div className="flex justify-center">
-                    <SpinningBorderButton href="/invoices/new">
+                    <SpinningBorderButton href="/invoices/new" dark>
                       <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>

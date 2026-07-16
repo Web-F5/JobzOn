@@ -13,17 +13,19 @@ export function AddClientButton({
   defaultOpen = false,
   variant = "orange",
   label = "+ Add Client",
+  dark = false,
 }: {
   spinning?: boolean;
   defaultOpen?: boolean;
   variant?: "orange" | "green";
   label?: string;
+  dark?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <>
       {spinning ? (
-        <SpinningBorderButton onClick={() => setOpen(true)} variant={variant}>{label}</SpinningBorderButton>
+        <SpinningBorderButton onClick={() => setOpen(true)} variant={variant} dark={dark}>{label}</SpinningBorderButton>
       ) : (
         <Button onClick={() => setOpen(true)} className="hover:!bg-orange-500">{label}</Button>
       )}

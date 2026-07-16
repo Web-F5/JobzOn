@@ -106,6 +106,12 @@ export default async function DashboardPage() {
             <p className="text-white/60 text-xs font-medium tracking-[0.2em] uppercase">Welcome to</p>
             <img src="/Jobz-On.webp" alt="Jobzon" className="w-full max-h-28 object-contain" />
 
+            {!allDone && (
+              <p className="text-base text-white/60 max-w-md leading-relaxed">
+                Follow the <span className="text-orange-500 font-medium">orange</span> buttons for the next step to setting up your JobzOn workspace. Each time you complete a step the button will change to <span className="text-green-500 font-medium">green</span> and another <span className="text-orange-500 font-medium">orange</span> option will appear to show you what to do next.
+              </p>
+            )}
+
             <div className="flex items-center gap-3 flex-wrap justify-center text-base text-white/60 mt-1">
               {pressText && <span>{pressText}</span>}
 
@@ -128,12 +134,6 @@ export default async function DashboardPage() {
 
               {sideText && <span>{sideText}</span>}
             </div>
-
-            {!allDone && (
-              <p className="text-base text-white/60 max-w-md leading-relaxed">
-                Follow the orange buttons for the next step to setting up your JobzOn workspace. Each time you complete a step the button will change to green and another orange option will appear to show you what to do next.
-              </p>
-            )}
           </div>
         </div>
 

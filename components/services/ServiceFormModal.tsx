@@ -21,6 +21,7 @@ export function AddServiceButton({
   spinning = false,
   variant = "orange",
   label = "Setup a Recurring Invoice",
+  dark = false,
 }: {
   clients: Pick<Client, "id" | "name">[];
   catalogueItems: Pick<ServiceCatalogueItem, "id" | "name" | "description" | "amountExGst" | "type">[];
@@ -29,12 +30,13 @@ export function AddServiceButton({
   spinning?: boolean;
   variant?: "orange" | "green";
   label?: string;
+  dark?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <>
       {spinning ? (
-        <SpinningBorderButton onClick={() => setOpen(true)} variant={variant}>
+        <SpinningBorderButton onClick={() => setOpen(true)} variant={variant} dark={dark}>
           <RecurringIcon /> {label}
         </SpinningBorderButton>
       ) : (

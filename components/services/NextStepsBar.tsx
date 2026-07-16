@@ -24,8 +24,10 @@ const InvoiceIcon = () => (
 );
 
 function Or() {
-  return <span className="text-blue-500 font-semibold shrink-0">OR</span>;
+  return <span className="text-white/40 font-semibold shrink-0">OR</span>;
 }
+
+const darkBar = "flex items-center gap-3 px-4 py-2.5 bg-[#111111] border border-white/10 rounded-xl text-sm text-white/60";
 
 // Shown on Service Types tab — progressive state machine
 export function CatalogueNextStepsBar({
@@ -40,43 +42,37 @@ export function CatalogueNextStepsBar({
   quotesCount: number;
 }) {
   const hasClients  = clients.length > 0;
-  const hasServices = servicesCount > 0;
   const hasQuotes   = quotesCount > 0;
 
-  // Count number of action buttons to decide "Next step" vs "Next steps"
-  const buttonCount = 1 + (hasClients ? 1 : 0) + (hasClients ? 1 : 0) + (hasServices ? 1 : 0);
+  const buttonCount = 1 + 1 + (hasClients ? 1 : 0) + (hasQuotes ? 1 : 0);
   const label = buttonCount > 1 ? "Next steps:" : "Next step:";
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5 bg-blue-50 border border-blue-100 rounded-xl text-sm text-blue-700">
+    <div className={darkBar}>
       <span className="font-medium shrink-0">{label}</span>
       <div className="flex items-center gap-3 flex-wrap">
 
-        {/* Add Service Type — always green here (bar only shows when catalogueItems > 0) */}
-        <AddCatalogueItemButton spinning variant="green" label="+ Add Another Service" />
+        <AddCatalogueItemButton spinning variant="green" label="+ Add Another Service" dark />
 
         <Or />
 
-        {/* Add Client — orange until a client exists, then green */}
-        <SpinningBorderButton href="/clients?action=add" variant={hasClients ? "green" : "orange"}>
+        <SpinningBorderButton href="/clients?action=add" variant={hasClients ? "green" : "orange"} dark>
           + {hasClients ? "Add Another Client" : "Add Client"}
         </SpinningBorderButton>
 
-        {/* Create Quote — appears once we have a client */}
         {hasClients && (
           <>
             <Or />
-            <SpinningBorderButton href="/quotes/new" variant={hasQuotes ? "green" : "orange"}>
+            <SpinningBorderButton href="/quotes/new" variant={hasQuotes ? "green" : "orange"} dark>
               <DocIcon /> {hasQuotes ? "Create Another Quote" : "Create Quote"}
             </SpinningBorderButton>
           </>
         )}
 
-        {/* Create Invoice — orange, appears once a quote has been created */}
         {hasQuotes && (
           <>
             <Or />
-            <SpinningBorderButton href="/invoices/new" variant="orange">
+            <SpinningBorderButton href="/invoices/new" variant="orange" dark>
               <InvoiceIcon /> Create an Invoice
             </SpinningBorderButton>
           </>
@@ -86,7 +82,7 @@ export function CatalogueNextStepsBar({
   );
 }
 
-// Shown on "Setup a Recurring Invoice" tab
+// Shown on Recurring Invoices page
 export function ClientServicesNextStepsBar({
   clients,
   catalogueItems,
@@ -97,22 +93,20 @@ export function ClientServicesNextStepsBar({
   quotesCount: number;
 }) {
   const hasQuotes = quotesCount > 0;
-  const buttonCount = hasQuotes ? 3 : 2;
-  const label = buttonCount > 1 ? "Next steps:" : "Next step:";
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5 bg-blue-50 border border-blue-100 rounded-xl text-sm text-blue-700">
-      <span className="font-medium shrink-0">{label}</span>
+    <div className={darkBar}>
+      <span className="font-medium shrink-0">Next steps:</span>
       <div className="flex items-center gap-3 flex-wrap">
-        <AddServiceButton clients={clients} catalogueItems={catalogueItems} spinning variant="green" label="Setup a Recurring Invoice" />
+        <AddServiceButton clients={clients} catalogueItems={catalogueItems} spinning variant="green" label="Setup a Recurring Invoice" dark />
         <Or />
-        <SpinningBorderButton href="/quotes/new" variant={hasQuotes ? "green" : "orange"}>
+        <SpinningBorderButton href="/quotes/new" variant={hasQuotes ? "green" : "orange"} dark>
           <DocIcon /> {hasQuotes ? "Create Another Quote" : "Create Quote"}
         </SpinningBorderButton>
         {hasQuotes && (
           <>
             <Or />
-            <SpinningBorderButton href="/invoices/new" variant="orange">
+            <SpinningBorderButton href="/invoices/new" variant="orange" dark>
               <InvoiceIcon /> Create an Invoice
             </SpinningBorderButton>
           </>
