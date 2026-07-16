@@ -36,9 +36,9 @@ export default async function JobsPage() {
       <main className="flex-1 p-6">
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">
           {jobs.length === 0 ? (
-            <div className="px-6 py-16 text-center">
-              <p className="text-base text-[var(--color-muted)]">No jobs yet</p>
-              <p className="text-sm text-[var(--color-muted)] mt-1">
+            <div className="px-6 py-16 text-center space-y-2 bg-[#334155] border-l-4 border-l-[#2563eb]">
+              <p className="text-base text-white/70">No jobs yet</p>
+              <p className="text-sm text-white/50">
                 Jobs are automatically created when a quote is accepted
               </p>
             </div>
@@ -46,7 +46,7 @@ export default async function JobsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs text-[var(--color-muted)] border-b border-[var(--color-border)] bg-slate-50">
+                  <tr className="text-left text-xs text-[var(--color-muted)] border-b border-[var(--color-border)] bg-[#e2e8f0] border-l-4 border-l-[#2563eb]">
                     <th className="px-5 py-3 font-medium">Job #</th>
                     <th className="px-5 py-3 font-medium">Client</th>
                     <th className="px-5 py-3 font-medium">Title</th>
@@ -59,7 +59,7 @@ export default async function JobsPage() {
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border)]">
                   {jobsWithClients.map((job: typeof jobsWithClients[number]) => (
-                    <tr key={job.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={job.id} className="hover:bg-[#e2e8f0] transition-colors">
                       <td className="px-5 py-3 font-mono text-xs text-[var(--color-muted)]">
                         {job.jobNumber}
                       </td>
