@@ -106,7 +106,7 @@ export default async function QuotesPage({
         {/* Table */}
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">
           {quotes.length === 0 ? (
-            <div className="px-6 py-16 text-center space-y-4 bg-[#334155] border-2 border-[#334155] ring-2 ring-[#e2e8f0] ring-inset">
+            <div className="px-6 py-16 text-center space-y-4 bg-[#334155] border-l-4 border-l-[#cbd5e1]">
               {!hasCatalogue ? (
                 <>
                   <p className="text-white/60 text-base">Please add a Service or Product before creating a Quote.</p>

@@ -102,7 +102,7 @@ export default async function DashboardPage() {
       <main className="flex-1 p-6 space-y-6">
 
         {/* Setup wizard card */}
-        <div className="bg-[#334155] border-2 border-[#334155] ring-2 ring-[#e2e8f0] ring-inset rounded-xl shadow-sm px-6 py-5 text-center">
+        <div className="bg-[#334155] border-l-4 border-l-[#cbd5e1] rounded-xl shadow-sm px-6 py-5 text-center">
           {!allDone && (
             <p className="text-base text-white/60 max-w-2xl mx-auto leading-snug mb-3">
               Follow the <span className="text-orange-500 font-medium">orange</span> buttons for the next step to setting up your JobzOn workspace. Each time you complete a step the button will change to <span className="text-green-500 font-medium">green</span> and another <span className="text-orange-500 font-medium">orange</span> option will appear to show you what to do next.
