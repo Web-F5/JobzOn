@@ -1,7 +1,6 @@
 import { Metadata } from "next";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-import { TopBar } from "@/components/nav/TopBar";
 import { StatCard } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatAUD } from "@/lib/gst";
@@ -92,48 +91,45 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <TopBar
-        title="Dashboard"
-        description="Overview of your invoices, jobs, and renewals"
-      />
+      {/* Dark header with logo */}
+      <header className="flex items-center gap-4 px-6 py-3 bg-[#111111] border-b border-white/10 shrink-0">
+        <img src="/Jobz-On.webp" alt="Jobzon" className="h-10 object-contain" />
+        <div>
+          <h1 className="text-lg font-semibold text-white/90">Dashboard</h1>
+          <p className="text-sm text-white/50">Overview of your invoices, jobs, and renewals</p>
+        </div>
+      </header>
 
       <main className="flex-1 p-6 space-y-6">
 
-        {/* Setup wizard card — all on dark background */}
-        <div className="bg-[#1e293b] border border-white/10 rounded-xl shadow-sm overflow-hidden flex flex-col items-center text-center">
-
-          <div className="w-full flex flex-col items-center gap-3 px-6 py-5">
-            <p className="text-white/60 text-xs font-medium tracking-[0.2em] uppercase">Welcome to</p>
-            <img src="/Jobz-On.webp" alt="Jobzon" className="w-full max-h-28 object-contain" />
-
+        {/* Setup wizard card */}
+        <div className="bg-[#1e293b] border border-white/10 rounded-xl shadow-sm px-6 py-5">
+          <div className="flex flex-wrap items-center gap-3 text-base text-white/60">
             {!allDone && (
-              <p className="text-base text-white/60 max-w-md leading-relaxed">
+              <p className="w-full max-w-xl leading-relaxed text-white/60 mb-1">
                 Follow the <span className="text-orange-500 font-medium">orange</span> buttons for the next step to setting up your JobzOn workspace. Each time you complete a step the button will change to <span className="text-green-500 font-medium">green</span> and another <span className="text-orange-500 font-medium">orange</span> option will appear to show you what to do next.
               </p>
             )}
+            {pressText && <span>{pressText}</span>}
 
-            <div className="flex items-center gap-3 flex-wrap justify-center text-base text-white/60 mt-1">
-              {pressText && <span>{pressText}</span>}
+            {/* Setup button */}
+            <a
+              href="/services"
+              className={`group relative inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold ${btnText} hover:text-white bg-[#1e293b] rounded-lg overflow-hidden transition-colors`}
+            >
+              <span
+                aria-hidden
+                className="pointer-events-none absolute w-[200%] h-[200%] -top-1/2 -left-1/2"
+                style={{
+                  background: `conic-gradient(from 0deg, transparent 60%, ${btnColor} 80%, transparent 100%)`,
+                  animation: "border-spin 2.5s linear infinite",
+                }}
+              />
+              <span aria-hidden className={`pointer-events-none absolute inset-[2px] rounded-[6px] bg-[#1e293b] ${btnHover} transition-colors`} />
+              <span className="relative">{btnLabel}</span>
+            </a>
 
-              {/* Setup button */}
-              <a
-                href="/services"
-                className={`group relative inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold ${btnText} hover:text-white bg-[#1e293b] rounded-lg overflow-hidden transition-colors`}
-              >
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute w-[200%] h-[200%] -top-1/2 -left-1/2"
-                  style={{
-                    background: `conic-gradient(from 0deg, transparent 60%, ${btnColor} 80%, transparent 100%)`,
-                    animation: "border-spin 2.5s linear infinite",
-                  }}
-                />
-                <span aria-hidden className={`pointer-events-none absolute inset-[2px] rounded-[6px] bg-[#1e293b] ${btnHover} transition-colors`} />
-                <span className="relative">{btnLabel}</span>
-              </a>
-
-              {sideText && <span>{sideText}</span>}
-            </div>
+            {sideText && <span>{sideText}</span>}
           </div>
         </div>
 

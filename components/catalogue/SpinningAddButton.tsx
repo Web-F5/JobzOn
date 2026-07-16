@@ -8,7 +8,7 @@ import { FormField } from "@/components/ui/FormField";
 import { SubmitButton, Button } from "@/components/ui/Button";
 import { SpinningBorderButton } from "@/components/ui/SpinningBorderButton";
 
-export function SpinningAddButton() {
+export function SpinningAddButton({ dark }: { dark?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDialogElement>(null);
   const [state, formAction] = useActionState<CatalogueFormState, FormData>(createCatalogueItem, {});
@@ -20,7 +20,7 @@ export function SpinningAddButton() {
   return (
     <>
       {/* Spinning-border trigger button */}
-      <SpinningBorderButton onClick={() => setOpen(true)}>+ Add Service</SpinningBorderButton>
+      <SpinningBorderButton onClick={() => setOpen(true)} dark={dark}>+ Add your first Service</SpinningBorderButton>
 
       {/* Modal */}
       <dialog ref={ref} onClose={() => setOpen(false)} className="rounded-xl shadow-2xl border-0 p-0 w-full max-w-md backdrop:bg-black/40">

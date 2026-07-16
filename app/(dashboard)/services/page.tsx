@@ -61,10 +61,11 @@ export default async function ServicesPage() {
               <tbody className="divide-y divide-[var(--color-border)]">
                 {catalogueItems.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-5 py-14 text-center">
-                      <p className="text-sm text-[var(--color-muted)] mb-5">No services yet — add your first service to get started.</p>
-                      <div className="flex justify-center">
-                        <SpinningAddButton />
+                    <td colSpan={5} className="px-5 py-14 text-center bg-[#1e293b]">
+                      <div className="flex flex-wrap items-center justify-center gap-3 text-base text-white/60">
+                        <span>No services yet</span>
+                        <SpinningAddButton dark />
+                        <span>to get started.</span>
                       </div>
                     </td>
                   </tr>

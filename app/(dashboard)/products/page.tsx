@@ -51,12 +51,11 @@ export default async function ProductsPage() {
               <tbody className="divide-y divide-[var(--color-border)]">
                 {products.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-5 py-14 text-center">
-                      <p className="text-sm text-[var(--color-muted)] mb-5">
-                        No products yet — add your first product to get started.
-                      </p>
-                      <div className="flex justify-center">
-                        <AddProductButton spinning />
+                    <td colSpan={6} className="px-5 py-14 text-center bg-[#1e293b]">
+                      <div className="flex flex-wrap items-center justify-center gap-3 text-base text-white/60">
+                        <span>No products yet</span>
+                        <AddProductButton spinning dark label="+ Add your first Product" />
+                        <span>to get started.</span>
                       </div>
                     </td>
                   </tr>
