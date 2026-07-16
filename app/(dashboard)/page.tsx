@@ -100,7 +100,7 @@ export default async function DashboardPage() {
       <main className="flex-1 p-6 space-y-6">
 
         {/* Setup wizard card — all on dark background */}
-        <div className="bg-[#111111] border border-white/10 rounded-xl shadow-sm overflow-hidden flex flex-col items-center text-center">
+        <div className="bg-[#1e293b] border border-white/10 rounded-xl shadow-sm overflow-hidden flex flex-col items-center text-center">
 
           <div className="w-full flex flex-col items-center gap-3 px-6 py-5">
             <p className="text-white/60 text-xs font-medium tracking-[0.2em] uppercase">Welcome to</p>
@@ -118,7 +118,7 @@ export default async function DashboardPage() {
               {/* Setup button */}
               <a
                 href="/services"
-                className={`group relative inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold ${btnText} hover:text-white bg-[#111111] rounded-lg overflow-hidden transition-colors`}
+                className={`group relative inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold ${btnText} hover:text-white bg-[#1e293b] rounded-lg overflow-hidden transition-colors`}
               >
                 <span
                   aria-hidden
@@ -128,7 +128,7 @@ export default async function DashboardPage() {
                     animation: "border-spin 2.5s linear infinite",
                   }}
                 />
-                <span aria-hidden className={`pointer-events-none absolute inset-[2px] rounded-[6px] bg-[#111111] ${btnHover} transition-colors`} />
+                <span aria-hidden className={`pointer-events-none absolute inset-[2px] rounded-[6px] bg-[#1e293b] ${btnHover} transition-colors`} />
                 <span className="relative">{btnLabel}</span>
               </a>
 
