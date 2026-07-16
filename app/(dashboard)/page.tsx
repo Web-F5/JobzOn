@@ -92,7 +92,7 @@ export default async function DashboardPage() {
   return (
     <>
       {/* Dark header with logo */}
-      <header className="flex items-center gap-4 px-6 py-3 bg-[#111111] border-b border-white/10 shrink-0">
+      <header className="flex items-center gap-4 px-6 py-3 bg-[#1e293b] border-b border-white/10 shrink-0">
         <img src="/Jobz-On.webp" alt="Jobzon" className="h-10 object-contain" />
         <p className="text-base font-medium text-white/80">
           Dashboard <span className="text-white/40 font-normal">— Overview of your invoices, jobs, and renewals</span>
