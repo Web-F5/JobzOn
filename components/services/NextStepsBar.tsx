@@ -35,24 +35,35 @@ export function CatalogueNextStepsBar({
   catalogueItems,
   servicesCount,
   quotesCount,
+  productCount = 0,
+  hideProducts = false,
 }: {
   clients: Pick<Client, "id" | "name">[];
   catalogueItems: Pick<ServiceCatalogueItem, "id" | "name" | "description" | "amountExGst" | "type">[];
   servicesCount: number;
   quotesCount: number;
+  productCount?: number;
+  hideProducts?: boolean;
 }) {
   const hasClients  = clients.length > 0;
   const hasQuotes   = quotesCount > 0;
-
-  const buttonCount = 1 + 1 + (hasClients ? 1 : 0) + (hasQuotes ? 1 : 0);
-  const label = buttonCount > 1 ? "Next steps:" : "Next step:";
+  const hasProducts = productCount > 0;
 
   return (
     <div className={darkBar}>
-      <span className="font-medium shrink-0">{label}</span>
+      <span className="font-medium shrink-0">Next steps:</span>
       <div className="flex items-center gap-3 flex-wrap">
 
         <AddCatalogueItemButton spinning variant="green" label="+ Add Another Service" dark />
+
+        {!hideProducts && (
+          <>
+            <Or />
+            <SpinningBorderButton href="/products" variant={hasProducts ? "green" : "orange"} dark>
+              + {hasProducts ? "Add Another Product" : "Add your first Product"}
+            </SpinningBorderButton>
+          </>
+        )}
 
         <Or />
 

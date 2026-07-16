@@ -332,6 +332,8 @@ model BusinessSettings {
   bankAccountName String?
   paymentTermsDays Int?   @default(14)
 
+  hideProducts Boolean @default(false)
+
   updatedAt DateTime @updatedAt
 }
 

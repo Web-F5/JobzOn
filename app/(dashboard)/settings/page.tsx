@@ -3,6 +3,7 @@ import { TopBar } from "@/components/nav/TopBar";
 import { getBusinessSettings } from "@/lib/actions/settings";
 import { LogoUploadForm } from "@/components/settings/LogoUploadForm";
 import { BusinessDetailsForm } from "@/components/settings/BusinessDetailsForm";
+import { BusinessPreferencesForm } from "@/components/settings/BusinessPreferencesForm";
 
 export const metadata: Metadata = { title: "Settings" };
 export const dynamic = "force-dynamic";
@@ -44,6 +45,9 @@ export default async function SettingsPage() {
           </p>
           <LogoUploadForm currentLogoUrl={settings.logoUrl} />
         </section>
+
+        {/* Business preferences */}
+        <BusinessPreferencesForm hideProducts={settings.hideProducts} />
 
       </main>
     </>

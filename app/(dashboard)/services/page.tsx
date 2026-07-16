@@ -6,6 +6,7 @@ import { formatAUD } from "@/lib/gst";
 import { AddCatalogueItemButton, EditCatalogueItemButton } from "@/components/catalogue/CatalogueFormModal";
 import { SpinningAddButton } from "@/components/catalogue/SpinningAddButton";
 import { CatalogueNextStepsBar } from "@/components/services/NextStepsBar";
+import { getBusinessSettings } from "@/lib/actions/settings";
 
 export const metadata: Metadata = { title: "Services" };
 export const dynamic = "force-dynamic";
@@ -13,18 +14,22 @@ export const dynamic = "force-dynamic";
 export default async function ServicesPage() {
   const { userId } = await auth();
 
-  const [catalogueItems, clients, servicesCount, quotesCount] = await Promise.all([
-    prisma.serviceCatalogueItem.findMany({
-      where: { userId: userId ?? "" },
-      orderBy: [{ type: "asc" }, { name: "asc" }],
-    }),
-    prisma.client.findMany({
-      where: { userId: userId ?? "" },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    }),
-    prisma.service.count({ where: { userId: userId ?? "", active: true } }),
-    prisma.quote.count({ where: { userId: userId ?? "" } }),
+  const [settings, [catalogueItems, clients, servicesCount, quotesCount, productCount]] = await Promise.all([
+    getBusinessSettings(),
+    Promise.all([
+      prisma.serviceCatalogueItem.findMany({
+        where: { userId: userId ?? "" },
+        orderBy: [{ type: "asc" }, { name: "asc" }],
+      }),
+      prisma.client.findMany({
+        where: { userId: userId ?? "" },
+        select: { id: true, name: true },
+        orderBy: { name: "asc" },
+      }),
+      prisma.service.count({ where: { userId: userId ?? "", active: true } }),
+      prisma.quote.count({ where: { userId: userId ?? "" } }),
+      prisma.product.count({ where: { userId: userId ?? "", active: true } }),
+    ]),
   ]);
 
   return (
@@ -43,6 +48,8 @@ export default async function ServicesPage() {
             catalogueItems={catalogueItems}
             servicesCount={servicesCount}
             quotesCount={quotesCount}
+            productCount={productCount}
+            hideProducts={settings.hideProducts}
           />
         )}
 

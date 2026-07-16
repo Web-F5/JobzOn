@@ -110,3 +110,26 @@ export async function saveBusinessDetails(
   revalidatePath("/settings");
   return { success: true };
 }
+
+
+export async function saveBusinessPreferences(
+  _prev: SettingsState,
+  formData: FormData
+): Promise<SettingsState> {
+  const userId = await requireUserId();
+  const hideProducts = formData.get("hideProducts") === "on";
+
+  try {
+    await prisma.businessSettings.upsert({
+      where:  { id: userId },
+      update: { hideProducts },
+      create: { id: userId, hideProducts },
+    });
+  } catch (err: unknown) {
+    return { error: `Failed to save: ${err instanceof Error ? err.message : String(err)}` };
+  }
+
+  revalidatePath("/settings");
+  revalidatePath("/services");
+  return { success: true };
+}
