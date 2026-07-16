@@ -107,7 +107,7 @@ export function Sidebar() {
     <aside className="flex flex-col w-60 shrink-0 h-screen sticky top-0 bg-[var(--color-sidebar-bg)]">
       {/* Logo */}
       <div className="border-b border-white/10">
-        <img src="/Jobz-On.png" alt="Jobzon" className="w-full object-cover" />
+        <img src="/Jobz-On.webp" alt="Jobzon" className="w-full object-cover" />
       </div>
 
       {/* Nav */}

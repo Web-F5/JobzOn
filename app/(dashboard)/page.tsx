@@ -104,15 +104,15 @@ export default async function DashboardPage() {
 
           <div className="w-full flex flex-col items-center gap-3 px-6 py-5">
             <p className="text-white/60 text-xs font-medium tracking-[0.2em] uppercase">Welcome to</p>
-            <img src="/Jobz-On.png" alt="Jobzon" className="w-full max-h-28 object-contain" />
+            <img src="/Jobz-On.webp" alt="Jobzon" className="w-full max-h-28 object-contain" />
 
-            <div className="flex items-center gap-3 flex-wrap justify-center text-sm text-white/60 mt-1">
+            <div className="flex items-center gap-3 flex-wrap justify-center text-base text-white/60 mt-1">
               {pressText && <span>{pressText}</span>}
 
               {/* Setup button */}
               <a
                 href="/services"
-                className={`group relative inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold ${btnText} hover:text-white bg-white rounded-lg overflow-hidden transition-colors`}
+                className={`group relative inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold ${btnText} hover:text-white bg-[#111111] rounded-lg overflow-hidden transition-colors`}
               >
                 <span
                   aria-hidden
@@ -122,7 +122,7 @@ export default async function DashboardPage() {
                     animation: "border-spin 2.5s linear infinite",
                   }}
                 />
-                <span aria-hidden className={`pointer-events-none absolute inset-[2px] rounded-[6px] bg-white ${btnHover} transition-colors`} />
+                <span aria-hidden className={`pointer-events-none absolute inset-[2px] rounded-[6px] bg-[#111111] ${btnHover} transition-colors`} />
                 <span className="relative">{btnLabel}</span>
               </a>
 
@@ -130,7 +130,7 @@ export default async function DashboardPage() {
             </div>
 
             {!allDone && (
-              <p className="text-xs text-white/60 max-w-md leading-relaxed">
+              <p className="text-base text-white/60 max-w-md leading-relaxed">
                 Follow the orange buttons for the next step to setting up your JobzOn workspace. Each time you complete a step the button will change to green and another orange option will appear to show you what to do next.
               </p>
             )}
