@@ -106,8 +106,8 @@ export function Sidebar() {
   return (
     <aside className="flex flex-col w-60 shrink-0 h-screen sticky top-0 bg-[var(--color-sidebar-bg)]">
       {/* Logo */}
-      <div className="flex items-center justify-center px-5 py-4 border-b border-white/10">
-        <img src="/Jobz-On.png" alt="Jobzon" width={120} height={80} className="object-contain" />
+      <div className="border-b border-white/10">
+        <img src="/Jobz-On.png" alt="Jobzon" className="w-full object-cover" />
       </div>
 
       {/* Nav */}

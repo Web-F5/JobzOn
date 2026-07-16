@@ -93,17 +93,15 @@ export default async function DashboardPage() {
   return (
     <>
       <TopBar
-        title=""
-        center={
-          <img src="/Jobz-On.png" alt="Jobzon" width={240} height={160} className="object-contain" />
-        }
+        title="Welcome to"
+        description="Your job management and invoicing workspace"
       />
 
       <main className="flex-1 p-6 space-y-6">
 
         {/* Setup wizard card */}
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm px-6 py-5 flex flex-col items-center gap-3 text-center">
-          <p className="text-base font-semibold text-[var(--color-text)]">Welcome to JobzOn.</p>
+          <img src="/Jobz-On.png" alt="Jobzon" width={240} height={160} className="object-contain" />
 
           <div className="flex items-center gap-3 flex-wrap justify-center text-sm text-[var(--color-muted)]">
             {pressText && <span>{pressText}</span>}
