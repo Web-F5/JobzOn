@@ -99,41 +99,38 @@ export default async function DashboardPage() {
 
       <main className="flex-1 p-6 space-y-6">
 
-        {/* Setup wizard card */}
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden flex flex-col items-center text-center">
+        {/* Setup wizard card — all on dark background */}
+        <div className="bg-[#111111] border border-white/10 rounded-xl shadow-sm overflow-hidden flex flex-col items-center text-center">
 
-          {/* Dark logo bar */}
-          <div className="w-full bg-[#111111] flex flex-col items-center gap-1 px-6 py-4">
+          <div className="w-full flex flex-col items-center gap-3 px-6 py-5">
             <p className="text-white/60 text-xs font-medium tracking-[0.2em] uppercase">Welcome to</p>
             <img src="/Jobz-On.png" alt="Jobzon" className="w-full max-h-28 object-contain" />
-          </div>
 
-          <div className="px-6 py-5 flex flex-col items-center gap-3 w-full">
-            <div className="flex items-center gap-3 flex-wrap justify-center text-sm text-[var(--color-muted)]">
+            <div className="flex items-center gap-3 flex-wrap justify-center text-sm text-white/60 mt-1">
               {pressText && <span>{pressText}</span>}
 
-            {/* Setup button */}
-            <a
-              href="/services"
-              className={`group relative inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold ${btnText} hover:text-white bg-white rounded-lg overflow-hidden transition-colors`}
-            >
-              <span
-                aria-hidden
-                className="pointer-events-none absolute w-[200%] h-[200%] -top-1/2 -left-1/2"
-                style={{
-                  background: `conic-gradient(from 0deg, transparent 60%, ${btnColor} 80%, transparent 100%)`,
-                  animation: "border-spin 2.5s linear infinite",
-                }}
-              />
-              <span aria-hidden className={`pointer-events-none absolute inset-[2px] rounded-[6px] bg-white ${btnHover} transition-colors`} />
-              <span className="relative">{btnLabel}</span>
-            </a>
+              {/* Setup button */}
+              <a
+                href="/services"
+                className={`group relative inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold ${btnText} hover:text-white bg-white rounded-lg overflow-hidden transition-colors`}
+              >
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute w-[200%] h-[200%] -top-1/2 -left-1/2"
+                  style={{
+                    background: `conic-gradient(from 0deg, transparent 60%, ${btnColor} 80%, transparent 100%)`,
+                    animation: "border-spin 2.5s linear infinite",
+                  }}
+                />
+                <span aria-hidden className={`pointer-events-none absolute inset-[2px] rounded-[6px] bg-white ${btnHover} transition-colors`} />
+                <span className="relative">{btnLabel}</span>
+              </a>
 
               {sideText && <span>{sideText}</span>}
             </div>
 
             {!allDone && (
-              <p className="text-xs text-[var(--color-muted)] max-w-md leading-relaxed">
+              <p className="text-xs text-white/60 max-w-md leading-relaxed">
                 Follow the orange buttons for the next step to setting up your JobzOn workspace. Each time you complete a step the button will change to green and another orange option will appear to show you what to do next.
               </p>
             )}
