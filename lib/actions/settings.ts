@@ -10,11 +10,28 @@ export type SettingsState = { error?: string; success?: boolean };
 /** Get (or create) the BusinessSettings row for the current user. */
 export async function getBusinessSettings() {
   const userId = await requireUserId();
-  return prisma.businessSettings.upsert({
-    where:  { id: userId },
-    update: {},
-    create: { id: userId },
-  });
+  try {
+    return await prisma.businessSettings.upsert({
+      where:  { id: userId },
+      update: {},
+      create: { id: userId },
+    });
+  } catch {
+    // hideProducts column may not exist yet — return safe defaults
+    const row = await prisma.businessSettings.upsert({
+      where:  { id: userId },
+      update: {},
+      create: { id: userId },
+      select: {
+        id: true, logoUrl: true, businessName: true, abn: true,
+        phone: true, address: true, suburb: true, state: true,
+        postcode: true, emailOutgoing: true, emailQuotes: true,
+        bankName: true, bsb: true, bankAccount: true,
+        bankAccountName: true, paymentTermsDays: true, updatedAt: true,
+      },
+    });
+    return { ...row, hideProducts: false };
+  }
 }
 
 export async function uploadLogo(
