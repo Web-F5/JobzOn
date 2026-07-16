@@ -92,7 +92,7 @@ export default async function InvoicesPage({
         {/* Table */}
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">
           {invoices.length === 0 ? (
-            <div className="px-6 py-16 text-center space-y-4 bg-[#334155] border border-[#334155] ring-1 ring-[#e2e8f0] ring-inset">
+            <div className="px-6 py-16 text-center space-y-4 bg-[#334155] border-2 border-[#334155] ring-2 ring-[#e2e8f0] ring-inset">
               {!hasCatalogue ? (
                 <>
                   <p className="text-white/60 text-base">Please add a Service or Product before creating an Invoice.</p>

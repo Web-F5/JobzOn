@@ -93,7 +93,7 @@ export default async function RecurringInvoicesPage({
               <tbody className="divide-y divide-[var(--color-border)]">
                 {services.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-5 py-12 text-center bg-[#334155]">
+                    <td colSpan={7} className="px-5 py-12 text-center bg-[#334155] border-2 border-[#334155] ring-2 ring-[#e2e8f0] ring-inset">
                       {!hasCatalogue ? (
                         <div className="space-y-4">
                           <p className="text-base text-white/60">Please add a Service or Product before creating a Recurring Invoice.</p>
