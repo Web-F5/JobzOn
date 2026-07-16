@@ -15,7 +15,7 @@ export function SpinningBorderButton({ onClick, href, children, size = "md", var
   const textColor = isGreen ? "text-green-500 hover:text-white" : "text-orange-500 hover:text-white";
   const spinColor = isGreen ? "#16a34a" : "#f97316";
   const hoverBg  = isGreen ? "group-hover:bg-green-600" : "group-hover:bg-orange-500";
-  const bg       = dark ? "bg-[#1e293b]" : "bg-white";
+  const bg       = dark ? "bg-[#334155]" : "bg-white";
   const cls = `group relative inline-flex items-center gap-2 ${padding} text-sm font-semibold ${textColor} ${bg} rounded-lg overflow-hidden transition-colors`;
 
   const inner = (

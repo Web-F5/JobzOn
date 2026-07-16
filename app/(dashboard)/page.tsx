@@ -102,7 +102,7 @@ export default async function DashboardPage() {
       <main className="flex-1 p-6 space-y-6">
 
         {/* Setup wizard card */}
-        <div className="bg-[#1e293b] border border-white/10 rounded-xl shadow-sm px-6 py-5 text-center">
+        <div className="bg-[#334155] border border-[#334155] ring-1 ring-[#e2e8f0] ring-inset rounded-xl shadow-sm px-6 py-5 text-center">
           {!allDone && (
             <p className="text-base text-white/60 max-w-2xl mx-auto leading-snug mb-3">
               Follow the <span className="text-orange-500 font-medium">orange</span> buttons for the next step to setting up your JobzOn workspace. Each time you complete a step the button will change to <span className="text-green-500 font-medium">green</span> and another <span className="text-orange-500 font-medium">orange</span> option will appear to show you what to do next.
@@ -114,7 +114,7 @@ export default async function DashboardPage() {
             {/* Setup button */}
             <a
               href="/services"
-              className={`group relative inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold ${btnText} hover:text-white bg-[#1e293b] rounded-lg overflow-hidden transition-colors`}
+              className={`group relative inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold ${btnText} hover:text-white bg-[#334155] rounded-lg overflow-hidden transition-colors`}
             >
               <span
                 aria-hidden
@@ -124,7 +124,7 @@ export default async function DashboardPage() {
                   animation: "border-spin 2.5s linear infinite",
                 }}
               />
-              <span aria-hidden className={`pointer-events-none absolute inset-[2px] rounded-[6px] bg-[#1e293b] ${btnHover} transition-colors`} />
+              <span aria-hidden className={`pointer-events-none absolute inset-[2px] rounded-[6px] bg-[#334155] ${btnHover} transition-colors`} />
               <span className="relative">{btnLabel}</span>
             </a>
 
