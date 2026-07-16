@@ -95,7 +95,7 @@ function Spinner() {
   );
 }
 
-export function Sidebar() {
+export function Sidebar({ hideProducts = false }: { hideProducts?: boolean }) {
   const pathname = usePathname();
   const [loadingHref, setLoadingHref] = useState<string | null>(null);
 
@@ -112,7 +112,7 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
-        {navItems.map((item) => {
+        {navItems.filter(item => !(hideProducts && item.href === "/products")).map((item) => {
           const isActive =
             item.href === "/"
               ? pathname === "/"
