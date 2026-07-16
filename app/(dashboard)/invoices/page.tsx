@@ -72,7 +72,7 @@ export default async function InvoicesPage({
       <main className="flex-1 p-6 space-y-4">
 
         {/* Status tabs */}
-        <div className="flex gap-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-1 w-fit">
+        <div className="flex gap-1 bg-[#e2e8f0] border border-[#c8d5e3] rounded-lg p-1 w-fit">
           {TABS.map((tab) => (
             <a
               key={tab.value}
@@ -125,7 +125,7 @@ export default async function InvoicesPage({
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs text-[var(--color-muted)] border-b border-[var(--color-border)] bg-slate-50">
+                  <tr className="text-left text-xs text-[var(--color-muted)] border-b border-[var(--color-border)] bg-[#e2e8f0]">
                     <th className="px-5 py-3 font-medium">Invoice #</th>
                     <th className="px-5 py-3 font-medium">Client</th>
                     <th className="px-5 py-3 font-medium">Issued</th>
@@ -150,7 +150,7 @@ export default async function InvoicesPage({
                       inv.status === "SENT" || inv.status === "OVERDUE";
 
                     return (
-                      <tr key={inv.id} className="hover:bg-slate-50 transition-colors">
+                      <tr key={inv.id} className="hover:bg-[#e2e8f0] transition-colors">
                         <td className="px-5 py-3 font-mono text-xs">
                           <a
                             href={`/invoices/${inv.id}`}

@@ -39,7 +39,7 @@ export default async function ProductsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-[var(--color-muted)] border-b border-[var(--color-border)] bg-slate-50">
+                <tr className="text-left text-xs text-[var(--color-muted)] border-b border-[var(--color-border)] bg-[#e2e8f0]">
                   <th className="px-5 py-3 font-medium">Product Name</th>
                   <th className="px-5 py-3 font-medium">Description</th>
                   <th className="px-5 py-3 font-medium">Unit</th>
@@ -61,7 +61,7 @@ export default async function ProductsPage() {
                   </tr>
                 ) : (
                   products.map((p) => (
-                    <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={p.id} className="hover:bg-[#e2e8f0] transition-colors">
                       <td className="px-5 py-3 font-medium text-[var(--color-text)]">{p.name}</td>
                       <td className="px-5 py-3 text-[var(--color-muted)]">{p.description ?? "—"}</td>
                       <td className="px-5 py-3 text-[var(--color-muted)]">{p.unit}</td>

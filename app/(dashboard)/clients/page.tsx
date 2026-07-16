@@ -49,7 +49,7 @@ export default async function ClientsPage({
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs text-[var(--color-muted)] border-b border-[var(--color-border)] bg-slate-50">
+                  <tr className="text-left text-xs text-[var(--color-muted)] border-b border-[var(--color-border)] bg-[#e2e8f0]">
                     <th className="px-5 py-3 font-medium">Name</th>
                     <th className="px-5 py-3 font-medium">Email</th>
                     <th className="px-5 py-3 font-medium">Phone</th>
@@ -62,7 +62,7 @@ export default async function ClientsPage({
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border)]">
                   {clients.map((client: typeof clients[number]) => (
-                    <tr key={client.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={client.id} className="hover:bg-[#e2e8f0] transition-colors">
                       <td className="px-5 py-3 font-medium text-[var(--color-text)]">{client.name}</td>
                       <td className="px-5 py-3 text-[var(--color-muted)]">{client.email}</td>
                       <td className="px-5 py-3 text-[var(--color-muted)]">

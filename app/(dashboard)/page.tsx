@@ -94,22 +94,21 @@ export default async function DashboardPage() {
       {/* Dark header with logo */}
       <header className="flex items-center gap-4 px-6 py-3 bg-[#111111] border-b border-white/10 shrink-0">
         <img src="/Jobz-On.webp" alt="Jobzon" className="h-10 object-contain" />
-        <div>
-          <h1 className="text-lg font-semibold text-white/90">Dashboard</h1>
-          <p className="text-sm text-white/50">Overview of your invoices, jobs, and renewals</p>
-        </div>
+        <p className="text-base font-medium text-white/80">
+          Dashboard <span className="text-white/40 font-normal">— Overview of your invoices, jobs, and renewals</span>
+        </p>
       </header>
 
       <main className="flex-1 p-6 space-y-6">
 
         {/* Setup wizard card */}
-        <div className="bg-[#1e293b] border border-white/10 rounded-xl shadow-sm px-6 py-5">
-          <div className="flex flex-wrap items-center gap-3 text-base text-white/60">
-            {!allDone && (
-              <p className="w-full max-w-xl leading-relaxed text-white/60 mb-1">
-                Follow the <span className="text-orange-500 font-medium">orange</span> buttons for the next step to setting up your JobzOn workspace. Each time you complete a step the button will change to <span className="text-green-500 font-medium">green</span> and another <span className="text-orange-500 font-medium">orange</span> option will appear to show you what to do next.
-              </p>
-            )}
+        <div className="bg-[#1e293b] border border-white/10 rounded-xl shadow-sm px-6 py-5 text-center">
+          {!allDone && (
+            <p className="text-base text-white/60 max-w-2xl mx-auto leading-snug mb-3">
+              Follow the <span className="text-orange-500 font-medium">orange</span> buttons for the next step to setting up your JobzOn workspace. Each time you complete a step the button will change to <span className="text-green-500 font-medium">green</span> and another <span className="text-orange-500 font-medium">orange</span> option will appear to show you what to do next.
+            </p>
+          )}
+          <div className="flex items-center justify-center gap-3 flex-wrap text-base text-white/60">
             {pressText && <span>{pressText}</span>}
 
             {/* Setup button */}

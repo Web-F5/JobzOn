@@ -80,7 +80,7 @@ export default async function RecurringInvoicesPage({
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-[var(--color-muted)] border-b border-[var(--color-border)] bg-slate-50">
+                <tr className="text-left text-xs text-[var(--color-muted)] border-b border-[var(--color-border)] bg-[#e2e8f0]">
                   <th className="px-5 py-3 font-medium">Client</th>
                   <th className="px-5 py-3 font-medium">Description</th>
                   <th className="px-5 py-3 font-medium">Service</th>
@@ -122,7 +122,7 @@ export default async function RecurringInvoicesPage({
                   </tr>
                 ) : (
                   services.map((svc: typeof services[number]) => (
-                    <tr key={svc.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={svc.id} className="hover:bg-[#e2e8f0] transition-colors">
                       <td className="px-5 py-3 font-medium text-[var(--color-text)]">{svc.client.name}</td>
                       <td className="px-5 py-3 text-[var(--color-muted)]">{svc.description}</td>
                       <td className="px-5 py-3">

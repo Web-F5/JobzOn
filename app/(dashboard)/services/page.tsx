@@ -50,7 +50,7 @@ export default async function ServicesPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-[var(--color-muted)] border-b border-[var(--color-border)] bg-slate-50">
+                <tr className="text-left text-xs text-[var(--color-muted)] border-b border-[var(--color-border)] bg-[#e2e8f0]">
                   <th className="px-5 py-3 font-medium">Service Name</th>
                   <th className="px-5 py-3 font-medium">Description</th>
                   <th className="px-5 py-3 font-medium text-right">Default Price (ex. GST)</th>
@@ -71,7 +71,7 @@ export default async function ServicesPage() {
                   </tr>
                 ) : (
                   catalogueItems.map((item: typeof catalogueItems[number]) => (
-                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={item.id} className="hover:bg-[#e2e8f0] transition-colors">
                       <td className="px-5 py-3 font-medium text-[var(--color-text)]">{item.name}</td>
                       <td className="px-5 py-3 text-[var(--color-muted)]">{item.description ?? "—"}</td>
                       <td className="px-5 py-3 text-right font-semibold text-[var(--color-text)]">
