@@ -93,8 +93,10 @@ export default async function DashboardPage() {
   return (
     <>
       <TopBar
-        title="Dashboard"
-        description="Overview of your invoices, jobs, and renewals"
+        title=""
+        center={
+          <img src="/Jobz-On.png" alt="Jobzon" width={240} height={160} className="object-contain" />
+        }
       />
 
       <main className="flex-1 p-6 space-y-6">

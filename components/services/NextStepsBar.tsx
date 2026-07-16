@@ -62,22 +62,8 @@ export function CatalogueNextStepsBar({
           + {hasClients ? "Add Another Client" : "Add Client"}
         </SpinningBorderButton>
 
-        {/* Link service — only appears once we have a client */}
+        {/* Create Quote — appears once we have a client */}
         {hasClients && (
-          <>
-            <Or />
-            <AddServiceButton
-              clients={clients}
-              catalogueItems={catalogueItems}
-              spinning
-              variant={hasServices ? "green" : "orange"}
-              label="Setup a Recurring Invoice"
-            />
-          </>
-        )}
-
-        {/* Create Quote — orange until a quote exists, then green */}
-        {hasServices && (
           <>
             <Or />
             <SpinningBorderButton href="/quotes/new" variant={hasQuotes ? "green" : "orange"}>
