@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { TopBar } from "@/components/nav/TopBar";
 import { StatCard } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatAUD } from "@/lib/gst";
@@ -91,19 +92,25 @@ export default async function DashboardPage() {
 
   return (
     <>
-      {/* Dark hero header — background matched to logo image */}
-      <div className="shrink-0 flex flex-col items-center gap-1 px-6 py-5 bg-[#111111] border-b border-white/10">
-        <p className="text-white/60 text-xs font-medium tracking-[0.2em] uppercase">Welcome to</p>
-        <img src="/Jobz-On.png" alt="Jobzon" width={240} height={160} className="object-contain" />
-      </div>
+      <TopBar
+        title="Dashboard"
+        description="Overview of your invoices, jobs, and renewals"
+      />
 
       <main className="flex-1 p-6 space-y-6">
 
         {/* Setup wizard card */}
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm px-6 py-5 flex flex-col items-center gap-3 text-center">
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden flex flex-col items-center text-center">
 
-          <div className="flex items-center gap-3 flex-wrap justify-center text-sm text-[var(--color-muted)]">
-            {pressText && <span>{pressText}</span>}
+          {/* Dark logo bar */}
+          <div className="w-full bg-[#111111] flex flex-col items-center gap-1 px-6 py-4">
+            <p className="text-white/60 text-xs font-medium tracking-[0.2em] uppercase">Welcome to</p>
+            <img src="/Jobz-On.png" alt="Jobzon" className="w-full max-h-28 object-contain" />
+          </div>
+
+          <div className="px-6 py-5 flex flex-col items-center gap-3 w-full">
+            <div className="flex items-center gap-3 flex-wrap justify-center text-sm text-[var(--color-muted)]">
+              {pressText && <span>{pressText}</span>}
 
             {/* Setup button */}
             <a
@@ -122,14 +129,15 @@ export default async function DashboardPage() {
               <span className="relative">{btnLabel}</span>
             </a>
 
-            {sideText && <span>{sideText}</span>}
-          </div>
+              {sideText && <span>{sideText}</span>}
+            </div>
 
-          {!allDone && (
-            <p className="text-xs text-[var(--color-muted)] max-w-md leading-relaxed">
-              Follow the orange buttons for the next step to setting up your JobzOn workspace. Each time you complete a step the button will change to green and another orange option will appear to show you what to do next.
-            </p>
-          )}
+            {!allDone && (
+              <p className="text-xs text-[var(--color-muted)] max-w-md leading-relaxed">
+                Follow the orange buttons for the next step to setting up your JobzOn workspace. Each time you complete a step the button will change to green and another orange option will appear to show you what to do next.
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Stat cards */}
