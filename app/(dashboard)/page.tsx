@@ -1,7 +1,6 @@
 import { Metadata } from "next";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-import { TopBar } from "@/components/nav/TopBar";
 import { StatCard } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatAUD } from "@/lib/gst";
@@ -92,16 +91,16 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <TopBar
-        title="Welcome to"
-        description="Your job management and invoicing workspace"
-      />
+      {/* Dark hero header — background matched to logo image */}
+      <div className="shrink-0 flex flex-col items-center gap-1 px-6 py-5 bg-[#111111] border-b border-white/10">
+        <p className="text-white/60 text-xs font-medium tracking-[0.2em] uppercase">Welcome to</p>
+        <img src="/Jobz-On.png" alt="Jobzon" width={240} height={160} className="object-contain" />
+      </div>
 
       <main className="flex-1 p-6 space-y-6">
 
         {/* Setup wizard card */}
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm px-6 py-5 flex flex-col items-center gap-3 text-center">
-          <img src="/Jobz-On.png" alt="Jobzon" width={240} height={160} className="object-contain" />
 
           <div className="flex items-center gap-3 flex-wrap justify-center text-sm text-[var(--color-muted)]">
             {pressText && <span>{pressText}</span>}
