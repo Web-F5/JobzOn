@@ -4,9 +4,9 @@ export default function SignInPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-slate-800">JobzOn</h1>
-          <p className="text-slate-500 text-sm mt-1">Job management & automated invoicing</p>
+        <div className="flex flex-col items-center gap-2">
+          <img src="/Jobz-On.webp" alt="JobzOn" className="w-64 object-contain" />
+          <p className="text-slate-500 text-sm">Job management & automated invoicing</p>
         </div>
         <SignIn />
       </div>
