@@ -50,6 +50,7 @@ export default async function ServicesPage() {
             quotesCount={quotesCount}
             productCount={productCount}
             hideProducts={settings.hideProducts}
+            trainingWheels={settings.trainingWheels}
           />
         )}
 

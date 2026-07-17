@@ -5,6 +5,7 @@ import { TopBar } from "@/components/nav/TopBar";
 import { formatAUD } from "@/lib/gst";
 import { AddProductButton, EditProductButton } from "@/components/products/ProductFormModal";
 import { ProductsNextStepsBar } from "@/components/products/ProductsNextStepsBar";
+import { getBusinessSettings } from "@/lib/actions/settings";
 
 export const metadata: Metadata = { title: "Products" };
 export const dynamic = "force-dynamic";
@@ -12,14 +13,17 @@ export const dynamic = "force-dynamic";
 export default async function ProductsPage() {
   const { userId } = await auth();
 
-  const [products, clientCount, quotesCount, serviceCount] = await Promise.all([
+  const [settings, [products, clientCount, quotesCount, serviceCount]] = await Promise.all([
+    getBusinessSettings(),
+    Promise.all([
     prisma.product.findMany({
       where: { userId: userId ?? "" },
       orderBy: { name: "asc" },
     }),
     prisma.client.count({ where: { userId: userId ?? "" } }),
     prisma.quote.count({ where: { userId: userId ?? "" } }),
-    prisma.serviceCatalogueItem.count({ where: { userId: userId ?? "" } }),
+      prisma.serviceCatalogueItem.count({ where: { userId: userId ?? "" } }),
+    ]),
   ]);
 
   return (
@@ -33,7 +37,7 @@ export default async function ProductsPage() {
       <main className="flex-1 p-6 space-y-5">
 
         {products.length > 0 && (
-          <ProductsNextStepsBar clientCount={clientCount} quotesCount={quotesCount} serviceCount={serviceCount} />
+          <ProductsNextStepsBar clientCount={clientCount} quotesCount={quotesCount} serviceCount={serviceCount} trainingWheels={settings.trainingWheels} />
         )}
 
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">

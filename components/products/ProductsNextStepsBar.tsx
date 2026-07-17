@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import { AddProductButton } from "@/components/products/ProductFormModal";
 import { SpinningBorderButton } from "@/components/ui/SpinningBorderButton";
 
@@ -16,59 +17,80 @@ const InvoiceIcon = () => (
 );
 
 function Or() {
-  return <span className="text-blue-500 font-semibold shrink-0">OR</span>;
+  return <span className="text-white/40 font-semibold shrink-0">OR</span>;
 }
+
+type Step = { node: React.ReactNode; green: boolean };
 
 export function ProductsNextStepsBar({
   clientCount,
   quotesCount,
   serviceCount = 0,
+  trainingWheels = "on",
 }: {
   clientCount: number;
   quotesCount: number;
   serviceCount?: number;
+  trainingWheels?: string;
 }) {
+  if (trainingWheels === "hidden") return null;
+
   const hasClients  = clientCount > 0;
   const hasQuotes   = quotesCount > 0;
   const hasServices = serviceCount > 0;
+
+  const steps: Step[] = [
+    {
+      node: <AddProductButton spinning variant="green" label="+ Add Another Product" dark autoOpen />,
+      green: true,
+    },
+    {
+      node: (
+        <SpinningBorderButton href="/services?action=add" variant={hasServices ? "green" : "orange"} dark>
+          {hasServices ? "+ Add Another Service" : "+ Add your first Service"}
+        </SpinningBorderButton>
+      ),
+      green: hasServices,
+    },
+    {
+      node: (
+        <SpinningBorderButton href="/clients?action=add" variant={hasClients ? "green" : "orange"} dark>
+          + {hasClients ? "Add Another Client" : "Add Client"}
+        </SpinningBorderButton>
+      ),
+      green: hasClients,
+    },
+    ...(hasClients ? [{
+      node: (
+        <SpinningBorderButton href="/quotes/new" variant={hasQuotes ? "green" : "orange"} dark>
+          <QuoteIcon /> {hasQuotes ? "Create Another Quote" : "Create Quote"}
+        </SpinningBorderButton>
+      ),
+      green: hasQuotes,
+    }] : []),
+    ...(hasQuotes ? [{
+      node: (
+        <SpinningBorderButton href="/invoices/new" variant="orange" dark>
+          <InvoiceIcon /> Create an Invoice
+        </SpinningBorderButton>
+      ),
+      green: false,
+    }] : []),
+  ];
+
+  const visible = trainingWheels === "orange_only" ? steps.filter((s) => !s.green) : steps;
+  if (visible.length === 0) return null;
 
   return (
     <div className="flex items-center gap-3 px-4 py-2.5 bg-[#334155] border-l-4 border-l-[#2563eb] rounded-xl text-sm text-white/60">
       <span className="font-medium shrink-0">Next steps:</span>
       <div className="flex items-center gap-3 flex-wrap">
-
-        <AddProductButton spinning variant="green" label="+ Add Another Product" dark autoOpen />
-
-        <Or />
-
-        <SpinningBorderButton href="/services?action=add" variant={hasServices ? "green" : "orange"} dark>
-          {hasServices ? "+ Add Another Service" : "+ Add your first Service"}
-        </SpinningBorderButton>
-
-        <Or />
-
-        <SpinningBorderButton href="/clients?action=add" variant={hasClients ? "green" : "orange"} dark>
-          + {hasClients ? "Add Another Client" : "Add Client"}
-        </SpinningBorderButton>
-
-        {hasClients && (
-          <>
-            <Or />
-            <SpinningBorderButton href="/quotes/new" variant={hasQuotes ? "green" : "orange"} dark>
-              <QuoteIcon /> {hasQuotes ? "Create Another Quote" : "Create Quote"}
-            </SpinningBorderButton>
-          </>
-        )}
-
-        {hasQuotes && (
-          <>
-            <Or />
-            <SpinningBorderButton href="/invoices/new" variant="orange" dark>
-              <InvoiceIcon /> Create an Invoice
-            </SpinningBorderButton>
-          </>
-        )}
-
+        {visible.map((s, i) => (
+          <Fragment key={i}>
+            {i > 0 && <Or />}
+            {s.node}
+          </Fragment>
+        ))}
       </div>
     </div>
   );

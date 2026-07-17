@@ -30,7 +30,7 @@ export async function getBusinessSettings() {
         bankAccountName: true, paymentTermsDays: true, updatedAt: true,
       },
     });
-    return { ...row, hideProducts: false };
+    return { ...row, hideProducts: false, trainingWheels: "on" };
   }
 }
 
@@ -134,13 +134,14 @@ export async function saveBusinessPreferences(
   formData: FormData
 ): Promise<SettingsState> {
   const userId = await requireUserId();
-  const hideProducts = formData.get("hideProducts") === "on";
+  const hideProducts   = formData.get("hideProducts") === "on";
+  const trainingWheels = (formData.get("trainingWheels") as string) || "on";
 
   try {
     await prisma.businessSettings.upsert({
       where:  { id: userId },
-      update: { hideProducts },
-      create: { id: userId, hideProducts },
+      update: { hideProducts, trainingWheels },
+      create: { id: userId, hideProducts, trainingWheels },
     });
   } catch (err: unknown) {
     return { error: `Failed to save: ${err instanceof Error ? err.message : String(err)}` };
@@ -148,5 +149,9 @@ export async function saveBusinessPreferences(
 
   revalidatePath("/settings");
   revalidatePath("/services");
+  revalidatePath("/products");
+  revalidatePath("/clients");
+  revalidatePath("/recurring-invoices");
+  revalidatePath("/");
   return { success: true };
 }

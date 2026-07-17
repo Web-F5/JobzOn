@@ -8,6 +8,7 @@ import { AddServiceButton, EditServiceButton } from "@/components/services/Servi
 import { ManualInvoiceButton } from "@/components/invoices/ManualInvoiceButton";
 import { SpinningAddButton } from "@/components/catalogue/SpinningAddButton";
 import { ClientServicesNextStepsBar } from "@/components/services/NextStepsBar";
+import { getBusinessSettings } from "@/lib/actions/settings";
 import { SpinningBorderButton } from "@/components/ui/SpinningBorderButton";
 
 export const metadata: Metadata = { title: "Recurring Invoices" };
@@ -37,7 +38,9 @@ export default async function RecurringInvoicesPage({
   const autoAdd = action === "add";
   const { userId } = await auth();
 
-  const [services, clients, catalogueItems, quotesCount, productCount] = await Promise.all([
+  const [settings, [services, clients, catalogueItems, quotesCount, productCount]] = await Promise.all([
+    getBusinessSettings(),
+    Promise.all([
     prisma.service.findMany({
       where: { userId: userId ?? "", active: true },
       include: { client: true },
@@ -53,7 +56,8 @@ export default async function RecurringInvoicesPage({
       orderBy: [{ type: "asc" }, { name: "asc" }],
     }),
     prisma.quote.count({ where: { userId: userId ?? "" } }),
-    prisma.product.count({ where: { userId: userId ?? "", active: true } }),
+      prisma.product.count({ where: { userId: userId ?? "", active: true } }),
+    ]),
   ]);
 
   const hasCatalogue = catalogueItems.length > 0 || productCount > 0;
@@ -73,7 +77,7 @@ export default async function RecurringInvoicesPage({
       <main className="flex-1 p-6 space-y-5">
 
         {services.length > 0 && (
-          <ClientServicesNextStepsBar clients={clients} catalogueItems={catalogueItems} quotesCount={quotesCount} />
+          <ClientServicesNextStepsBar clients={clients} catalogueItems={catalogueItems} quotesCount={quotesCount} trainingWheels={settings.trainingWheels} />
         )}
 
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">

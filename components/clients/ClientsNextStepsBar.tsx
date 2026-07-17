@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import { AddClientButton } from "@/components/clients/ClientFormModal";
 import { SpinningBorderButton } from "@/components/ui/SpinningBorderButton";
 
@@ -21,45 +22,69 @@ const InvoiceIcon = () => (
   </svg>
 );
 
+function Or() {
+  return <span className="text-white/40 font-semibold shrink-0">OR</span>;
+}
+
+type Step = { node: React.ReactNode; green: boolean };
+
 export function ClientsNextStepsBar({
   hasLinkedService,
   hasQuote,
+  trainingWheels = "on",
 }: {
   hasLinkedService: boolean;
   hasQuote: boolean;
+  trainingWheels?: string;
 }) {
-  return (
-    <div className="flex items-center gap-3 px-4 py-2.5 bg-[#334155] border-l-4 border-l-[#2563eb] rounded-xl text-sm text-white/60 mb-4">
-      <span className="font-medium shrink-0">Next steps:</span>
-      <div className="flex items-center gap-3 flex-wrap">
+  if (trainingWheels === "hidden") return null;
 
-        <AddClientButton spinning variant="green" label="+ Add Another Client" dark />
-
-        <span className="text-white/40 font-semibold shrink-0">OR</span>
-
+  const steps: Step[] = [
+    {
+      node: <AddClientButton spinning variant="green" label="+ Add Another Client" dark />,
+      green: true,
+    },
+    {
+      node: (
         <SpinningBorderButton href="/recurring-invoices?action=add" variant={hasLinkedService ? "green" : "orange"} dark>
           <RecurringIcon />
           Setup a Recurring Invoice
         </SpinningBorderButton>
+      ),
+      green: hasLinkedService,
+    },
+    ...(hasLinkedService ? [{
+      node: (
+        <SpinningBorderButton href="/quotes/new" variant={hasQuote ? "green" : "orange"} dark>
+          <QuoteIcon />
+          {hasQuote ? "Create Another Quote" : "Create Quote"}
+        </SpinningBorderButton>
+      ),
+      green: hasQuote,
+    }] : []),
+    ...(hasQuote ? [{
+      node: (
+        <SpinningBorderButton href="/invoices/new" variant="orange" dark>
+          <InvoiceIcon /> Create an Invoice
+        </SpinningBorderButton>
+      ),
+      green: false,
+    }] : []),
+  ];
 
-        {hasLinkedService && (
-          <>
-            <span className="text-white/40 font-semibold shrink-0">OR</span>
-            <SpinningBorderButton href="/quotes/new" variant={hasQuote ? "green" : "orange"} dark>
-              <QuoteIcon />
-              {hasQuote ? "Create Another Quote" : "Create Quote"}
-            </SpinningBorderButton>
-          </>
-        )}
+  const visible = trainingWheels === "orange_only" ? steps.filter((s) => !s.green) : steps;
+  if (visible.length === 0) return null;
 
-        {hasQuote && (
-          <>
-            <span className="text-white/40 font-semibold shrink-0">OR</span>
-            <SpinningBorderButton href="/invoices/new" variant="orange" dark>
-              <InvoiceIcon /> Create an Invoice
-            </SpinningBorderButton>
-          </>
-        )}
+  return (
+    <div className="flex items-center gap-3 px-4 py-2.5 bg-[#334155] border-l-4 border-l-[#2563eb] rounded-xl text-sm text-white/60 mb-4">
+      <span className="font-medium shrink-0">Next steps:</span>
+      <div className="flex items-center gap-3 flex-wrap">
+        {visible.map((s, i) => (
+          <Fragment key={i}>
+            {i > 0 && <Or />}
+            {s.node}
+          </Fragment>
+        ))}
       </div>
     </div>
   );

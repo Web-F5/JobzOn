@@ -1,15 +1,10 @@
 "use client";
 
+import { Fragment } from "react";
 import { AddCatalogueItemButton } from "@/components/catalogue/CatalogueFormModal";
 import { SpinningBorderButton } from "@/components/ui/SpinningBorderButton";
 import { AddServiceButton } from "@/components/services/ServiceFormModal";
 import type { Client, ServiceCatalogueItem } from "@prisma/client";
-
-const LinkIcon = () => (
-  <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-  </svg>
-);
 
 const QuoteIcon = () => (
   <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -29,6 +24,23 @@ function Or() {
 
 const darkBar = "flex items-center gap-3 px-4 py-2.5 bg-[#334155] border-l-4 border-l-[#2563eb] rounded-xl text-sm text-white/60";
 
+type Step = { node: React.ReactNode; green: boolean };
+
+function StepsRow({ steps, tw }: { steps: Step[]; tw: string }) {
+  const visible = tw === "orange_only" ? steps.filter((s) => !s.green) : steps;
+  if (visible.length === 0) return null;
+  return (
+    <div className="flex items-center gap-3 flex-wrap">
+      {visible.map((s, i) => (
+        <Fragment key={i}>
+          {i > 0 && <Or />}
+          {s.node}
+        </Fragment>
+      ))}
+    </div>
+  );
+}
+
 // Shown on Service Types tab — progressive state machine
 export function CatalogueNextStepsBar({
   clients,
@@ -37,6 +49,7 @@ export function CatalogueNextStepsBar({
   quotesCount,
   productCount = 0,
   hideProducts = false,
+  trainingWheels = "on",
 }: {
   clients: Pick<Client, "id" | "name">[];
   catalogueItems: Pick<ServiceCatalogueItem, "id" | "name" | "description" | "amountExGst" | "type">[];
@@ -44,51 +57,57 @@ export function CatalogueNextStepsBar({
   quotesCount: number;
   productCount?: number;
   hideProducts?: boolean;
+  trainingWheels?: string;
 }) {
+  if (trainingWheels === "hidden") return null;
+
   const hasClients  = clients.length > 0;
   const hasQuotes   = quotesCount > 0;
   const hasProducts = productCount > 0;
 
-  return (
-    <div className={darkBar}>
-      <span className="font-medium shrink-0">Next steps:</span>
-      <div className="flex items-center gap-3 flex-wrap">
-
-        <AddCatalogueItemButton spinning variant="green" label="+ Add Another Service" dark autoOpen />
-
-        {!hideProducts && (
-          <>
-            <Or />
-            <SpinningBorderButton href="/products?action=add" variant={hasProducts ? "green" : "orange"} dark>
-              + {hasProducts ? "Add Another Product" : "Add your first Product"}
-            </SpinningBorderButton>
-          </>
-        )}
-
-        <Or />
-
+  const steps: Step[] = [
+    {
+      node: <AddCatalogueItemButton spinning variant="green" label="+ Add Another Service" dark autoOpen />,
+      green: true,
+    },
+    ...(!hideProducts ? [{
+      node: (
+        <SpinningBorderButton href="/products?action=add" variant={hasProducts ? "green" : "orange"} dark>
+          + {hasProducts ? "Add Another Product" : "Add your first Product"}
+        </SpinningBorderButton>
+      ),
+      green: hasProducts,
+    }] : []),
+    {
+      node: (
         <SpinningBorderButton href="/clients?action=add" variant={hasClients ? "green" : "orange"} dark>
           + {hasClients ? "Add Another Client" : "Add Client"}
         </SpinningBorderButton>
+      ),
+      green: hasClients,
+    },
+    ...(hasClients ? [{
+      node: (
+        <SpinningBorderButton href="/quotes/new" variant={hasQuotes ? "green" : "orange"} dark>
+          <QuoteIcon /> {hasQuotes ? "Create Another Quote" : "Create Quote"}
+        </SpinningBorderButton>
+      ),
+      green: hasQuotes,
+    }] : []),
+    ...(hasQuotes ? [{
+      node: (
+        <SpinningBorderButton href="/invoices/new" variant="orange" dark>
+          <InvoiceIcon /> Create an Invoice
+        </SpinningBorderButton>
+      ),
+      green: false,
+    }] : []),
+  ];
 
-        {hasClients && (
-          <>
-            <Or />
-            <SpinningBorderButton href="/quotes/new" variant={hasQuotes ? "green" : "orange"} dark>
-              <QuoteIcon /> {hasQuotes ? "Create Another Quote" : "Create Quote"}
-            </SpinningBorderButton>
-          </>
-        )}
-
-        {hasQuotes && (
-          <>
-            <Or />
-            <SpinningBorderButton href="/invoices/new" variant="orange" dark>
-              <InvoiceIcon /> Create an Invoice
-            </SpinningBorderButton>
-          </>
-        )}
-      </div>
+  return (
+    <div className={darkBar}>
+      <span className="font-medium shrink-0">Next steps:</span>
+      <StepsRow steps={steps} tw={trainingWheels} />
     </div>
   );
 }
@@ -98,31 +117,44 @@ export function ClientServicesNextStepsBar({
   clients,
   catalogueItems,
   quotesCount,
+  trainingWheels = "on",
 }: {
   clients: Pick<Client, "id" | "name">[];
   catalogueItems: Pick<ServiceCatalogueItem, "id" | "name" | "description" | "amountExGst" | "type">[];
   quotesCount: number;
+  trainingWheels?: string;
 }) {
+  if (trainingWheels === "hidden") return null;
+
   const hasQuotes = quotesCount > 0;
+
+  const steps: Step[] = [
+    {
+      node: <AddServiceButton clients={clients} catalogueItems={catalogueItems} spinning variant="green" label="Setup a Recurring Invoice" dark />,
+      green: true,
+    },
+    {
+      node: (
+        <SpinningBorderButton href="/quotes/new" variant={hasQuotes ? "green" : "orange"} dark>
+          <QuoteIcon /> {hasQuotes ? "Create Another Quote" : "Create Quote"}
+        </SpinningBorderButton>
+      ),
+      green: hasQuotes,
+    },
+    ...(hasQuotes ? [{
+      node: (
+        <SpinningBorderButton href="/invoices/new" variant="orange" dark>
+          <InvoiceIcon /> Create an Invoice
+        </SpinningBorderButton>
+      ),
+      green: false,
+    }] : []),
+  ];
 
   return (
     <div className={darkBar}>
       <span className="font-medium shrink-0">Next steps:</span>
-      <div className="flex items-center gap-3 flex-wrap">
-        <AddServiceButton clients={clients} catalogueItems={catalogueItems} spinning variant="green" label="Setup a Recurring Invoice" dark />
-        <Or />
-        <SpinningBorderButton href="/quotes/new" variant={hasQuotes ? "green" : "orange"} dark>
-          <QuoteIcon /> {hasQuotes ? "Create Another Quote" : "Create Quote"}
-        </SpinningBorderButton>
-        {hasQuotes && (
-          <>
-            <Or />
-            <SpinningBorderButton href="/invoices/new" variant="orange" dark>
-              <InvoiceIcon /> Create an Invoice
-            </SpinningBorderButton>
-          </>
-        )}
-      </div>
+      <StepsRow steps={steps} tw={trainingWheels} />
     </div>
   );
 }

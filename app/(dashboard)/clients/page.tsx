@@ -5,6 +5,7 @@ import { TopBar } from "@/components/nav/TopBar";
 import { AddClientButton, EditClientButton } from "@/components/clients/ClientFormModal";
 import { PortalLinkButton } from "@/components/clients/PortalLinkButton";
 import { ClientsNextStepsBar } from "@/components/clients/ClientsNextStepsBar";
+import { getBusinessSettings } from "@/lib/actions/settings";
 
 export const metadata: Metadata = { title: "Clients" };
 export const dynamic = "force-dynamic";
@@ -18,13 +19,16 @@ export default async function ClientsPage({
   const autoAdd = action === "add";
   const { userId } = await auth();
 
-  const [clients, quotesCount] = await Promise.all([
-    prisma.client.findMany({
-      where: { userId: userId ?? "" },
-      include: { _count: { select: { services: true, invoices: true } } },
-      orderBy: { name: "asc" },
-    }),
-    prisma.quote.count({ where: { userId: userId ?? "" } }),
+  const [settings, [clients, quotesCount]] = await Promise.all([
+    getBusinessSettings(),
+    Promise.all([
+      prisma.client.findMany({
+        where: { userId: userId ?? "" },
+        include: { _count: { select: { services: true, invoices: true } } },
+        orderBy: { name: "asc" },
+      }),
+      prisma.quote.count({ where: { userId: userId ?? "" } }),
+    ]),
   ]);
   const hasLinkedService = clients.some((c) => c._count.services > 0);
 
@@ -37,7 +41,7 @@ export default async function ClientsPage({
       />
 
       <main className="flex-1 p-6">
-        {clients.length > 0 && <ClientsNextStepsBar hasLinkedService={hasLinkedService} hasQuote={quotesCount > 0} />}
+        {clients.length > 0 && <ClientsNextStepsBar hasLinkedService={hasLinkedService} hasQuote={quotesCount > 0} trainingWheels={settings.trainingWheels} />}
 
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">
           {clients.length === 0 ? (

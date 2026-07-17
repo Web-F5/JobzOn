@@ -72,18 +72,21 @@ export function QuoteForm({ quoteId, initialData, clients, catalogueItems, produ
   const [lineItems, setLineItems] = useState<LineItem[]>(() => {
     if (initialData?.lineItems?.length) {
       return initialData.lineItems.map((li) => {
-        const match = catalogueItems.find(
+        const sMatch = catalogueItems.find(
           (c) =>
             (c.description ?? c.name) === li.description ||
             (c.amountExGst === li.unitPrice && catalogueItems.filter((x) => x.amountExGst === li.unitPrice).length === 1)
         );
-        return {
-          id:          uid(),
-          catalogueId: match?.id ?? "",
-          description: li.description,
-          quantity:    li.quantity,
-          unitPrice:   li.unitPrice,
-        };
+        if (sMatch) return { id: uid(), catalogueId: `s:${sMatch.id}`, description: li.description, quantity: li.quantity, unitPrice: li.unitPrice };
+
+        const pMatch = products.find(
+          (p) =>
+            (p.description ?? p.name) === li.description ||
+            (p.defaultPrice === li.unitPrice && products.filter((x) => x.defaultPrice === li.unitPrice).length === 1)
+        );
+        if (pMatch) return { id: uid(), catalogueId: `p:${pMatch.id}`, description: li.description, quantity: li.quantity, unitPrice: li.unitPrice };
+
+        return { id: uid(), catalogueId: "", description: li.description, quantity: li.quantity, unitPrice: li.unitPrice };
       });
     }
     return [{ ...BLANK, id: uid() }];

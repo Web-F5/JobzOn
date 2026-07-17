@@ -47,7 +47,7 @@ export default async function SettingsPage() {
         </section>
 
         {/* Business preferences */}
-        <BusinessPreferencesForm hideProducts={settings.hideProducts} />
+        <BusinessPreferencesForm hideProducts={settings.hideProducts} trainingWheels={settings.trainingWheels} />
 
       </main>
     </>

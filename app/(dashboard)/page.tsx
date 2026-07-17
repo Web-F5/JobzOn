@@ -5,6 +5,7 @@ import { StatCard } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatAUD } from "@/lib/gst";
 import { formatDate } from "@/lib/dates";
+import { getBusinessSettings } from "@/lib/actions/settings";
 
 export const metadata: Metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
@@ -73,8 +74,8 @@ async function getDashboardData(userId: string) {
 
 export default async function DashboardPage() {
   const { userId } = await auth();
-  const { counts, overdueInvoices, overdueTotal, upcomingRenewals, recentActivity, catalogueCount, clientCount, serviceCount, quoteCount } =
-    await getDashboardData(userId ?? "");
+  const [{ counts, overdueInvoices, overdueTotal, upcomingRenewals, recentActivity, catalogueCount, clientCount, serviceCount, quoteCount }, settings] =
+    await Promise.all([getDashboardData(userId ?? ""), getBusinessSettings()]);
 
   const allDone   = catalogueCount > 0 && clientCount > 0 && serviceCount > 0 && quoteCount > 0;
   const started   = catalogueCount > 0;
@@ -102,7 +103,7 @@ export default async function DashboardPage() {
       <main className="flex-1 p-6 space-y-6">
 
         {/* Setup wizard card */}
-        <div className="bg-[#334155] border-l-4 border-l-[#2563eb] rounded-xl shadow-sm px-6 py-5 text-center">
+        {settings.trainingWheels !== "hidden" && <div className="bg-[#334155] border-l-4 border-l-[#2563eb] rounded-xl shadow-sm px-6 py-5 text-center">
           {!allDone && (
             <>
               <p className="text-base text-white/60 max-w-xl mx-auto leading-snug mb-1">
@@ -147,7 +148,7 @@ export default async function DashboardPage() {
 
             {sideText && <span>{sideText}</span>}
           </div>
-        </div>
+        </div>}
 
         {/* Stat cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

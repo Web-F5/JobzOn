@@ -332,7 +332,8 @@ model BusinessSettings {
   bankAccountName String?
   paymentTermsDays Int?   @default(14)
 
-  hideProducts Boolean @default(false)
+  hideProducts    Boolean @default(false)
+  trainingWheels  String  @default("on") // "on" | "orange_only" | "hidden"
 
   updatedAt DateTime @updatedAt
 }

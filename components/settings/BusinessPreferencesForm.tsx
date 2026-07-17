@@ -4,7 +4,31 @@ import { useActionState } from "react";
 import { saveBusinessPreferences, type SettingsState } from "@/lib/actions/settings";
 import { SubmitButton } from "@/components/ui/Button";
 
-export function BusinessPreferencesForm({ hideProducts }: { hideProducts: boolean }) {
+const TW_OPTIONS = [
+  {
+    value: "on",
+    label: "Training Wheels On",
+    description: "Show all Next Steps buttons — both orange (to-do) and green (completed).",
+  },
+  {
+    value: "orange_only",
+    label: "Orange buttons only",
+    description: "Hide completed (green) buttons. Only shows the next action to take.",
+  },
+  {
+    value: "hidden",
+    label: "Hide Next Steps",
+    description: "Hide Next Steps bars on all pages and the setup card on the Dashboard.",
+  },
+];
+
+export function BusinessPreferencesForm({
+  hideProducts,
+  trainingWheels = "on",
+}: {
+  hideProducts: boolean;
+  trainingWheels?: string;
+}) {
   const [state, formAction] = useActionState<SettingsState, FormData>(saveBusinessPreferences, {});
 
   return (
@@ -25,7 +49,9 @@ export function BusinessPreferencesForm({ hideProducts }: { hideProducts: boolea
         </p>
       )}
 
-      <form action={formAction} className="space-y-4">
+      <form action={formAction} className="space-y-6">
+
+        {/* Hide Products */}
         <label className="flex items-start gap-3 cursor-pointer group">
           <input
             type="checkbox"
@@ -40,6 +66,31 @@ export function BusinessPreferencesForm({ hideProducts }: { hideProducts: boolea
             </p>
           </div>
         </label>
+
+        {/* Training Wheels */}
+        <div>
+          <p className="text-sm font-medium text-[var(--color-text)] mb-1">Next Steps Guide</p>
+          <p className="text-xs text-[var(--color-muted)] mb-3">
+            Control whether the Next Steps setup guide is shown, and how much detail to display.
+          </p>
+          <div className="space-y-2">
+            {TW_OPTIONS.map((opt) => (
+              <label key={opt.value} className="flex items-start gap-3 cursor-pointer p-3 rounded-lg border border-[var(--color-border)] hover:border-[var(--color-brand)] transition-colors">
+                <input
+                  type="radio"
+                  name="trainingWheels"
+                  value={opt.value}
+                  defaultChecked={trainingWheels === opt.value}
+                  className="mt-0.5 w-4 h-4 text-[var(--color-brand)] focus:ring-[var(--color-brand)]"
+                />
+                <div>
+                  <p className="text-sm font-medium text-[var(--color-text)]">{opt.label}</p>
+                  <p className="text-xs text-[var(--color-muted)] mt-0.5">{opt.description}</p>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
 
         <div className="pt-2 border-t border-[var(--color-border)] flex justify-end">
           <SubmitButton>Save Preferences</SubmitButton>
