@@ -55,7 +55,7 @@ export default async function ProductsPage() {
                     <td colSpan={6} className="px-5 py-14 text-center bg-[#334155] border-l-4 border-l-[#2563eb]">
                       <div className="flex flex-wrap items-center justify-center gap-3 text-base text-white/60">
                         <span>No products yet</span>
-                        <AddProductButton spinning dark label="+ Add your first Product" />
+                        <AddProductButton spinning dark label="+ Add your first Product" autoOpen />
                         <span>to get started.</span>
                       </div>
                     </td>

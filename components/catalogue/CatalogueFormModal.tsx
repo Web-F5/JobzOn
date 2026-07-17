@@ -30,8 +30,14 @@ export function AddCatalogueItemButton({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDialogElement>(null);
   const searchParams = useSearchParams();
+  const router = useRouter();
 
-  useEffect(() => { if (autoOpen && searchParams.get("action") === "add") setOpen(true); }, []);
+  useEffect(() => {
+    if (autoOpen && searchParams.get("action") === "add") {
+      setOpen(true);
+      router.replace("/services");
+    }
+  }, []);
   useEffect(() => {
     if (open) {
       ref.current?.showModal();

@@ -15,7 +15,12 @@ export function SpinningAddButton({ dark }: { dark?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  useEffect(() => { if (searchParams.get("action") === "add") setOpen(true); }, []);
+  useEffect(() => {
+    if (searchParams.get("action") === "add") {
+      setOpen(true);
+      router.replace("/services");
+    }
+  }, []);
   useEffect(() => {
     if (open) {
       ref.current?.showModal();

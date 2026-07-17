@@ -107,17 +107,19 @@ export default async function DashboardPage() {
             <>
               <p className="text-base text-white/60 max-w-xl mx-auto leading-snug mb-1">
                 Follow the{" "}
-                <span className="relative inline-flex items-center mx-0.5">
-                  <span aria-hidden className="pointer-events-none absolute inset-0 rounded" style={{ background: "conic-gradient(from 0deg, transparent 60%, #f97316 80%, transparent 100%)", animation: "border-spin 2.5s linear infinite" }} />
-                  <span className="relative text-orange-400 font-semibold px-1">orange</span>
+                <span className="relative inline-flex items-center overflow-hidden rounded px-1.5 py-0.5 mx-0.5">
+                  <span aria-hidden className="pointer-events-none absolute w-[200%] h-[200%] -top-1/2 -left-1/2" style={{ background: "conic-gradient(from 0deg, transparent 60%, #f97316 80%, transparent 100%)", animation: "border-spin 2.5s linear infinite" }} />
+                  <span aria-hidden className="pointer-events-none absolute inset-[1.5px] rounded-sm bg-[#334155]" />
+                  <span className="relative text-orange-400 font-semibold">orange</span>
                 </span>
                 {" "}buttons to set up your workspace.
               </p>
               <p className="text-base text-white/60 max-w-xl mx-auto leading-snug mb-3">
                 Completed steps turn{" "}
-                <span className="relative inline-flex items-center mx-0.5">
-                  <span aria-hidden className="pointer-events-none absolute inset-0 rounded" style={{ background: "conic-gradient(from 0deg, transparent 60%, #10b981 80%, transparent 100%)", animation: "border-spin 2.5s linear infinite" }} />
-                  <span className="relative text-green-400 font-semibold px-1">green</span>
+                <span className="relative inline-flex items-center overflow-hidden rounded px-1.5 py-0.5 mx-0.5">
+                  <span aria-hidden className="pointer-events-none absolute w-[200%] h-[200%] -top-1/2 -left-1/2" style={{ background: "conic-gradient(from 0deg, transparent 60%, #10b981 80%, transparent 100%)", animation: "border-spin 2.5s linear infinite" }} />
+                  <span aria-hidden className="pointer-events-none absolute inset-[1.5px] rounded-sm bg-[#334155]" />
+                  <span className="relative text-green-400 font-semibold">green</span>
                 </span>
                 {" "}and the next step appears.
               </p>

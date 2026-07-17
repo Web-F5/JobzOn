@@ -119,7 +119,13 @@ export function AddProductButton({
   const ref = useRef<HTMLDialogElement>(null);
   const searchParams = useSearchParams();
 
-  useEffect(() => { if (autoOpen && searchParams.get("action") === "add") setOpen(true); }, []);
+  const router = useRouter();
+  useEffect(() => {
+    if (autoOpen && searchParams.get("action") === "add") {
+      setOpen(true);
+      router.replace("/products");
+    }
+  }, []);
   useEffect(() => {
     if (open) {
       ref.current?.showModal();
