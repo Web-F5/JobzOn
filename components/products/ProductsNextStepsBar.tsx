@@ -22,12 +22,15 @@ function Or() {
 export function ProductsNextStepsBar({
   clientCount,
   quotesCount,
+  serviceCount = 0,
 }: {
   clientCount: number;
   quotesCount: number;
+  serviceCount?: number;
 }) {
-  const hasClients = clientCount > 0;
-  const hasQuotes  = quotesCount > 0;
+  const hasClients  = clientCount > 0;
+  const hasQuotes   = quotesCount > 0;
+  const hasServices = serviceCount > 0;
 
   return (
     <div className="flex items-center gap-3 px-4 py-2.5 bg-[#334155] border-l-4 border-l-[#2563eb] rounded-xl text-sm text-white/60">
@@ -35,6 +38,12 @@ export function ProductsNextStepsBar({
       <div className="flex items-center gap-3 flex-wrap">
 
         <AddProductButton spinning variant="green" label="+ Add Another Product" dark />
+
+        <Or />
+
+        <SpinningBorderButton href="/services" variant={hasServices ? "green" : "orange"} dark>
+          {hasServices ? "+ Add Another Service" : "+ Add your first Service"}
+        </SpinningBorderButton>
 
         <Or />
 

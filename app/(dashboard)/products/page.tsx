@@ -12,13 +12,14 @@ export const dynamic = "force-dynamic";
 export default async function ProductsPage() {
   const { userId } = await auth();
 
-  const [products, clientCount, quotesCount] = await Promise.all([
+  const [products, clientCount, quotesCount, serviceCount] = await Promise.all([
     prisma.product.findMany({
       where: { userId: userId ?? "" },
       orderBy: { name: "asc" },
     }),
     prisma.client.count({ where: { userId: userId ?? "" } }),
     prisma.quote.count({ where: { userId: userId ?? "" } }),
+    prisma.serviceCatalogueItem.count({ where: { userId: userId ?? "" } }),
   ]);
 
   return (
@@ -32,7 +33,7 @@ export default async function ProductsPage() {
       <main className="flex-1 p-6 space-y-5">
 
         {products.length > 0 && (
-          <ProductsNextStepsBar clientCount={clientCount} quotesCount={quotesCount} />
+          <ProductsNextStepsBar clientCount={clientCount} quotesCount={quotesCount} serviceCount={serviceCount} />
         )}
 
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">

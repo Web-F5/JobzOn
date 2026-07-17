@@ -106,8 +106,8 @@ export function Sidebar({ hideProducts = false }: { hideProducts?: boolean }) {
   return (
     <aside className="flex flex-col w-60 shrink-0 h-screen sticky top-0 bg-[var(--color-sidebar-bg)]">
       {/* Logo */}
-      <div className="border-b border-white/10">
-        <img src="/jobzon-logo.svg" alt="Jobzon" className="w-full object-contain" />
+      <div className="flex justify-center border-b border-white/10 px-4 py-3">
+        <img src="/jobzon-logo.svg" alt="Jobzon" className="w-44 object-contain" />
       </div>
 
       {/* Nav */}
