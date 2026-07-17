@@ -104,22 +104,24 @@ export default async function DashboardPage() {
         {/* Setup wizard card */}
         <div className="bg-[#334155] border-l-4 border-l-[#2563eb] rounded-xl shadow-sm px-6 py-5 text-center">
           {!allDone && (
-            <p className="text-base text-white/60 max-w-xl mx-auto leading-snug mb-1">
-              Follow the{" "}
-              <span className="relative inline-flex items-center mx-0.5">
-                <span aria-hidden className="pointer-events-none absolute inset-0 rounded" style={{ background: "conic-gradient(from 0deg, transparent 60%, #f97316 80%, transparent 100%)", animation: "border-spin 2.5s linear infinite" }} />
-                <span className="relative text-orange-400 font-semibold px-1">orange</span>
-              </span>
-              {" "}buttons to set up your workspace.
-            </p>
-            <p className="text-base text-white/60 max-w-xl mx-auto leading-snug mb-3">
-              Completed steps turn{" "}
-              <span className="relative inline-flex items-center mx-0.5">
-                <span aria-hidden className="pointer-events-none absolute inset-0 rounded" style={{ background: "conic-gradient(from 0deg, transparent 60%, #10b981 80%, transparent 100%)", animation: "border-spin 2.5s linear infinite" }} />
-                <span className="relative text-green-400 font-semibold px-1">green</span>
-              </span>
-              {" "}and the next step appears.
-            </p>
+            <>
+              <p className="text-base text-white/60 max-w-xl mx-auto leading-snug mb-1">
+                Follow the{" "}
+                <span className="relative inline-flex items-center mx-0.5">
+                  <span aria-hidden className="pointer-events-none absolute inset-0 rounded" style={{ background: "conic-gradient(from 0deg, transparent 60%, #f97316 80%, transparent 100%)", animation: "border-spin 2.5s linear infinite" }} />
+                  <span className="relative text-orange-400 font-semibold px-1">orange</span>
+                </span>
+                {" "}buttons to set up your workspace.
+              </p>
+              <p className="text-base text-white/60 max-w-xl mx-auto leading-snug mb-3">
+                Completed steps turn{" "}
+                <span className="relative inline-flex items-center mx-0.5">
+                  <span aria-hidden className="pointer-events-none absolute inset-0 rounded" style={{ background: "conic-gradient(from 0deg, transparent 60%, #10b981 80%, transparent 100%)", animation: "border-spin 2.5s linear infinite" }} />
+                  <span className="relative text-green-400 font-semibold px-1">green</span>
+                </span>
+                {" "}and the next step appears.
+              </p>
+            </>
           )}
           <div className="flex items-center justify-center gap-3 flex-wrap text-base text-white/60">
             {pressText && <span>{pressText}</span>}
