@@ -112,7 +112,7 @@ export function ClientServicesNextStepsBar({
         <AddServiceButton clients={clients} catalogueItems={catalogueItems} spinning variant="green" label="Setup a Recurring Invoice" dark />
         <Or />
         <SpinningBorderButton href="/quotes/new" variant={hasQuotes ? "green" : "orange"} dark>
-          <DocIcon /> {hasQuotes ? "Create Another Quote" : "Create Quote"}
+          <QuoteIcon /> {hasQuotes ? "Create Another Quote" : "Create Quote"}
         </SpinningBorderButton>
         {hasQuotes && (
           <>
