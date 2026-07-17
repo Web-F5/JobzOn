@@ -107,18 +107,29 @@ export function AddProductButton({
   variant = "orange",
   label,
   dark = false,
+  autoOpen = false,
 }: {
   spinning?: boolean;
   variant?: "orange" | "green";
   label?: string;
   dark?: boolean;
+  autoOpen?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDialogElement>(null);
   const searchParams = useSearchParams();
 
-  useEffect(() => { if (searchParams.get("action") === "add") setOpen(true); }, []);
-  useEffect(() => { open ? ref.current?.showModal() : ref.current?.close(); }, [open]);
+  useEffect(() => { if (autoOpen && searchParams.get("action") === "add") setOpen(true); }, []);
+  useEffect(() => {
+    if (open) {
+      ref.current?.showModal();
+      requestAnimationFrame(() => {
+        ref.current?.querySelector<HTMLInputElement>("input:not([type='hidden']):not([type='checkbox'])")?.focus();
+      });
+    } else {
+      ref.current?.close();
+    }
+  }, [open]);
 
   return (
     <>
@@ -172,12 +183,14 @@ export function EditProductButton({ item }: { item: ProductItem }) {
         <div className="p-6">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-semibold text-[var(--color-text)]">Edit Product</h2>
-            <div className="flex items-center gap-3">
-              <button onClick={handleDelete} className="text-xs text-red-500 hover:underline">Delete</button>
-              <button onClick={() => setOpen(false)} className="text-[var(--color-muted)] hover:text-[var(--color-text)] text-xl leading-none">×</button>
-            </div>
+            <button onClick={() => setOpen(false)} className="text-[var(--color-muted)] hover:text-[var(--color-text)] text-xl leading-none">×</button>
           </div>
           <ProductForm item={item} onSuccess={() => setOpen(false)} onCancel={() => setOpen(false)} />
+          <div className="mt-4 pt-4 border-t border-[var(--color-border)]">
+            <button onClick={handleDelete} className="text-xs text-red-500 hover:underline">
+              Delete this Product
+            </button>
+          </div>
         </div>
       </dialog>
     </>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   createCatalogueItem,
   updateCatalogueItem,
@@ -19,16 +19,29 @@ export function AddCatalogueItemButton({
   variant = "orange",
   label = "+ Add Service",
   dark = false,
+  autoOpen = false,
 }: {
   spinning?: boolean;
   variant?: "orange" | "green";
   label?: string;
   dark?: boolean;
+  autoOpen?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDialogElement>(null);
+  const searchParams = useSearchParams();
 
-  useEffect(() => { open ? ref.current?.showModal() : ref.current?.close(); }, [open]);
+  useEffect(() => { if (autoOpen && searchParams.get("action") === "add") setOpen(true); }, []);
+  useEffect(() => {
+    if (open) {
+      ref.current?.showModal();
+      requestAnimationFrame(() => {
+        ref.current?.querySelector<HTMLInputElement>("input:not([type='hidden']):not([type='checkbox'])")?.focus();
+      });
+    } else {
+      ref.current?.close();
+    }
+  }, [open]);
 
   return (
     <>
@@ -96,7 +109,7 @@ export function EditCatalogueItemButton({ item }: { item: CatalogueItem }) {
           <CatalogueItemForm item={item} onSuccess={() => setOpen(false)} onCancel={() => setOpen(false)} />
           <div className="mt-4 pt-4 border-t border-[var(--color-border)]">
             <button onClick={handleDelete} className="text-xs text-red-500 hover:underline">
-              Delete this service type
+              Delete this Service
             </button>
           </div>
         </div>

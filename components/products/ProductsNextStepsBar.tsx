@@ -37,7 +37,7 @@ export function ProductsNextStepsBar({
       <span className="font-medium shrink-0">Next steps:</span>
       <div className="flex items-center gap-3 flex-wrap">
 
-        <AddProductButton spinning variant="green" label="+ Add Another Product" dark />
+        <AddProductButton spinning variant="green" label="+ Add Another Product" dark autoOpen />
 
         <Or />
 

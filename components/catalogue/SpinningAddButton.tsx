@@ -16,7 +16,16 @@ export function SpinningAddButton({ dark }: { dark?: boolean }) {
   const searchParams = useSearchParams();
 
   useEffect(() => { if (searchParams.get("action") === "add") setOpen(true); }, []);
-  useEffect(() => { open ? ref.current?.showModal() : ref.current?.close(); }, [open]);
+  useEffect(() => {
+    if (open) {
+      ref.current?.showModal();
+      requestAnimationFrame(() => {
+        ref.current?.querySelector<HTMLInputElement>("input:not([type='hidden']):not([type='checkbox'])")?.focus();
+      });
+    } else {
+      ref.current?.close();
+    }
+  }, [open]);
   useEffect(() => { if (state.success) { router.refresh(); setOpen(false); } }, [state.success]);
 
   return (

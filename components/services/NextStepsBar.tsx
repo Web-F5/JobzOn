@@ -54,7 +54,7 @@ export function CatalogueNextStepsBar({
       <span className="font-medium shrink-0">Next steps:</span>
       <div className="flex items-center gap-3 flex-wrap">
 
-        <AddCatalogueItemButton spinning variant="green" label="+ Add Another Service" dark />
+        <AddCatalogueItemButton spinning variant="green" label="+ Add Another Service" dark autoOpen />
 
         {!hideProducts && (
           <>
