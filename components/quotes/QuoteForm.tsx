@@ -152,12 +152,6 @@ export function QuoteForm({ quoteId, initialData, clients, catalogueItems, produ
         </div>
       )}
 
-      {state.success && quoteId && (
-        <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg">
-          Quote saved successfully.
-        </div>
-      )}
-
       {/* Client */}
       {!quoteId && (
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6 space-y-4">
@@ -326,6 +320,11 @@ export function QuoteForm({ quoteId, initialData, clients, catalogueItems, produ
       </div>
 
       {/* Submit */}
+      {state.success && quoteId && (
+        <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg">
+          Quote saved successfully.
+        </div>
+      )}
       <div className="flex items-center justify-end gap-3">
         <button type="button" onClick={() => router.back()}
           className="px-4 py-2 text-sm text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors">
