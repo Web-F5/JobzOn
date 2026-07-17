@@ -59,7 +59,7 @@ export function CatalogueNextStepsBar({
         {!hideProducts && (
           <>
             <Or />
-            <SpinningBorderButton href="/products" variant={hasProducts ? "green" : "orange"} dark>
+            <SpinningBorderButton href="/products?action=add" variant={hasProducts ? "green" : "orange"} dark>
               + {hasProducts ? "Add Another Product" : "Add your first Product"}
             </SpinningBorderButton>
           </>

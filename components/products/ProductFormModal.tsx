@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createProduct, updateProduct, deleteProduct, type ProductFormState } from "@/lib/actions/products";
 import { FormField } from "@/components/ui/FormField";
 import { SubmitButton, Button } from "@/components/ui/Button";
@@ -115,7 +115,9 @@ export function AddProductButton({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDialogElement>(null);
+  const searchParams = useSearchParams();
 
+  useEffect(() => { if (searchParams.get("action") === "add") setOpen(true); }, []);
   useEffect(() => { open ? ref.current?.showModal() : ref.current?.close(); }, [open]);
 
   return (

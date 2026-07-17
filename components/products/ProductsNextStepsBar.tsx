@@ -41,7 +41,7 @@ export function ProductsNextStepsBar({
 
         <Or />
 
-        <SpinningBorderButton href="/services" variant={hasServices ? "green" : "orange"} dark>
+        <SpinningBorderButton href="/services?action=add" variant={hasServices ? "green" : "orange"} dark>
           {hasServices ? "+ Add Another Service" : "+ Add your first Service"}
         </SpinningBorderButton>
 

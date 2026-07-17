@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createCatalogueItem, type CatalogueFormState } from "@/lib/actions/catalogue";
 import { useActionState } from "react";
 import { FormField } from "@/components/ui/FormField";
@@ -13,7 +13,9 @@ export function SpinningAddButton({ dark }: { dark?: boolean }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [state, formAction] = useActionState<CatalogueFormState, FormData>(createCatalogueItem, {});
   const router = useRouter();
+  const searchParams = useSearchParams();
 
+  useEffect(() => { if (searchParams.get("action") === "add") setOpen(true); }, []);
   useEffect(() => { open ? ref.current?.showModal() : ref.current?.close(); }, [open]);
   useEffect(() => { if (state.success) { router.refresh(); setOpen(false); } }, [state.success]);
 
