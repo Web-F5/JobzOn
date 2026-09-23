@@ -431,7 +431,7 @@ function RatesStep({ onNext, onBack }: { onNext: () => void; onBack: () => void 
       <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-5 space-y-4">
         <h3 className="text-sm font-semibold text-white">Quote Presentation</h3>
         <RateField label="Quote rounding" hint="Final price rounded to nearest $ amount (e.g. 10 = nearest $10)" prefix="$">
-          <input name="quoteRounding" type="number" step="5" min="1" defaultValue={10} className={numInp + " w-32"} />
+          <input name="quoteRounding" type="number" step="1" min="1" defaultValue={10} className={numInp + " w-32"} />
         </RateField>
       </div>
 
