@@ -313,7 +313,7 @@ function DetailsStep({ initial, onNext, onBack }: {
             <label className="text-xs font-medium text-slate-400 uppercase tracking-wide">Suburb / Town</label>
             <AddressAutocomplete
               searchType="locality"
-              defaultValue={suburb}
+              value={suburb}
               inputClassName={inp}
               onSelect={({ suburb: s, state: st, postcode: p }) => {
                 if (s)  setSuburb(s);

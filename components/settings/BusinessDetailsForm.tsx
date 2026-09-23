@@ -97,7 +97,7 @@ export function BusinessDetailsForm({ initial }: Props) {
             <AddressAutocomplete
               searchType="locality"
               name="suburb_autocomplete"
-              defaultValue={suburb}
+              value={suburb}
               onSelect={({ suburb: s, state: st, postcode: p }) => {
                 if (s)  setSuburb(s);
                 if (st) setState_(st);

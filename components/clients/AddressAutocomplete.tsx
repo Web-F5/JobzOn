@@ -11,6 +11,8 @@ interface AddressFields {
 
 interface Props {
   defaultValue?: string;
+  /** Controlled value — when set, syncs internal input state whenever it changes */
+  value?: string;
   onSelect: (fields: AddressFields) => void;
   inputClassName?: string;
   name?: string;
@@ -50,9 +52,14 @@ interface Prediction {
 
 const DEFAULT_CLS = "w-full px-3 py-2 text-sm rounded-lg border border-[var(--color-border)] bg-white focus:outline-none focus:ring-2 focus:ring-blue-300";
 
-export function AddressAutocomplete({ defaultValue = "", onSelect, inputClassName, name = "address", searchType = "address" }: Props) {
+export function AddressAutocomplete({ defaultValue = "", value: controlledValue, onSelect, inputClassName, name = "address", searchType = "address" }: Props) {
   const cls = inputClassName ?? DEFAULT_CLS;
-  const [value, setValue]             = useState(defaultValue);
+  const [value, setValue]             = useState(controlledValue ?? defaultValue);
+
+  // Sync internal state when parent passes a new controlled value (e.g. street address filling suburb)
+  useEffect(() => {
+    if (controlledValue !== undefined) setValue(controlledValue);
+  }, [controlledValue]);
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [open, setOpen]               = useState(false);
   const [ready, setReady]             = useState(false);
@@ -117,7 +124,8 @@ export function AddressAutocomplete({ defaultValue = "", onSelect, inputClassNam
       const state    = getShort("administrative_area_level_1");
       const postcode = get("postal_code");
 
-      setValue(address);
+      // For locality searches show the suburb name; for address searches show the street
+      setValue(searchType === "locality" ? suburb : address);
       onSelect({ address, suburb, state, postcode });
     });
   }
