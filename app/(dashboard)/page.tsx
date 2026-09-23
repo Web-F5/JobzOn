@@ -106,6 +106,13 @@ export default async function DashboardPage() {
         {settings.trainingWheels !== "hidden" && <div className="bg-[#334155] border-l-4 border-l-[#2563eb] rounded-xl shadow-sm px-6 py-5 text-center">
           {!allDone && (
             <>
+              <p
+                className="text-2xl font-bold mb-2"
+                style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif", letterSpacing: "-0.5px" }}
+              >
+                <span className="text-white">Welcome to Jobz</span>
+                <span className="text-[#10b981]">On</span>
+              </p>
               <p className="text-base text-white/60 max-w-xl mx-auto leading-snug mb-1">
                 Follow the{" "}
                 <span className="relative inline-flex items-center overflow-hidden rounded px-1.5 py-0.5 mx-0.5">

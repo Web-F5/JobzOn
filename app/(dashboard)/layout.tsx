@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/nav/Sidebar";
 import { getBusinessSettings } from "@/lib/actions/settings";
 
@@ -7,6 +8,10 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const settings = await getBusinessSettings();
+
+  if (!settings.onboardingComplete) {
+    redirect("/onboarding");
+  }
 
   return (
     <div className="flex min-h-screen bg-[var(--color-bg)]">

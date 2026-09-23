@@ -30,7 +30,7 @@ export async function getBusinessSettings() {
         bankAccountName: true, paymentTermsDays: true, updatedAt: true,
       },
     });
-    return { ...row, hideProducts: false, trainingWheels: "on" };
+    return { ...row, hideProducts: false, trainingWheels: "on", trade: "general", onboardingComplete: false };
   }
 }
 

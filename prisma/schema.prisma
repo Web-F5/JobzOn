@@ -335,6 +335,25 @@ model BusinessSettings {
   hideProducts    Boolean @default(false)
   trainingWheels  String  @default("on") // "on" | "orange_only" | "hidden"
 
+  trade              String  @default("general") // "general" | "electrician"
+  onboardingComplete Boolean @default(false)
+
+  updatedAt DateTime @updatedAt
+}
+
+// ─── ELECTRICIAN SETTINGS ─────────────────────────────────────────────────────
+
+model ElectricianSettings {
+  id                   String @id  // Clerk userId
+
+  labourSellRate       Float  @default(170)
+  labourCostRate       Float  @default(65)
+  overheadAllowance    Float  @default(0.1)
+  contingencyAllowance Float  @default(0.05)
+  minimumJobCharge     Float  @default(500)
+  travelCallout        Float  @default(0)
+  quoteRounding        Int    @default(10)
+
   updatedAt DateTime @updatedAt
 }
 
