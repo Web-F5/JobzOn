@@ -130,6 +130,6 @@ export async function completeOnboarding(): Promise<OnboardingState> {
   } catch {
     return { error: "Failed to complete onboarding." };
   }
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { success: true };
 }
