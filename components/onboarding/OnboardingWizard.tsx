@@ -468,11 +468,13 @@ function RateField({ label, hint, prefix, suffix, children }: {
 
 function ReadyStep({ trade, onDone }: { trade: string; onDone: () => void }) {
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
 
   function handleDone() {
     startTransition(async () => {
       await completeOnboarding();
-      window.location.href = "/";
+      router.refresh();
+      router.replace("/");
     });
   }
 
