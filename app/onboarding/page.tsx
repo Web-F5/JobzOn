@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { getBusinessSettings } from "@/lib/actions/settings";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 
@@ -7,6 +8,9 @@ export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage() {
   const settings = await getBusinessSettings();
+
+  // Already completed — send straight to dashboard
+  if (settings.onboardingComplete) redirect("/");
 
   return (
     <OnboardingWizard
