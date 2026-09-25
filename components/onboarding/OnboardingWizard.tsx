@@ -8,6 +8,7 @@ import {
   saveOnboardingRates,
   completeOnboarding,
 } from "@/lib/actions/onboarding";
+import { importSupplierPriceList } from "@/lib/actions/supplierPriceList";
 import { AddressAutocomplete } from "@/components/clients/AddressAutocomplete";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -36,7 +37,8 @@ const inp = [
   "border-[#334155] focus:outline-none focus:ring-2 focus:ring-blue-500",
 ].join(" ");
 
-const STEPS = ["Your Trade", "Business Details", "Your Rates", "All Done!"];
+const STEPS_ELECTRICIAN = ["Your Trade", "Business Details", "Your Rates", "Price List", "All Done!"];
+const STEPS_GENERAL     = ["Your Trade", "Business Details", "Price List", "All Done!"];
 
 // ─── Progress bar ─────────────────────────────────────────────────────────────
 
@@ -464,7 +466,132 @@ function RateField({ label, hint, prefix, suffix, children }: {
   );
 }
 
-// ─── Step 4 — Ready ───────────────────────────────────────────────────────────
+// ─── Step — Price List (optional) ────────────────────────────────────────────
+
+const KNOWN_SUPPLIERS = ["Middys", "Rexel", "Voltex", "Reece", "Other"];
+
+function PriceListStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
+  const [supplier, setSupplier]         = useState("Middys");
+  const [customSupplier, setCustomName] = useState("");
+  const [file, setFile]                 = useState<File | null>(null);
+  const [preview, setPreview]           = useState<string[] | null>(null);
+  const [error, setError]               = useState<string | null>(null);
+  const [success, setSuccess]           = useState<string | null>(null);
+  const [pending, startTransition]      = useTransition();
+  const fileRef                         = useRef<HTMLInputElement>(null);
+
+  const effectiveSupplier = supplier === "Other" ? customSupplier.trim() : supplier;
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0] ?? null;
+    setFile(f);
+    setPreview(null);
+    setError(null);
+    setSuccess(null);
+    if (!f) return;
+    const text = await f.text();
+    const lines = text.split(/\r?\n/).filter((l) => l.trim());
+    setPreview(lines.slice(0, 4));
+  }
+
+  function handleImport() {
+    if (!file || !effectiveSupplier) return;
+    setError(null);
+    startTransition(async () => {
+      const text = await file.text();
+      const result = await importSupplierPriceList(effectiveSupplier, text);
+      if (!result.success) { setError(result.error ?? "Import failed"); return; }
+      setSuccess(`Imported ${result.itemCount?.toLocaleString()} products from ${effectiveSupplier}`);
+      setFile(null);
+      setPreview(null);
+      if (fileRef.current) fileRef.current.value = "";
+    });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-xl font-semibold text-white mb-1">Import a Supplier Price List</h2>
+        <p className="text-sm text-slate-400">
+          Import your supplier's CSV price list so you can quickly add materials to quotes.
+          You can skip this and do it later in Settings.
+        </p>
+      </div>
+
+      {success ? (
+        <div className="bg-[#10b981]/10 border border-[#10b981]/30 rounded-xl p-4 flex items-start gap-3">
+          <svg className="w-5 h-5 text-[#10b981] shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          <div>
+            <p className="text-sm font-medium text-[#10b981]">{success}</p>
+            <button onClick={() => { setSuccess(null); setSupplier("Middys"); }}
+              className="text-xs text-slate-400 hover:text-white mt-1 transition-colors">
+              Import another supplier →
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <label className="text-xs text-slate-400 uppercase tracking-wide font-medium">Supplier</label>
+            <select value={supplier} onChange={(e) => setSupplier(e.target.value)}
+              className={inp}>
+              {KNOWN_SUPPLIERS.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+
+          {supplier === "Other" && (
+            <div className="space-y-1">
+              <label className="text-xs text-slate-400 uppercase tracking-wide font-medium">Supplier Name</label>
+              <input type="text" value={customSupplier} onChange={(e) => setCustomName(e.target.value)}
+                placeholder="e.g. Reece Plumbing" className={inp} />
+            </div>
+          )}
+
+          <div className="space-y-1">
+            <label className="text-xs text-slate-400 uppercase tracking-wide font-medium">CSV File</label>
+            <input ref={fileRef} type="file" accept=".csv,text/csv" onChange={handleFileChange}
+              className="w-full text-sm text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-[#1e293b] file:text-slate-300 cursor-pointer" />
+          </div>
+
+          {preview && (
+            <div className="rounded-lg bg-[#0f172a] border border-[#334155] overflow-x-auto">
+              <table className="w-full text-xs">
+                {preview.map((line, i) => (
+                  <tr key={i} className={i === 0 ? "text-slate-500 border-b border-[#334155]" : "text-slate-300"}>
+                    {line.split(",").slice(0, 5).map((cell, j) => (
+                      <td key={j} className="px-2 py-1 truncate max-w-[100px]">{cell.replace(/^"|"$/g, "")}</td>
+                    ))}
+                    <td className="px-2 py-1 text-slate-600">…</td>
+                  </tr>
+                ))}
+              </table>
+              <p className="px-2 py-1 text-xs text-slate-600 border-t border-[#334155]">First 3 rows · 5 columns shown</p>
+            </div>
+          )}
+
+          {error && <p className="text-sm text-red-400 bg-red-900/20 border border-red-800/50 rounded-lg px-3 py-2">{error}</p>}
+
+          <button onClick={handleImport} disabled={!file || !effectiveSupplier || pending}
+            className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-colors disabled:opacity-40">
+            {pending ? "Importing…" : "Import Price List"}
+          </button>
+        </div>
+      )}
+
+      <div className="flex justify-between pt-2">
+        <button type="button" onClick={onBack} className="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors">← Back</button>
+        <button type="button" onClick={onNext}
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-lg transition-colors">
+          {success ? "Next →" : "Skip for now →"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Step — Ready ─────────────────────────────────────────────────────────────
 
 function ReadyStep({ trade, onDone }: { trade: string; onDone: () => void }) {
   const [pending, startTransition] = useTransition();
@@ -543,9 +670,8 @@ export function OnboardingWizard({ initial }: { initial: InitialData }) {
   const [step,  setStep]  = useState(0);
   const [trade, setTrade] = useState(initial.trade);
 
-  // Skip rates step for non-electricians
-  const totalSteps = trade === "electrician" ? 4 : 3;
-  const stepLabels = trade === "electrician" ? STEPS : ["Your Trade", "Business Details", "All Done!"];
+  const stepLabels = trade === "electrician" ? STEPS_ELECTRICIAN : STEPS_GENERAL;
+  const totalSteps = stepLabels.length;
 
   function goNext() { setStep((s) => s + 1); }
   function goBack() { setStep((s) => s - 1); }
@@ -608,6 +734,9 @@ export function OnboardingWizard({ initial }: { initial: InitialData }) {
           <RatesStep onNext={goNext} onBack={goBack} />
         )}
         {((step === 2 && trade !== "electrician") || step === 3) && (
+          <PriceListStep onNext={goNext} onBack={goBack} />
+        )}
+        {((step === 3 && trade !== "electrician") || step === 4) && (
           <ReadyStep trade={trade} onDone={() => {}} />
         )}
       </div>

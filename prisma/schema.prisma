@@ -357,6 +357,41 @@ model ElectricianSettings {
   updatedAt DateTime @updatedAt
 }
 
+// ─── SUPPLIER PRICE LISTS ─────────────────────────────────────────────────────
+
+model SupplierPriceList {
+  id           String   @id @default(cuid())
+  userId       String
+  supplierName String
+  itemCount    Int      @default(0)
+  importedAt   DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  products SupplierProduct[]
+
+  @@unique([userId, supplierName])
+}
+
+model SupplierProduct {
+  id               String @id @default(cuid())
+  priceListId      String
+  priceList        SupplierPriceList @relation(fields: [priceListId], references: [id], onDelete: Cascade)
+
+  partNumber       String
+  manufacturerCode String?
+  manufacturer     String?
+  description      String
+  unit             String?
+  tradePrice       Float   @default(0)
+  sellPrice        Float   @default(0)
+  barcode          String?
+  category         String?
+  subCategory1     String?
+  subCategory2     String?
+
+  @@unique([priceListId, partNumber])
+}
+
 // ─── SEQUENCE COUNTERS (invoice / quote / job numbering per fiscal year) ───────
 
 model SequenceCounter {

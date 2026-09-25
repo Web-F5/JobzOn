@@ -1,15 +1,20 @@
 import { Metadata } from "next";
 import { TopBar } from "@/components/nav/TopBar";
 import { getBusinessSettings } from "@/lib/actions/settings";
+import { getSupplierPriceLists } from "@/lib/actions/supplierPriceList";
 import { LogoUploadForm } from "@/components/settings/LogoUploadForm";
 import { BusinessDetailsForm } from "@/components/settings/BusinessDetailsForm";
 import { BusinessPreferencesForm } from "@/components/settings/BusinessPreferencesForm";
+import { SupplierPriceListManager } from "@/components/settings/SupplierPriceListManager";
 
 export const metadata: Metadata = { title: "Settings" };
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const settings = await getBusinessSettings();
+  const [settings, priceLists] = await Promise.all([
+    getBusinessSettings(),
+    getSupplierPriceLists(),
+  ]);
 
   return (
     <>
@@ -48,6 +53,16 @@ export default async function SettingsPage() {
 
         {/* Business preferences */}
         <BusinessPreferencesForm hideProducts={settings.hideProducts} trainingWheels={settings.trainingWheels} />
+
+        {/* Supplier price lists */}
+        <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm p-6">
+          <h2 className="font-semibold text-[var(--color-text)] mb-1">Supplier Price Lists</h2>
+          <p className="text-sm text-[var(--color-muted)] mb-5">
+            Import CSV price lists from your suppliers. Used when building material quotes.
+            Price lists older than 30 days will be flagged as potentially out of date.
+          </p>
+          <SupplierPriceListManager initial={priceLists} />
+        </section>
 
       </main>
     </>
