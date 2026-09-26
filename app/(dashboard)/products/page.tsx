@@ -7,13 +7,11 @@ import { AddProductButton, EditProductButton } from "@/components/products/Produ
 import { ProductsNextStepsBar } from "@/components/products/ProductsNextStepsBar";
 import { getBusinessSettings } from "@/lib/actions/settings";
 import { getSupplierPriceLists } from "@/lib/actions/supplierPriceList";
+import { SupplierPriceListManager } from "@/components/settings/SupplierPriceListManager";
 
 export const metadata: Metadata = { title: "Products" };
 export const dynamic = "force-dynamic";
 
-function formatDate(d: Date) {
-  return new Date(d).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
-}
 
 export default async function ProductsPage() {
   const { userId } = await auth();
@@ -37,7 +35,7 @@ export default async function ProductsPage() {
       <TopBar
         title="Products"
         description="Physical items and materials that can be added to quotes and invoices"
-        actions={products.length > 0 ? <AddProductButton /> : null}
+        actions={products.length > 0 ? <AddProductButton label={priceLists.length > 0 ? "+ Add Another Product" : undefined} /> : null}
       />
 
       <main className="flex-1 p-6 space-y-5">
@@ -46,42 +44,16 @@ export default async function ProductsPage() {
           <ProductsNextStepsBar clientCount={clientCount} quotesCount={quotesCount} serviceCount={serviceCount} trainingWheels={settings.trainingWheels} />
         )}
 
-        {/* Supplier price lists summary */}
+        {/* Supplier price lists */}
         {priceLists.length > 0 && (
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h2 className="text-sm font-semibold text-[var(--color-text)]">Supplier Price Lists</h2>
-                <p className="text-xs text-[var(--color-muted)] mt-0.5">
-                  Available for material lookups when building quotes. Manage in{" "}
-                  <a href="/settings" className="underline hover:text-[var(--color-text)] transition-colors">Settings</a>.
-                </p>
-              </div>
+            <div className="mb-4">
+              <h2 className="text-sm font-semibold text-[var(--color-text)]">Supplier Price Lists</h2>
+              <p className="text-xs text-[var(--color-muted)] mt-0.5">
+                Available for material lookups when building quotes.
+              </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {priceLists.map((pl) => (
-                <div key={pl.id} className="flex items-start gap-3 p-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-raised)]">
-                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
-                    <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-medium text-[var(--color-text)]">{pl.supplierName}</span>
-                      {pl.isStale && (
-                        <span className="text-xs px-1.5 py-0.5 rounded-full bg-orange-500/15 text-orange-400 font-medium">
-                          Update recommended
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-[var(--color-muted)] mt-0.5">
-                      {pl.itemCount.toLocaleString()} items · Updated {formatDate(pl.updatedAt)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <SupplierPriceListManager initial={priceLists} />
           </div>
         )}
 
@@ -102,11 +74,24 @@ export default async function ProductsPage() {
                 {products.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-5 py-14 text-center bg-[#334155] border-l-4 border-l-[#2563eb]">
-                      <div className="flex flex-wrap items-center justify-center gap-3 text-base text-white/60">
-                        <span>No products yet</span>
-                        <AddProductButton spinning dark label="+ Add your first Product" autoOpen />
-                        <span>to get started.</span>
-                      </div>
+                      {priceLists.length > 0 ? (
+                        <div className="max-w-lg mx-auto space-y-3">
+                          <p className="text-sm text-white/60">
+                            A supplier price list has been attached. If you wish to add your own products
+                            that are not in the list you can enter them here — note that manually added
+                            products will need to be updated by hand when your prices change.
+                          </p>
+                          <div className="flex justify-center">
+                            <AddProductButton spinning dark label="+ Add Your Own Product" autoOpen />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap items-center justify-center gap-3 text-base text-white/60">
+                          <span>No products yet</span>
+                          <AddProductButton spinning dark label="+ Add your first Product" autoOpen />
+                          <span>to get started.</span>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ) : (
