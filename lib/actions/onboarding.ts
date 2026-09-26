@@ -1,9 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { prisma }         from "@/lib/prisma";
-import { requireUserId }  from "@/lib/auth";
-import { put }            from "@vercel/blob";
+import { revalidatePath }              from "next/cache";
+import { prisma }                      from "@/lib/prisma";
+import { requireUserId }               from "@/lib/auth";
+import { put }                         from "@vercel/blob";
+import { ELECTRICIAN_SERVICE_SEEDS }   from "@/lib/electricianServiceSeed";
 
 export type OnboardingState = { error?: string; success?: boolean };
 
@@ -118,15 +119,38 @@ export async function saveOnboardingRates(
   return { success: true };
 }
 
-/** Final step — mark onboarding complete */
+/** Final step — mark onboarding complete and seed trade-specific data */
 export async function completeOnboarding(): Promise<OnboardingState> {
   const userId = await requireUserId();
   try {
-    await prisma.businessSettings.upsert({
+    const settings = await prisma.businessSettings.upsert({
       where:  { id: userId },
       update: { onboardingComplete: true },
       create: { id: userId, onboardingComplete: true },
     });
+
+    // Seed electrician service catalogue on first completion
+    if (settings.trade === "electrician") {
+      const elec = await prisma.electricianSettings.findUnique({ where: { id: userId } });
+      const sellRate = elec?.labourSellRate ?? 170;
+
+      // Only seed if the user has no catalogue items yet (idempotent)
+      const existing = await prisma.serviceCatalogueItem.count({ where: { userId } });
+      if (existing === 0) {
+        await prisma.serviceCatalogueItem.createMany({
+          data: ELECTRICIAN_SERVICE_SEEDS.map((s) => ({
+            id:          crypto.randomUUID(),
+            userId,
+            name:        s.name,
+            type:        "OTHER" as const,
+            description: s.description,
+            amountExGst: Math.round(s.labourHrs * sellRate * 100) / 100,
+            active:      true,
+          })),
+          skipDuplicates: true,
+        });
+      }
+    }
   } catch {
     return { error: "Failed to complete onboarding." };
   }
