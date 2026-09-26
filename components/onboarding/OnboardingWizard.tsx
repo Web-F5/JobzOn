@@ -40,42 +40,6 @@ const inp = [
 const STEPS_ELECTRICIAN = ["Your Trade", "Business Details", "Your Rates", "Price List", "All Done!"];
 const STEPS_GENERAL     = ["Your Trade", "Business Details", "Price List", "All Done!"];
 
-// ─── Progress bar ─────────────────────────────────────────────────────────────
-
-function ProgressBar({ step, total }: { step: number; total: number }) {
-  return (
-    <div className="w-full max-w-xl mb-8">
-      <div className="flex items-center gap-2">
-        {Array.from({ length: total }, (_, i) => (
-          <div key={i} className="flex items-center gap-2 flex-1">
-            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 transition-colors ${
-              i < step  ? "bg-[#10b981] text-white" :
-              i === step ? "bg-blue-500 text-white" :
-              "bg-[#334155] text-slate-400"
-            }`}>
-              {i < step ? (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              ) : i + 1}
-            </div>
-            {i < total - 1 && (
-              <div className={`h-0.5 flex-1 transition-colors ${i < step ? "bg-[#10b981]" : "bg-[#334155]"}`} />
-            )}
-          </div>
-        ))}
-      </div>
-      <div className="flex justify-between mt-2">
-        {STEPS.map((label, i) => (
-          <span key={i} className={`text-xs ${i === step ? "text-white" : "text-slate-500"}`}
-            style={{ width: `${100 / STEPS.length}%`, textAlign: i === 0 ? "left" : i === STEPS.length - 1 ? "right" : "center" }}>
-            {label}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // ─── Step 1 — Trade selection ─────────────────────────────────────────────────
 
