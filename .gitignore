@@ -42,6 +42,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# uploaded/imported data files — keep out of source control
+*.csv
+*.xlsx
+*.xls
+migrate-*.sql
+
 /app/generated/prisma
 
 .vercel

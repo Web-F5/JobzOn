@@ -304,8 +304,8 @@ function DetailsStep({ initial, onNext, onBack }: {
         {/* Emails */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-slate-400 uppercase tracking-wide">Business Email</label>
-            <input name="emailOutgoing" type="email" defaultValue={initial.emailOutgoing} placeholder="accounts@yourbusiness.com.au" className={inp} />
+            <label className="text-xs font-medium text-slate-400 uppercase tracking-wide">Business Email <span className="text-red-400">*</span></label>
+            <input name="emailOutgoing" type="email" required defaultValue={initial.emailOutgoing} placeholder="accounts@yourbusiness.com.au" className={inp} />
             <p className="text-xs text-slate-500">Printed on invoices &amp; quotes</p>
           </div>
           <div className="flex flex-col gap-1">
@@ -589,9 +589,7 @@ function ReadyStep({ trade, onDone }: { trade: string; onDone: () => void }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
         {trade === "electrician" ? (
           <>
-            <NextAction icon="⚡" title="Add your first Service" desc="Set up your service catalogue with your standard job types and pricing." href="/services" />
             <NextAction icon="👤" title="Add a Client" desc="Add your first client so you can create quotes and invoices." href="/clients" />
-            <NextAction icon="📋" title="Create a Quote" desc="Use the electrician quoting tool to build your first job quote." href="/quotes/new" />
             <NextAction icon="⚙️" title="Review your Settings" desc="Update payment details, bank info, and business logo." href="/settings" />
           </>
         ) : (
