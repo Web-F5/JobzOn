@@ -9,6 +9,9 @@ import {
 
 const KNOWN_SUPPLIERS = ["Middys", "Rexel", "Voltex", "Reece", "Other"];
 
+// Matches serverActions.bodySizeLimit in next.config.ts
+const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
+
 function formatDate(d: Date) {
   return new Date(d).toLocaleDateString("en-AU", {
     day: "numeric",
@@ -53,9 +56,20 @@ export function SupplierPriceListManager({
     setError(null);
     setSuccess(null);
 
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setError("File is too large (max 4 MB). Try removing unused columns, or contact support.");
+      return;
+    }
+
     startTransition(async () => {
       const text = await file.text();
-      const result = await importSupplierPriceList(effectiveSupplier, text);
+      let result: Awaited<ReturnType<typeof importSupplierPriceList>>;
+      try {
+        result = await importSupplierPriceList(effectiveSupplier, text);
+      } catch {
+        setError("Import failed — the file may be too large or the connection dropped. Please try again.");
+        return;
+      }
       if (!result.success) {
         setError(result.error ?? "Import failed");
         return;
@@ -112,7 +126,7 @@ export function SupplierPriceListManager({
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                  <p className="text-xs text-[var(--color-muted)] mt-0.5">
                     {l.itemCount.toLocaleString()} products · Last updated {formatDate(l.updatedAt)}
                   </p>
                 </div>
@@ -125,7 +139,7 @@ export function SupplierPriceListManager({
                     setShowForm(true);
                     setSuccess(null);
                   }}
-                  className="text-xs px-3 py-1.5 rounded bg-[var(--color-surface-raised)] hover:bg-[var(--color-border)] text-[var(--color-text-muted)] transition-colors"
+                  className="text-xs px-3 py-1.5 rounded bg-[var(--color-bg)] hover:bg-[var(--color-border)] text-[var(--color-muted)] transition-colors"
                 >
                   Update
                 </button>
@@ -143,7 +157,7 @@ export function SupplierPriceListManager({
       )}
 
       {lists.length === 0 && !showForm && (
-        <p className="text-sm text-[var(--color-text-muted)]">No price lists imported yet.</p>
+        <p className="text-sm text-[var(--color-muted)]">No price lists imported yet.</p>
       )}
 
       {/* Success message */}
@@ -159,11 +173,11 @@ export function SupplierPriceListManager({
           <h4 className="font-medium text-[var(--color-text)]">Import Price List</h4>
 
           <div className="space-y-1">
-            <label className="text-xs text-[var(--color-text-muted)] uppercase tracking-wide">Supplier</label>
+            <label className="text-xs text-[var(--color-muted)] uppercase tracking-wide">Supplier</label>
             <select
               value={supplier}
               onChange={(e) => setSupplier(e.target.value)}
-              className="w-full px-3 py-2 rounded bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text)] text-sm"
+              className="w-full px-3 py-2 rounded bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-text)] text-sm"
             >
               {KNOWN_SUPPLIERS.map((s) => (
                 <option key={s} value={s}>{s}</option>
@@ -173,42 +187,42 @@ export function SupplierPriceListManager({
 
           {supplier === "Other" && (
             <div className="space-y-1">
-              <label className="text-xs text-[var(--color-text-muted)] uppercase tracking-wide">Supplier Name</label>
+              <label className="text-xs text-[var(--color-muted)] uppercase tracking-wide">Supplier Name</label>
               <input
                 type="text"
                 value={customSupplier}
                 onChange={(e) => setCustomSupplier(e.target.value)}
                 placeholder="e.g. Reece Plumbing"
-                className="w-full px-3 py-2 rounded bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text)] text-sm"
+                className="w-full px-3 py-2 rounded bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-text)] text-sm"
               />
             </div>
           )}
 
           <div className="space-y-1">
-            <label className="text-xs text-[var(--color-text-muted)] uppercase tracking-wide">CSV File</label>
+            <label className="text-xs text-[var(--color-muted)] uppercase tracking-wide">CSV File</label>
             <input
               ref={fileRef}
               type="file"
               accept=".csv,text/csv"
               onChange={handleFileChange}
-              className="w-full text-sm text-[var(--color-text-muted)] file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:bg-[var(--color-surface-raised)] file:text-[var(--color-text)] cursor-pointer"
+              className="w-full text-sm text-[var(--color-muted)] file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:bg-[var(--color-bg)] file:text-[var(--color-text)] cursor-pointer"
             />
           </div>
 
           {/* Preview */}
           {preview && (
-            <div className="rounded bg-[var(--color-surface-raised)] border border-[var(--color-border)] overflow-x-auto">
+            <div className="rounded bg-[var(--color-bg)] border border-[var(--color-border)] overflow-x-auto">
               <table className="w-full text-xs">
                 {preview.map((line, i) => (
-                  <tr key={i} className={i === 0 ? "text-[var(--color-text-muted)] border-b border-[var(--color-border)]" : "text-[var(--color-text)]"}>
+                  <tr key={i} className={i === 0 ? "text-[var(--color-muted)] border-b border-[var(--color-border)]" : "text-[var(--color-text)]"}>
                     {line.split(",").slice(0, 6).map((cell, j) => (
                       <td key={j} className="px-2 py-1 truncate max-w-[120px]">{cell.replace(/^"|"$/g, "")}</td>
                     ))}
-                    <td className="px-2 py-1 text-[var(--color-text-muted)]">…</td>
+                    <td className="px-2 py-1 text-[var(--color-muted)]">…</td>
                   </tr>
                 ))}
               </table>
-              <p className="px-2 py-1 text-xs text-[var(--color-text-muted)] border-t border-[var(--color-border)]">
+              <p className="px-2 py-1 text-xs text-[var(--color-muted)] border-t border-[var(--color-border)]">
                 Showing first 3 data rows · first 6 columns
               </p>
             </div>
@@ -222,13 +236,13 @@ export function SupplierPriceListManager({
             <button
               onClick={handleImport}
               disabled={!file || !effectiveSupplier || pending}
-              className="px-4 py-2 rounded bg-[var(--color-accent)] text-white text-sm font-medium disabled:opacity-40 hover:opacity-90 transition-opacity"
+              className="px-4 py-2 rounded bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white text-sm font-medium disabled:opacity-40 transition-colors"
             >
               {pending ? "Importing…" : "Import"}
             </button>
             <button
               onClick={() => { setShowForm(false); setFile(null); setPreview(null); setError(null); if (fileRef.current) fileRef.current.value = ""; }}
-              className="px-4 py-2 rounded bg-[var(--color-surface-raised)] text-[var(--color-text-muted)] text-sm hover:bg-[var(--color-border)] transition-colors"
+              className="px-4 py-2 rounded bg-[var(--color-bg)] text-[var(--color-muted)] text-sm hover:bg-[var(--color-border)] transition-colors"
             >
               Cancel
             </button>
@@ -237,7 +251,7 @@ export function SupplierPriceListManager({
       ) : (
         <button
           onClick={() => { setShowForm(true); setSuccess(null); setSupplier("Middys"); setCustomSupplier(""); }}
-          className="text-sm px-4 py-2 rounded bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-border)] transition-colors"
+          className="text-sm px-4 py-2 rounded bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-border)] transition-colors"
         >
           + Add Price List
         </button>

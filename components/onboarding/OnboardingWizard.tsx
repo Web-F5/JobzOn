@@ -9,6 +9,7 @@ import {
 } from "@/lib/actions/onboarding";
 import { importSupplierPriceList } from "@/lib/actions/supplierPriceList";
 import { AddressAutocomplete } from "@/components/clients/AddressAutocomplete";
+import { ImportClientsButton } from "@/components/clients/ImportClientsButton";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -460,9 +461,16 @@ function PriceListStep({ onNext, onBack }: { onNext: () => void; onBack: () => v
   function handleImport() {
     if (!file || !effectiveSupplier) return;
     setError(null);
+    if (file.size > 4 * 1024 * 1024) { setError("File is too large (max 4 MB)."); return; }
     startTransition(async () => {
       const text = await file.text();
-      const result = await importSupplierPriceList(effectiveSupplier, text);
+      let result: Awaited<ReturnType<typeof importSupplierPriceList>>;
+      try {
+        result = await importSupplierPriceList(effectiveSupplier, text);
+      } catch {
+        setError("Import failed — the file may be too large or the connection dropped. Please try again.");
+        return;
+      }
       if (!result.success) { setError(result.error ?? "Import failed"); return; }
       setSuccess(`Imported ${result.itemCount?.toLocaleString()} products from ${effectiveSupplier}`);
       setFile(null);
@@ -607,6 +615,14 @@ function ReadyStep({ trade }: { trade: string }) {
         {actions.map((a) => (
           <NextAction key={a.href} {...a} disabled={pending} onClick={() => finish(a.href)} />
         ))}
+        <ImportClientsButton
+          sources={["xero"]}
+          trigger={(open) => (
+            <NextAction icon="🔄" title="Import Contacts from Xero"
+              desc="Already use Xero? Bring your existing contacts in as clients."
+              disabled={pending} onClick={open} className="sm:col-span-2" />
+          )}
+        />
       </div>
 
       <button
@@ -620,12 +636,12 @@ function ReadyStep({ trade }: { trade: string }) {
   );
 }
 
-function NextAction({ icon, title, desc, disabled, onClick }: {
-  icon: string; title: string; desc: string; disabled: boolean; onClick: () => void;
+function NextAction({ icon, title, desc, disabled, onClick, className = "" }: {
+  icon: string; title: string; desc: string; disabled: boolean; onClick: () => void; className?: string;
 }) {
   return (
     <button type="button" onClick={onClick} disabled={disabled}
-      className="flex items-start gap-3 p-4 text-left bg-[#1e293b] border border-[#334155] rounded-xl hover:border-[#475569] transition-colors group disabled:opacity-60">
+      className={`flex items-start gap-3 p-4 text-left bg-[#1e293b] border border-[#334155] rounded-xl hover:border-[#475569] transition-colors group disabled:opacity-60 ${className}`}>
       <span className="text-xl shrink-0">{icon}</span>
       <div>
         <p className="text-sm font-semibold text-white group-hover:text-blue-400 transition-colors">{title}</p>

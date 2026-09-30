@@ -31,10 +31,19 @@ const SOURCES: { value: ContactSource; label: string; steps: string[] }[] = [
 ];
 
 /** Import Contacts button + modal — imports clients from a Xero (or other) contacts CSV */
-export function ImportClientsButton() {
+export function ImportClientsButton({
+  sources = ["xero", "other"],
+  trigger,
+}: {
+  /** Which import sources to offer (first is selected by default) */
+  sources?: ContactSource[];
+  /** Custom trigger element; defaults to an "Import Contacts" button */
+  trigger?: (open: () => void) => React.ReactNode;
+} = {}) {
   const router = useRouter();
   const [open, setOpen]             = useState(false);
-  const [source, setSource]         = useState<ContactSource>("xero");
+  const [source, setSource]         = useState<ContactSource>(sources[0]);
+  const available                   = SOURCES.filter((s) => sources.includes(s.value));
   const [csvText, setCsvText]       = useState<string | null>(null);
   const [fileName, setFileName]     = useState("");
   const [preview, setPreview]       = useState<ParseContactsResult | null>(null);
@@ -80,9 +89,11 @@ export function ImportClientsButton() {
 
   return (
     <>
-      <Button variant="secondary" onClick={() => setOpen(true)}>Import Contacts</Button>
+      {trigger
+        ? trigger(() => setOpen(true))
+        : <Button variant="secondary" onClick={() => setOpen(true)}>Import Contacts</Button>}
 
-      <Modal title="Import Contacts" open={open} onClose={close} width="lg" disableBackdropClose>
+      <Modal title={available.length === 1 ? `Import Contacts from ${available[0].label}` : "Import Contacts"} open={open} onClose={close} width="lg" disableBackdropClose>
         {result ? (
           <div className="space-y-4">
             <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">
@@ -101,11 +112,11 @@ export function ImportClientsButton() {
           </div>
         ) : (
           <div className="space-y-5">
-            {/* Source */}
-            <div className="space-y-1.5">
+            {/* Source — only shown when there's a choice */}
+            {available.length > 1 && <div className="space-y-1.5">
               <label className="text-xs font-medium text-[var(--color-muted)] uppercase tracking-wide">Import from</label>
               <div className="flex gap-2">
-                {SOURCES.map((s) => (
+                {available.map((s) => (
                   <button key={s.value} type="button" onClick={() => setSource(s.value)}
                     className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
                       source === s.value
@@ -116,7 +127,7 @@ export function ImportClientsButton() {
                   </button>
                 ))}
               </div>
-            </div>
+            </div>}
 
             {/* How-to */}
             <ol className="list-decimal list-inside space-y-1 text-sm text-[var(--color-muted)] bg-slate-50 border border-[var(--color-border)] rounded-lg px-4 py-3">

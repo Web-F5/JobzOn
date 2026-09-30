@@ -13,7 +13,7 @@ export type ClientImportResult = {
   skipped?: ParseContactsResult["skipped"];
 };
 
-// Server Actions reject bodies over 1 MB by default (next.config serverActions.bodySizeLimit)
+// Contact exports are small — 1 MB is thousands of contacts (well under serverActions.bodySizeLimit)
 const MAX_BYTES = 1000 * 1000;
 const MAX_ROWS  = 5000;
 

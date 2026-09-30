@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath }              from "next/cache";
 import { prisma }                      from "@/lib/prisma";
 import { requireUserId }               from "@/lib/auth";
 import { put }                         from "@vercel/blob";
@@ -163,6 +162,8 @@ export async function completeOnboarding(): Promise<OnboardingState> {
   } catch (err) {
     console.error("completeOnboarding: failed to seed service catalogue", err);
   }
-  revalidatePath("/", "layout");
+  // No revalidatePath here: in a Server Action it re-renders the current page (/onboarding),
+  // whose "already complete" redirect then races the client's full navigation and flashes
+  // "This page couldn't load". The wizard does a full page load afterwards, so nothing is stale.
   return { success: true };
 }
