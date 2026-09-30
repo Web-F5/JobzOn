@@ -16,8 +16,11 @@ export async function getBusinessSettings() {
       update: {},
       create: { id: userId },
     });
-  } catch {
-    // hideProducts column may not exist yet — return safe defaults
+  } catch (err) {
+    // hideProducts column may not exist yet — return safe defaults.
+    // NB: this reports onboardingComplete=false, so a DB missing the newer columns
+    // sends users round the onboarding wizard forever — run `npm run db:push`.
+    console.error("getBusinessSettings: full read failed, falling back to legacy columns", err);
     const row = await prisma.businessSettings.upsert({
       where:  { id: userId },
       update: {},

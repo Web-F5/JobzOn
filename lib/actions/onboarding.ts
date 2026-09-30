@@ -122,15 +122,24 @@ export async function saveOnboardingRates(
 /** Final step — mark onboarding complete and seed trade-specific data */
 export async function completeOnboarding(): Promise<OnboardingState> {
   const userId = await requireUserId();
+
+  let trade: string;
   try {
     const settings = await prisma.businessSettings.upsert({
       where:  { id: userId },
       update: { onboardingComplete: true },
       create: { id: userId, onboardingComplete: true },
     });
+    trade = settings.trade;
+  } catch (err) {
+    console.error("completeOnboarding: failed to mark onboarding complete", err);
+    return { error: "Failed to complete onboarding. Please try again." };
+  }
 
+  // Seeding is best-effort — a failure here must not block the user from getting into the app
+  try {
     // Seed electrician service catalogue on first completion
-    if (settings.trade === "electrician") {
+    if (trade === "electrician") {
       const elec = await prisma.electricianSettings.findUnique({ where: { id: userId } });
       const sellRate = elec?.labourSellRate ?? 170;
 
@@ -151,8 +160,8 @@ export async function completeOnboarding(): Promise<OnboardingState> {
         });
       }
     }
-  } catch {
-    return { error: "Failed to complete onboarding." };
+  } catch (err) {
+    console.error("completeOnboarding: failed to seed service catalogue", err);
   }
   revalidatePath("/", "layout");
   return { success: true };

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import {
   saveOnboardingTrade,
   saveOnboardingDetails,
@@ -557,17 +556,33 @@ function PriceListStep({ onNext, onBack }: { onNext: () => void; onBack: () => v
 
 // ─── Step — Ready ─────────────────────────────────────────────────────────────
 
-function ReadyStep({ trade, onDone }: { trade: string; onDone: () => void }) {
+function ReadyStep({ trade }: { trade: string }) {
   const [pending, startTransition] = useTransition();
-  const router = useRouter();
+  const [error,   setError]        = useState("");
 
-  function handleDone() {
+  // Every exit from the wizard must mark onboarding complete first — otherwise the
+  // dashboard layout sees onboardingComplete=false and bounces back to /onboarding.
+  function finish(href: string) {
+    setError("");
     startTransition(async () => {
-      await completeOnboarding();
-      router.refresh();
-      router.replace("/");
+      const res = await completeOnboarding();
+      if (res.error) { setError(res.error); return; }
+      // Full navigation so no stale client-router cache of the /onboarding redirect is reused
+      window.location.assign(href);
     });
   }
+
+  const actions = trade === "electrician"
+    ? [
+        { icon: "👤", title: "Add a Client",         desc: "Add your first client so you can create quotes and invoices.", href: "/clients?action=add" },
+        { icon: "⚙️", title: "Review your Settings", desc: "Update payment details, bank info, and business logo.",        href: "/settings" },
+      ]
+    : [
+        { icon: "🔧", title: "Add a Service",        desc: "Set up your service catalogue — reusable items for quotes and invoices.", href: "/services" },
+        { icon: "👤", title: "Add a Client",         desc: "Add your first client to get started with invoicing.",                    href: "/clients?action=add" },
+        { icon: "📋", title: "Create a Quote",       desc: "Send a professional quote to your first client.",                         href: "/quotes/new" },
+        { icon: "⚙️", title: "Review your Settings", desc: "Add payment details and your business logo.",                             href: "/settings" },
+      ];
 
   return (
     <div className="space-y-6 text-center">
@@ -586,24 +601,16 @@ function ReadyStep({ trade, onDone }: { trade: string; onDone: () => void }) {
         </p>
       </div>
 
+      {error && <p className="text-sm text-red-400 bg-red-900/30 border border-red-800 rounded-lg px-3 py-2">{error}</p>}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
-        {trade === "electrician" ? (
-          <>
-            <NextAction icon="👤" title="Add a Client" desc="Add your first client so you can create quotes and invoices." href="/clients" />
-            <NextAction icon="⚙️" title="Review your Settings" desc="Update payment details, bank info, and business logo." href="/settings" />
-          </>
-        ) : (
-          <>
-            <NextAction icon="🔧" title="Add a Service" desc="Set up your service catalogue — reusable items for quotes and invoices." href="/services" />
-            <NextAction icon="👤" title="Add a Client" desc="Add your first client to get started with invoicing." href="/clients" />
-            <NextAction icon="📋" title="Create a Quote" desc="Send a professional quote to your first client." href="/quotes/new" />
-            <NextAction icon="⚙️" title="Review your Settings" desc="Add payment details and your business logo." href="/settings" />
-          </>
-        )}
+        {actions.map((a) => (
+          <NextAction key={a.href} {...a} disabled={pending} onClick={() => finish(a.href)} />
+        ))}
       </div>
 
       <button
-        onClick={handleDone}
+        onClick={() => finish("/")}
         disabled={pending}
         className="inline-flex items-center gap-2 px-8 py-3 bg-[#10b981] hover:bg-green-400 text-white font-semibold rounded-xl transition-colors disabled:opacity-60 text-base"
       >
@@ -613,16 +620,18 @@ function ReadyStep({ trade, onDone }: { trade: string; onDone: () => void }) {
   );
 }
 
-function NextAction({ icon, title, desc, href }: { icon: string; title: string; desc: string; href: string }) {
+function NextAction({ icon, title, desc, disabled, onClick }: {
+  icon: string; title: string; desc: string; disabled: boolean; onClick: () => void;
+}) {
   return (
-    <a href={href}
-      className="flex items-start gap-3 p-4 bg-[#1e293b] border border-[#334155] rounded-xl hover:border-[#475569] transition-colors group">
+    <button type="button" onClick={onClick} disabled={disabled}
+      className="flex items-start gap-3 p-4 text-left bg-[#1e293b] border border-[#334155] rounded-xl hover:border-[#475569] transition-colors group disabled:opacity-60">
       <span className="text-xl shrink-0">{icon}</span>
       <div>
         <p className="text-sm font-semibold text-white group-hover:text-blue-400 transition-colors">{title}</p>
         <p className="text-xs text-slate-400 mt-0.5">{desc}</p>
       </div>
-    </a>
+    </button>
   );
 }
 
@@ -699,7 +708,7 @@ export function OnboardingWizard({ initial }: { initial: InitialData }) {
           <PriceListStep onNext={goNext} onBack={goBack} />
         )}
         {((step === 3 && trade !== "electrician") || step === 4) && (
-          <ReadyStep trade={trade} onDone={() => {}} />
+          <ReadyStep trade={trade} />
         )}
       </div>
 

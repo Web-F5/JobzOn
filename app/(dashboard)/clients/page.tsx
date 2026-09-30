@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { TopBar } from "@/components/nav/TopBar";
 import { AddClientButton, EditClientButton } from "@/components/clients/ClientFormModal";
+import { ImportClientsButton } from "@/components/clients/ImportClientsButton";
 import { PortalLinkButton } from "@/components/clients/PortalLinkButton";
 import { ClientsNextStepsBar } from "@/components/clients/ClientsNextStepsBar";
 import { getBusinessSettings } from "@/lib/actions/settings";
@@ -37,7 +38,12 @@ export default async function ClientsPage({
       <TopBar
         title="Clients"
         description="Manage your client accounts and services"
-        actions={<AddClientButton defaultOpen={autoAdd} />}
+        actions={
+          <div className="flex items-center gap-2">
+            <ImportClientsButton />
+            <AddClientButton defaultOpen={autoAdd} />
+          </div>
+        }
       />
 
       <main className="flex-1 p-6">
@@ -46,8 +52,11 @@ export default async function ClientsPage({
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">
           {clients.length === 0 ? (
             <div className="px-6 py-14 flex flex-col items-center gap-4 text-center">
-              <p className="text-sm text-[var(--color-muted)]">No clients yet — add your first client to get started.</p>
-              <AddClientButton defaultOpen={false} spinning />
+              <p className="text-sm text-[var(--color-muted)]">No clients yet — add your first client, or import your contacts from Xero.</p>
+              <div className="flex items-center gap-3">
+                <AddClientButton defaultOpen={false} spinning />
+                <ImportClientsButton />
+              </div>
             </div>
           ) : (
             <div className="overflow-x-auto">
