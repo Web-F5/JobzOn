@@ -4,6 +4,7 @@ import { useState, useActionState, useTransition } from "react";
 import { createManualInvoice } from "@/lib/actions/invoices";
 import { SelectField } from "@/components/ui/FormField";
 import { SubmitButton } from "@/components/ui/Button";
+import { ClientSearchInput } from "@/components/clients/ClientSearchInput";
 import type { InvoiceActionState } from "@/lib/actions/invoices";
 
 interface CatalogueItem {
@@ -159,16 +160,11 @@ export function NewInvoiceForm({ clients, catalogueItems, products = [], quotes,
             <label className="text-sm font-medium text-[var(--color-text)]">
               Client <span className="text-red-500">*</span>
             </label>
-            <select
+            <ClientSearchInput
               name="clientId"
               required
-              value={selectedClientId}
-              onChange={(e) => { setClient(e.target.value); setLineItems([{ ...BLANK_LINE }]); }}
-              className={inputCls}
-            >
-              <option value="" disabled>Select a client…</option>
-              {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+              onChange={(c) => { setClient(c?.id ?? ""); setLineItems([{ ...BLANK_LINE }]); }}
+            />
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="dueDate" className="text-sm font-medium text-[var(--color-text)]">

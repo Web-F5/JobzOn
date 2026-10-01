@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useTransition, useState, useEffect, useRef } from "react";
+import { useActionState, useTransition, useState, useEffect, useRef, useCallback } from "react";
+import { ClientSearchInput } from "@/components/clients/ClientSearchInput";
 import { useRouter } from "next/navigation";
 import type { QuoteFormState } from "@/lib/actions/quotes";
 
@@ -163,12 +164,13 @@ export function QuoteForm({ quoteId, initialData, clients, catalogueItems, produ
             <label className="text-sm font-medium text-[var(--color-text)]">
               Client <span className="text-red-500">*</span>
             </label>
-            <select name="clientId" required defaultValue={initialData?.clientId ?? ""} className={inp + " cursor-pointer"}>
-              <option value="" disabled>Select a client…</option>
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            <ClientSearchInput
+              name="clientId"
+              required
+              initialClient={initialData?.clientId
+                ? { id: initialData.clientId, name: clients.find(c => c.id === initialData.clientId)?.name ?? "" }
+                : null}
+            />
           </div>
         </div>
       )}
