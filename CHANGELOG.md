@@ -4,6 +4,16 @@ All notable changes to JobzOn are documented here.
 
 ---
 
+## [0.2.1] — 2026-10-01
+
+### Added
+- **Full development changelog** — complete milestone version history (v0.1.0–v0.2.0) added to CHANGELOG.md.
+
+### Fixed
+- TypeScript build error on Vercel: `ClientListSearch` passing partial client type to `EditClientButton` which expects the full Prisma `Client` model. Search API updated to return all required fields.
+
+---
+
 ## [0.2.0] — 2026-10-01
 
 ### Added
