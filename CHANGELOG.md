@@ -7,6 +7,7 @@ All notable changes to JobzOn are documented here.
 ## [0.2.0] — 2026-10-01
 
 ### Added
+- **Middys Trade Prices CSV parser** — imports Middys Xero-format cost-of-goods file ("Middys (Trade Prices)" in the supplier dropdown). Stores trade/buy prices for future purchase order and COGS tracking against quoted jobs. Strips the redundant code prefix from descriptions and cross-references the Middys catalogue number for later RRP ↔ trade price lookup.
 - **Supplier price list import** — import CSV price lists from Middys and Voltex via the onboarding wizard (step 4), Products page, and Settings. Supports multiple suppliers simultaneously with update and remove options.
 - **Stale price list warning** — orange "Update recommended" badge when a price list is more than 30 days old.
 - **Electrician service catalogue seeding** — on onboarding completion, electrician accounts are automatically pre-populated with ~20 service items (GPO, light install, ceiling fan, new circuit, cable runs) priced from the user's configured labour rate.
