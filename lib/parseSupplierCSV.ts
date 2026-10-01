@@ -61,6 +61,48 @@ export function parseMiddysCSV(text: string): ParsedRow[] {
   return rows;
 }
 
+// Parse Voltex-format CSV — columns: Part Number, Item Description, Buy Price, Category
+export function parseVoltexCSV(text: string): ParsedRow[] {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim());
+  if (lines.length < 2) throw new Error("CSV appears empty");
+
+  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+  const idx = {
+    partNumber:  headers.indexOf("part number"),
+    description: headers.indexOf("item description"),
+    tradePrice:  headers.indexOf("buy price"),
+    category:    headers.indexOf("category"),
+  };
+
+  if (idx.partNumber === -1 || idx.description === -1 || idx.tradePrice === -1) {
+    throw new Error("Unrecognised CSV format — expected Voltex columns (Part Number, Item Description, Buy Price, Category)");
+  }
+
+  const rows: ParsedRow[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = splitCSVLine(lines[i]);
+    const partNumber  = cols[idx.partNumber]?.trim();
+    const description = cols[idx.description]?.trim();
+    if (!partNumber || !description) continue;
+
+    rows.push({
+      partNumber,
+      manufacturerCode: null,
+      manufacturer:     null,
+      description,
+      unit:             null,
+      tradePrice:       parseFloat(cols[idx.tradePrice] ?? "0") || 0,
+      sellPrice:        0,
+      barcode:          null,
+      category:         idx.category >= 0 ? cols[idx.category]?.trim() || null : null,
+      subCategory1:     null,
+      subCategory2:     null,
+    });
+  }
+
+  return rows;
+}
+
 function splitCSVLine(line: string): string[] {
   const result: string[] = [];
   let cur = "";
