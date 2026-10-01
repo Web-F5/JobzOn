@@ -61,6 +61,52 @@ export function parseMiddysCSV(text: string): ParsedRow[] {
   return rows;
 }
 
+// Parse Middys Trade Prices CSV (Xero import format) — columns: Code, Description, Purchases Unit Price, New Product Code
+export function parseMiddysTradeCSV(text: string): ParsedRow[] {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim());
+  if (lines.length < 2) throw new Error("CSV appears empty");
+
+  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+  const idx = {
+    partNumber:      headers.indexOf("code"),
+    description:     headers.indexOf("description"),
+    tradePrice:      headers.indexOf("purchases unit price"),
+    middysCode:      headers.indexOf("new product code"),
+  };
+
+  if (idx.partNumber === -1 || idx.description === -1 || idx.tradePrice === -1) {
+    throw new Error("Unrecognised CSV format — expected Middys trade price columns (Code, Description, Purchases Unit Price)");
+  }
+
+  const rows: ParsedRow[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = splitCSVLine(lines[i]);
+    const partNumber  = cols[idx.partNumber]?.trim();
+    let   description = cols[idx.description]?.trim() ?? "";
+    if (!partNumber || !description) continue;
+
+    // Strip leading "CODE: " prefix that Middys includes in the description
+    const prefixPattern = new RegExp(`^${partNumber.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}:\\s*`, "i");
+    description = description.replace(prefixPattern, "");
+
+    rows.push({
+      partNumber,
+      manufacturerCode: idx.middysCode >= 0 ? cols[idx.middysCode]?.trim() || null : null,
+      manufacturer:     null,
+      description,
+      unit:             null,
+      tradePrice:       parseFloat(cols[idx.tradePrice] ?? "0") || 0,
+      sellPrice:        0,
+      barcode:          null,
+      category:         null,
+      subCategory1:     null,
+      subCategory2:     null,
+    });
+  }
+
+  return rows;
+}
+
 // Parse Voltex-format CSV — columns: Part Number, Item Description, Buy Price, Category
 export function parseVoltexCSV(text: string): ParsedRow[] {
   const lines = text.split(/\r?\n/).filter((l) => l.trim());

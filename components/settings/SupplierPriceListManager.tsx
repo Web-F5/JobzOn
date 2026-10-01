@@ -7,7 +7,7 @@ import {
   type PriceListSummary,
 } from "@/lib/actions/supplierPriceList";
 
-const KNOWN_SUPPLIERS = ["Middys", "Rexel", "Voltex", "Reece", "Other"];
+const KNOWN_SUPPLIERS = ["Middys", "Middys (Trade Prices)", "Rexel", "Voltex", "Reece", "Other"];
 
 // Matches serverActions.bodySizeLimit in next.config.ts
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;

@@ -3,7 +3,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { parseMiddysCSV, parseVoltexCSV } from "@/lib/parseSupplierCSV";
+import { parseMiddysCSV, parseMiddysTradeCSV, parseVoltexCSV } from "@/lib/parseSupplierCSV";
 
 export type PriceListSummary = {
   id: string;
@@ -48,6 +48,8 @@ export async function importSupplierPriceList(
     const name = supplierName.toLowerCase();
     if (name === "voltex") {
       rows = parseVoltexCSV(csvText);
+    } else if (name === "middys (trade prices)") {
+      rows = parseMiddysTradeCSV(csvText);
     } else {
       rows = parseMiddysCSV(csvText);
     }
