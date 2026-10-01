@@ -23,7 +23,9 @@ export async function GET(request: Request) {
     },
     select: {
       id: true, name: true, email: true, phone: true,
-      smsEnabled: true, portalToken: true,
+      userId: true, abn: true, address: true, suburb: true,
+      state: true, postcode: true, smsEnabled: true, portalToken: true,
+      createdAt: true, updatedAt: true,
       _count: { select: { services: true, invoices: true } },
     },
     orderBy: { name: "asc" },

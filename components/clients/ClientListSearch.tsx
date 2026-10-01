@@ -9,8 +9,16 @@ type Client = {
   name: string;
   email: string;
   phone: string | null;
+  userId: string;
+  abn: string | null;
+  address: string | null;
+  suburb: string | null;
+  state: string | null;
+  postcode: string | null;
   smsEnabled: boolean;
   portalToken: string | null;
+  createdAt: Date;
+  updatedAt: Date;
   _count: { services: number; invoices: number };
 };
 
