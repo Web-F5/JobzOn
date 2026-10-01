@@ -4,6 +4,13 @@ All notable changes to JobzOn are documented here.
 
 ---
 
+## [0.2.2] — 2026-10-01
+
+### Added
+- **Electrician Rates in Settings** — electrician accounts can now edit all trade rates after onboarding: labour sell rate, labour cost rate, overhead allowance, contingency allowance, minimum job charge, travel/callout fee, and quote rounding. Section is hidden for General Business accounts. Changing the labour sell rate does not retroactively update existing catalogue items.
+
+---
+
 ## [0.2.1] — 2026-10-01
 
 ### Added
