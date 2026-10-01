@@ -132,6 +132,51 @@ export async function saveBusinessDetails(
 }
 
 
+export async function getElectricianSettings() {
+  const userId = await requireUserId();
+  return prisma.electricianSettings.findUnique({ where: { id: userId } });
+}
+
+export async function saveElectricianSettings(
+  _prev: SettingsState,
+  formData: FormData
+): Promise<SettingsState> {
+  const userId = await requireUserId();
+  const num = (key: string, def: number) => {
+    const v = parseFloat(formData.get(key) as string ?? "");
+    return isNaN(v) ? def : v;
+  };
+  const int = (key: string, def: number) => {
+    const v = parseInt(formData.get(key) as string ?? "", 10);
+    return isNaN(v) ? def : v;
+  };
+
+  // overheadAllowance and contingencyAllowance are stored as decimals (0.1 = 10%)
+  // but the form submits them as percentages (10 = 10%)
+  const data = {
+    labourSellRate:       num("labourSellRate",       170),
+    labourCostRate:       num("labourCostRate",         65),
+    overheadAllowance:    num("overheadAllowance",      10) / 100,
+    contingencyAllowance: num("contingencyAllowance",    5) / 100,
+    minimumJobCharge:     num("minimumJobCharge",      500),
+    travelCallout:        num("travelCallout",           0),
+    quoteRounding:        int("quoteRounding",          10),
+  };
+
+  try {
+    await prisma.electricianSettings.upsert({
+      where:  { id: userId },
+      update: data,
+      create: { id: userId, ...data },
+    });
+  } catch (err: unknown) {
+    return { error: `Failed to save: ${err instanceof Error ? err.message : String(err)}` };
+  }
+
+  revalidatePath("/settings");
+  return { success: true };
+}
+
 export async function saveBusinessPreferences(
   _prev: SettingsState,
   formData: FormData

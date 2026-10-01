@@ -1,19 +1,21 @@
 import { Metadata } from "next";
 import { TopBar } from "@/components/nav/TopBar";
-import { getBusinessSettings } from "@/lib/actions/settings";
+import { getBusinessSettings, getElectricianSettings } from "@/lib/actions/settings";
 import { getSupplierPriceLists } from "@/lib/actions/supplierPriceList";
 import { LogoUploadForm } from "@/components/settings/LogoUploadForm";
 import { BusinessDetailsForm } from "@/components/settings/BusinessDetailsForm";
 import { BusinessPreferencesForm } from "@/components/settings/BusinessPreferencesForm";
+import { ElectricianSettingsForm } from "@/components/settings/ElectricianSettingsForm";
 import { SupplierPriceListManager } from "@/components/settings/SupplierPriceListManager";
 
 export const metadata: Metadata = { title: "Settings" };
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const [settings, priceLists] = await Promise.all([
+  const [settings, priceLists, electricianSettings] = await Promise.all([
     getBusinessSettings(),
     getSupplierPriceLists(),
+    getElectricianSettings(),
   ]);
 
   return (
@@ -50,6 +52,18 @@ export default async function SettingsPage() {
           </p>
           <LogoUploadForm currentLogoUrl={settings.logoUrl} />
         </section>
+
+        {/* Electrician rates — only shown for electrician accounts */}
+        {settings.trade === "electrician" && (
+          <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm p-6">
+            <h2 className="font-semibold text-[var(--color-text)] mb-1">Electrician Rates</h2>
+            <p className="text-sm text-[var(--color-muted)] mb-5">
+              These rates are used when calculating job quotes and pre-populating your service catalogue prices.
+              Changing your labour sell rate here will not automatically update existing catalogue items.
+            </p>
+            <ElectricianSettingsForm initial={electricianSettings} />
+          </section>
+        )}
 
         {/* Business preferences */}
         <BusinessPreferencesForm hideProducts={settings.hideProducts} trainingWheels={settings.trainingWheels} />
