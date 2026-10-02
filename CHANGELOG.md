@@ -4,6 +4,27 @@ All notable changes to JobzOn are documented here.
 
 ---
 
+## [0.5.0] — 2026-10-02
+
+### Added
+- **Electrical Quote Builder — Switchboard Module (Phase 3)** — ported from Ben's Aussie Sparky Quote Builder v10 (Stage 25).
+  - Up to 8 board rows (Main board / Sub-board); work types New, Upgrade, Modification with distinct base labour hours.
+  - RCBO and RCD quantities at $35/$45 each; main switch/isolator flag ($45 material).
+  - New and Upgrade work types include board enclosure allowance (main: $180, sub: $120) plus $40 sundries.
+  - Optional feed/submain cable: size 2.5–25 mm² with per-size routing-rate multipliers, heavier cable material costs, conduit support.
+  - Feed pull-in hours: main board 1.5 hrs, sub-board 0.9 hrs.
+  - Inspector/inspection flag: adds $350 external cost when any board requires inspection.
+  - **Switchboard-only setup hours**: 0.50 hrs (vs the standard 0.65/1.0/1.4 thresholds for other modules).
+  - **Benchmark validation**: B15 (modification) passes at 0.0%, B16 (upgrade + mains + inspector) passes at 0.0% labour / -0.7% price, both within tolerances.
+
+- **Electrical Quote Builder — Custom Job Module (Phase 3)** — free-form universal builder.
+  - Up to 10 line items: Equipment, Cable, Containment, Switchgear, Access/Hire, Labour, and Other.
+  - Each item has qty, material cost per unit, and labour hours per unit.
+  - Totals feed the standard job-level calculation (labour sell, progressive markup, overhead, contingency, GST).
+  - No dedicated benchmarks (free-form module); standard setup hours apply.
+
+---
+
 ## [0.4.0] — 2026-10-02
 
 ### Added

@@ -1007,3 +1007,310 @@ export function defaultLightPoints(count = 10): LightPoint[] {
 export function defaultLightControls(count = 5): LightControl[] {
   return Array.from({ length: count }, () => ({ ...DEFAULT_LIGHT_CONTROL }));
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SWITCHBOARD MODULE
+// ═══════════════════════════════════════════════════════════════════════════
+
+export type BoardType = "Not used" | "Main board" | "Sub-board";
+export type BoardWorkType = "New" | "Upgrade" | "Modification";
+
+export interface SwitchboardEntry {
+  board:         BoardType;
+  workType:      BoardWorkType;
+  rcboQty:       number;
+  rcdQty:        number;
+  mainSwitch:    "Yes" | "No";
+  /** Feed/submain cable size */
+  cableSize:     CableSize;
+  /** Feed cable run in metres (0 = no submain) */
+  cableLength:   number;
+  routeOverride: RouteOverride;
+  inspector:     "Yes" | "No";
+  extraLabour:   number;
+  extraMaterial: number;
+}
+
+export interface SwitchboardResult {
+  entries: {
+    route:      string;
+    labourHrs:  number;
+    materials:  number;
+  }[];
+  moduleLabourHrs:  number;
+  setupHrs:         number;
+  externalCosts:    number;
+  totalHrs:         number;
+  rawMaterials:     number;
+  labourSellValue:  number;
+  materialMarkup:   number;
+  travelCallout:    number;
+  baseBeforeOverhead: number;
+  overheadAmount:   number;
+  contingencyAmount: number;
+  subtotalExGst:    number;
+  gst:              number;
+  totalIncGst:      number;
+  hasRouteIssue:    boolean;
+}
+
+// Switchboard Assumptions (v10 Stage 25)
+const ASB = {
+  K16: 0.15,  // hrs per RCBO or RCD
+  H72: 1.5,   // main board feed pull-in hrs
+  H73: 0.9,   // sub-board feed pull-in hrs
+  E18: 0.5,   // switchboard-only whole-job setup hrs
+  // Reused from A/ANC:
+  H70: 0.35, H71: 0.008, H66: A.H66, H48: A.H48,
+  B8: A.B8, B9: A.B9, B12: A.B12, B13: A.B13, B15: A.B15, B16: A.B16,
+  E21: A.E21, E22: A.E22,
+} as const;
+
+// Work type base labour hours (Settings AJ5, N12, N11)
+const SB_WORK_HRS: Record<BoardWorkType, number> = { New: 3, Upgrade: 4, Modification: 1 };
+
+// RCBO / RCD material costs (Settings N6, N7)
+const SB_RCBO_MAT  = 35;   // Settings N6
+const SB_RCD_MAT   = 45;   // Settings N7
+const SB_SUNDRIES  = 40;   // Settings N10 (board sundries / labels)
+const SB_MAIN_MAT  = 180;  // Settings AJ6 (main board enclosure)
+const SB_SUB_MAT   = 120;  // Settings AJ7 (sub-board enclosure)
+const SB_SWITCH_MAT = 45;  // Settings AJ8 (main switch / isolator)
+const SB_INSPECTOR  = 350; // Settings N5
+
+// SB feed cable material cost per m (Settings AC5-AC10 — heavier grades than NC)
+const SB_CABLE_COST: Partial<Record<CableSize, number>> = {
+  "2.5 mm²": 1.95, "4 mm²": 2.99, "6 mm²": 4.25,
+  "10 mm²": 7.12, "16 mm²": 12, "25 mm²": 15.01,
+};
+
+function resolveSbRoute(
+  entry: SwitchboardEntry,
+  setup: GpoJobSetup,
+): string {
+  if (entry.board === "Not used" || entry.cableLength === 0) return "NONE";
+  const ov = entry.routeOverride;
+  if (ov === "MANUAL / SITE CHECK") return "MANUAL / SITE CHECK";
+  if ((ov === "UNDERFLOOR" || ov === "FLOOR") && setup.underfloor !== "Yes") {
+    return "INVALID - NO FLOOR ACCESS";
+  }
+  if (ov !== "AUTO") return ov;
+  if (setup.quoteType === "New Build" || setup.openFrame === "Yes") return "OPEN FRAME";
+  if (setup.storeys === "Two storey") return "CONDUIT";
+  if (setup.underfloor === "Yes") return "UNDERFLOOR";
+  return "ROOF";
+}
+
+function sbEntryLabour(entry: SwitchboardEntry, setup: GpoJobSetup, route: string): number {
+  if (entry.board === "Not used") return 0;
+
+  const base = SB_WORK_HRS[entry.workType];
+  const protectionDevices = (entry.rcboQty + entry.rcdQty) * ASB.K16;
+
+  let cableHrs = 0;
+  if (entry.cableLength > 0 && route !== "NONE" &&
+      route !== "INVALID - NO FLOOR ACCESS" && route !== "MANUAL / SITE CHECK") {
+    const rr    = routeRate(route as ResolvedRoute);
+    const cr    = clippingRate(route as ResolvedRoute);
+    const sf    = NC_SIZE_FACTOR[entry.cableSize] ?? 1;
+    const pull  = setup.roofAccess === "Pull sheets";
+    const two   = setup.storeys === "Two storey";
+    const isNB  = setup.quoteType === "New Build";
+    const isOF  = route === "OPEN FRAME";
+    const feedIn = entry.board === "Main board" ? ASB.H72 : ASB.H73;
+
+    cableHrs =
+      feedIn
+      + entry.cableLength * sf * (rr + cr)
+      + (route === "CONDUIT" ? ASB.E22 : 0)
+      + (route === "ROOF" && pull ? entry.cableLength * sf * ASB.H48 : 0)
+      + (two && (isNB || isOF) ? ASB.H70 + entry.cableLength * ASB.H71 : 0)
+      + (isOF && !isNB ? ASB.H66 : 0);
+  }
+
+  return base + protectionDevices + cableHrs + entry.extraLabour;
+}
+
+function sbEntryMaterials(entry: SwitchboardEntry, route: string): number {
+  if (entry.board === "Not used") return 0;
+
+  const protectionMat = entry.rcboQty * SB_RCBO_MAT + entry.rcdQty * SB_RCD_MAT;
+  const boardMat =
+    (entry.workType === "New" || entry.workType === "Upgrade")
+      ? (entry.board === "Main board" ? SB_MAIN_MAT : SB_SUB_MAT) + SB_SUNDRIES
+      : 0;
+  const switchMat = entry.mainSwitch === "Yes" ? SB_SWITCH_MAT : 0;
+
+  let cableMat = 0;
+  if (entry.cableLength > 0 && route !== "NONE" &&
+      route !== "INVALID - NO FLOOR ACCESS" && route !== "MANUAL / SITE CHECK") {
+    const costPerM = SB_CABLE_COST[entry.cableSize] ?? 0;
+    cableMat =
+      entry.cableLength * costPerM
+      + (route === "CONDUIT" ? entry.cableLength * S.E8 : 0);
+  }
+
+  return protectionMat + boardMat + switchMat + cableMat + entry.extraMaterial;
+}
+
+export function calculateSwitchboardJob(
+  setup: GpoJobSetup,
+  entries: SwitchboardEntry[],
+  settings: EngineSettings,
+  /** Pass true when switchboard is the only active module (uses E18 setup hrs) */
+  switchboardOnly = true,
+): SwitchboardResult {
+  const active = entries.filter(e => e.board !== "Not used");
+
+  const entryResults = entries.map(e => {
+    const route     = resolveSbRoute(e, setup);
+    const labourHrs = sbEntryLabour(e, setup, route);
+    const materials = sbEntryMaterials(e, route);
+    return { route, labourHrs, materials };
+  });
+
+  const moduleLabourHrs = entryResults.reduce((s, r) => s + r.labourHrs, 0);
+  const rawMaterials    = entryResults.reduce((s, r) => s + r.materials, 0)
+    + (setup.extraMaterials ?? 0);
+
+  const hasInspector = entries.some(e => e.board !== "Not used" && e.inspector === "Yes");
+  const externalCosts = hasInspector ? SB_INSPECTOR : 0;
+
+  const setupHrs =
+    active.length === 0  ? 0
+    : switchboardOnly    ? ASB.E18
+    : moduleLabourHrs <= 4  ? SETUP_SMALL
+    : moduleLabourHrs <= 10 ? SETUP_MEDIUM
+    : SETUP_LARGE;
+
+  const totalHrs        = moduleLabourHrs + setupHrs + (setup.extraLabour ?? 0);
+  const labourSellValue = totalHrs * settings.labourSellRate;
+  const materialMarkup  = progressiveMarkup(rawMaterials);
+
+  const effectiveTravel = (setup.travelOverride ?? 0) > 0
+    ? (setup.travelOverride ?? 0)
+    : settings.travelCallout;
+  const travelCallout = active.length > 0 ? effectiveTravel : 0;
+
+  const baseBeforeOverhead =
+    labourSellValue + rawMaterials + materialMarkup + externalCosts + travelCallout;
+  const overheadAmount     = baseBeforeOverhead * settings.overheadAllowance;
+  const contingencyAmount  = baseBeforeOverhead * settings.contingencyAllowance;
+
+  const subtotalExGst = active.length === 0 ? 0
+    : Math.max(settings.minimumJobCharge, baseBeforeOverhead + overheadAmount + contingencyAmount);
+
+  const gst         = subtotalExGst * 0.10;
+  const totalIncGst = active.length === 0 ? 0
+    : Math.ceil((subtotalExGst + gst) / settings.quoteRounding) * settings.quoteRounding;
+
+  const hasRouteIssue = entryResults.some(
+    r => r.route === "INVALID - NO FLOOR ACCESS" || r.route === "MANUAL / SITE CHECK",
+  );
+
+  return {
+    entries: entryResults,
+    moduleLabourHrs, setupHrs, externalCosts,
+    totalHrs, rawMaterials, labourSellValue, materialMarkup, travelCallout,
+    baseBeforeOverhead, overheadAmount, contingencyAmount,
+    subtotalExGst, gst, totalIncGst, hasRouteIssue,
+  };
+}
+
+export const DEFAULT_SB_ENTRY: SwitchboardEntry = {
+  board:         "Not used",
+  workType:      "Modification",
+  rcboQty:       0,
+  rcdQty:        0,
+  mainSwitch:    "No",
+  cableSize:     "16 mm²",
+  cableLength:   0,
+  routeOverride: "AUTO",
+  inspector:     "No",
+  extraLabour:   0,
+  extraMaterial: 0,
+};
+
+export function defaultSbEntries(count = 8): SwitchboardEntry[] {
+  return Array.from({ length: count }, () => ({ ...DEFAULT_SB_ENTRY }));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CUSTOM JOB MODULE
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface CustomJobItem {
+  name:           string;
+  qty:            number;
+  materialCostEa: number;
+  labourHrsEa:    number;
+}
+
+export interface CustomJobResult {
+  totalLabourHrs:  number;
+  totalMaterials:  number;
+  setupHrs:        number;
+  totalHrs:        number;
+  rawMaterials:    number;
+  labourSellValue: number;
+  materialMarkup:  number;
+  travelCallout:   number;
+  baseBeforeOverhead: number;
+  overheadAmount:  number;
+  contingencyAmount: number;
+  subtotalExGst:   number;
+  gst:             number;
+  totalIncGst:     number;
+}
+
+export function calculateCustomJob(
+  items: CustomJobItem[],
+  settings: EngineSettings,
+  extraLabour = 0,
+  extraMaterials = 0,
+  travelOverride = 0,
+): CustomJobResult {
+  const active = items.filter(i => i.qty > 0);
+
+  const totalLabourHrs = items.reduce((s, i) => s + i.qty * i.labourHrsEa, 0) + extraLabour;
+  const rawMaterials   = items.reduce((s, i) => s + i.qty * i.materialCostEa, 0) + extraMaterials;
+
+  const setupHrs =
+    active.length === 0 ? 0
+    : totalLabourHrs <= 4  ? SETUP_SMALL
+    : totalLabourHrs <= 10 ? SETUP_MEDIUM
+    : SETUP_LARGE;
+
+  const totalHrs        = totalLabourHrs + setupHrs;
+  const labourSellValue = totalHrs * settings.labourSellRate;
+  const materialMarkup  = progressiveMarkup(rawMaterials);
+
+  const effectiveTravel = travelOverride > 0 ? travelOverride : settings.travelCallout;
+  const travelCallout   = active.length > 0 ? effectiveTravel : 0;
+
+  const baseBeforeOverhead = labourSellValue + rawMaterials + materialMarkup + travelCallout;
+  const overheadAmount     = baseBeforeOverhead * settings.overheadAllowance;
+  const contingencyAmount  = baseBeforeOverhead * settings.contingencyAllowance;
+
+  const subtotalExGst = active.length === 0 ? 0
+    : Math.max(settings.minimumJobCharge, baseBeforeOverhead + overheadAmount + contingencyAmount);
+
+  const gst         = subtotalExGst * 0.10;
+  const totalIncGst = active.length === 0 ? 0
+    : Math.ceil((subtotalExGst + gst) / settings.quoteRounding) * settings.quoteRounding;
+
+  return {
+    totalLabourHrs, totalMaterials: rawMaterials,
+    setupHrs, totalHrs,
+    rawMaterials, labourSellValue, materialMarkup, travelCallout,
+    baseBeforeOverhead, overheadAmount, contingencyAmount,
+    subtotalExGst, gst, totalIncGst,
+  };
+}
+
+export const DEFAULT_CUSTOM_ITEM: CustomJobItem = {
+  name:           "",
+  qty:            0,
+  materialCostEa: 0,
+  labourHrsEa:    0,
+};
