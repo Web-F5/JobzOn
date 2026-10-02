@@ -392,6 +392,36 @@ model SupplierProduct {
   @@unique([priceListId, partNumber])
 }
 
+// ─── ELECTRICIAN QUOTE JOBS ───────────────────────────────────────────────────
+
+model ElectricianQuoteJob {
+  id      String  @id @default(cuid())
+  userId  String
+  quoteId String? @unique  // linked Quote once "saved as quote"
+
+  // Job Setup
+  quoteType  String @default("Existing Home")
+  storeys    String @default("Single storey")
+  underfloor String @default("No")
+  roofAccess String @default("Manhole")
+  openFrame  String @default("No")
+
+  extraLabour    Float @default(0)
+  extraMaterials Float @default(0)
+  travelOverride Float @default(0)
+
+  // GPO groups stored as JSON array of GpoGroup objects
+  gpoGroups Json @default("[]")
+
+  // Cached totals (updated on save)
+  totalHrs    Float @default(0)
+  totalExGst  Float @default(0)
+  totalIncGst Float @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 // ─── SEQUENCE COUNTERS (invoice / quote / job numbering per fiscal year) ───────
 
 model SequenceCounter {

@@ -4,6 +4,19 @@ All notable changes to JobzOn are documented here.
 
 ---
 
+## [0.3.0] — 2026-10-02
+
+### Added
+- **Electrical Quote Builder — GPO Module (Phase 1)** — a dedicated quoting engine ported from Ben's Aussie Sparky Quote Builder v10 (Stage 25 calibration). Electrician accounts can access the builder from the Quotes page via the ⚡ Electrical Quote button.
+  - **Job Setup**: quote type (Existing Home / Renovation / New Build), storeys, underfloor access, roof access method (Manhole / Pull sheets / None), whole-job open-frame override.
+  - **GPO Groups**: up to 10 groups with qty, cable run (m), height (Low/High), wall type (Interior / Exterior brick / Exterior weatherboard / Standard), layout (Same area / Separate locations), near-corner flag, new circuit flag, and manual route override.
+  - **Auto route resolution**: OPEN FRAME → UNDERFLOOR → ROOF → CONDUIT priority chain, with INVALID and MANUAL / SITE CHECK guard states.
+  - **Live cost calculation**: labour hours (per group + whole-job setup/test), raw materials, progressive material markup (6 tiers), overhead and contingency allowances, minimum job charge, GST, rounding — all pulled from the user's Electrician Rates settings.
+  - **Benchmark validation**: engine verified against all 5 locked GPO benchmarks (B01–B05) at 0.0%–0.4% labour deviation and 0.0%–2.3% price deviation, within the 5%/7.5% tolerances.
+  - Route badges on each group row show the resolved route (colour-coded). Groups with routing issues display inline error messages.
+
+---
+
 ## [0.2.2] — 2026-10-01
 
 ### Added
