@@ -4,6 +4,31 @@ All notable changes to JobzOn are documented here.
 
 ---
 
+## [0.6.0] — 2026-10-02
+
+### Added
+- **Electrical Quote Builder — Underground Module (Phase 4)** — ported from Ben's Aussie Sparky Quote Builder v10 (Stage 25).
+  - Single run length with up to 8 cables (sizes 1.5–25 mm²) sharing a common trench and conduit.
+  - Auto conduit sizing via Nexans Olex capacity table (20–63 mm); manual override available.
+  - Multi-conduit support (ROUNDUP of fill ratio when 63 mm is insufficient).
+  - Trench methods: Customer supplied, Hand dig, Own machine, Hired trencher/excavator, each with separate labour rates.
+  - Ground difficulty multipliers: Normal (×1.0), Difficult (×1.3), Very difficult (×1.6).
+  - Optional flags: backfill, warning tape, bedding/sand, termination/gland kits.
+  - Protection points: additional conduit-entry labour per emergence point.
+  - Plant hire: external cost (days × $280) bypasses progressive markup, passed through to job total.
+  - **Benchmark validation**: B18 (customer trench, 1×6 mm²), B19 (hand dig + tape + bedding + backfill), B20 (hired plant + 16 mm² + 2 days), B21 (shared conduit 6 mm² + 2.5 mm²) and calibration candidate S25-05 (with protection points) all pass at 0.0% deviation.
+
+- **Electrical Quote Builder — Data/TV Module (Phase 4)** — ported from Ben's Aussie Sparky Quote Builder v10 (Stage 25).
+  - Up to 12 groups; services: Data Cat6, Data Cat6A, TV coax.
+  - Per-group inputs: location count, ports per location, total cable run, install type (New/Replacement), route override, area condition, central termination flag.
+  - Route resolution: OPEN FRAME → UNDERFLOOR → ROOF with MANUAL/INVALID guards (identical logic to GPO/NC).
+  - Labour: base hrs/location (new Data 1.5, TV 0.45, open-frame 0.3), extra port termination (0.15/port), central termination (0.08/port), per-group setup (0.2), two-storey extras.
+  - Materials: Cat6 (0.85/m + $10 RJ45 + $5 plate), Cat6A (1.35/m + $14 RJ45), TV coax (0.95/m + $8 mech), central termination jacks/splitters.
+  - Antenna system: base install, mast, amplifier, splitter setup, coax run material.
+  - **Benchmark validation**: Stage 25 calibration candidate S25-03 (1 Cat6 point, 15 m roof) passes at 0.0% module hours and 0.0% price. B22-B25 are flagged REVERIFY (Stage 24 references; Stage 25 calibration changed base hrs constants).
+
+---
+
 ## [0.5.0] — 2026-10-02
 
 ### Added
