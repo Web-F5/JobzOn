@@ -4,6 +4,29 @@ All notable changes to JobzOn are documented here.
 
 ---
 
+## [0.4.0] — 2026-10-02
+
+### Added
+- **Electrical Quote Builder — Light Install Module (Phase 2)** — ported from Ben's Aussie Sparky Quote Builder v10 (Stage 25).
+  - Supports Downlight, Pendant, Batten, Other, Ceiling fan, and IXL fixture types.
+  - Position modes: New position (full roof-routing labour) and Existing/replacement (minimal cable labour).
+  - Supply modes: Supply & Install (includes fixture material cost) and Customer supplied.
+  - Timber support, exterior difficulty, and IXL cable-allowance flags per group.
+  - Controls section: switch locations with 1-way, 2-way, intermediate, dimmer, fan-control, and other mechanisms.
+  - Open-frame branch (New Build or job-wide flag) with renovation return-visit extra.
+  - **Benchmark validation**: all 3 locked Light Install benchmarks (B06–B08) pass at 0.0% deviation.
+
+- **Electrical Quote Builder — New Circuit Module (Phase 2)** — ported from Ben's Aussie Sparky Quote Builder v10 (Stage 25).
+  - Up to 10 circuit rows; cable sizes 1.5–25 mm² with per-size routing-rate multipliers and material costs.
+  - Auto RCBO size suggestion (10A/16A/20A/32A) with manual override.
+  - Isolator flag per circuit (+0.5 hrs labour, +$35 materials).
+  - Route resolution: OPEN FRAME → UNDERFLOOR → CONDUIT (two-storey default) → ROOF chain with INVALID/MANUAL guard states.
+  - Per-circuit and per-size cable cost, conduit, RCBO, and fixed sundry materials.
+  - Module setup hours (0.75 hr) applied once across all circuits.
+  - **Benchmark validation**: all 3 locked New Circuit benchmarks (B11–B13) pass at 0.0% deviation.
+
+---
+
 ## [0.3.0] — 2026-10-02
 
 ### Added

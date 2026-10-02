@@ -1,5 +1,5 @@
 /**
- * Electrician Quote Engine — GPO Module
+ * Electrician Quote Engine — GPO, Light Install, New Circuit Modules
  * Ported from Ben's Aussie Sparky Quote Builder v10 (Stage 25)
  *
  * Assumptions sheet values embedded as constants.
@@ -437,4 +437,573 @@ export const DEFAULT_SETTINGS: EngineSettings = {
 
 export function defaultGroups(count = 10): GpoGroup[] {
   return Array.from({ length: count }, () => ({ ...DEFAULT_GROUP }));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NEW CIRCUIT MODULE
+// ═══════════════════════════════════════════════════════════════════════════
+
+export type CableSize =
+  | "1.5 mm²" | "2.5 mm²" | "4 mm²" | "6 mm²"
+  | "10 mm²" | "16 mm²" | "25 mm²";
+export type RcboRating = "AUTO" | "10 A" | "16 A" | "20 A" | "32 A";
+export type AccessOverride = "Use site default" | "Open frame";
+
+export interface NewCircuit {
+  /** Cable run length in metres (0 = inactive row) */
+  cableRun:      number;
+  cableSize:     CableSize;
+  rcboOverride:  RcboRating;
+  isolator:      "Yes" | "No";
+  routeOverride: RouteOverride;
+  accessOverride: AccessOverride;
+}
+
+export interface NewCircuitResult {
+  circuits: {
+    route:      ResolvedRoute;
+    rcbo:       string;
+    labourHrs:  number;
+    materials:  number;
+  }[];
+  moduleSetupHrs:  number;
+  moduleLabourHrs: number;
+  setupHrs:        number;
+  totalHrs:        number;
+  rawMaterials:    number;
+  labourSellValue: number;
+  materialMarkup:  number;
+  travelCallout:   number;
+  baseBeforeOverhead: number;
+  overheadAmount:  number;
+  contingencyAmount: number;
+  subtotalExGst:   number;
+  gst:             number;
+  totalIncGst:     number;
+  hasRouteIssue:   boolean;
+}
+
+// New Circuit Assumptions (v10 Stage 25)
+const ANC = {
+  E24: 0.75,  // Module setup hrs (added once per module)
+  E25: 0.35,  // Per-circuit connect hrs
+  E26: 0.25,  // Per-circuit wire hrs
+  E27: 0.18,  // Open-frame per-circuit extra hrs
+  E33: 0.03,  // Two-storey cable extra factor per m (existing/reno)
+  H70: 0.35,  // Two-storey new build/open-frame fixed extra per circuit
+  H71: 0.008, // Two-storey new build/open-frame cable extra hrs/m
+  // Reused from A:
+  H48: A.H48, H66: A.H66,
+  B8: A.B8, B9: A.B9, B12: A.B12, B13: A.B13, B15: A.B15, B16: A.B16,
+  E21: A.E21, E22: A.E22, E23: A.E28, // E23=0.95 is two-storey fixed for existing
+} as const;
+
+// Separate E23 value (0.95 = two-storey existing non-open-frame fixed hrs for NC)
+const NC_E23 = 0.95;
+
+// Cable size routing-rate multipliers (Settings Y5-Y11)
+const NC_SIZE_FACTOR: Record<CableSize, number> = {
+  "1.5 mm²": 1.0, "2.5 mm²": 1.0, "4 mm²": 1.1,
+  "6 mm²": 1.2, "10 mm²": 1.35, "16 mm²": 1.5, "25 mm²": 1.7,
+};
+
+// Cable material cost per metre (Settings Q5-Q8)
+const NC_CABLE_COST: Partial<Record<CableSize, number>> = {
+  "1.5 mm²": 1.15, "2.5 mm²": 1.95, "4 mm²": 2.99, "6 mm²": 4.25,
+};
+
+// RCBO cost lookup (Settings H5-H8)
+const RCBO_COST: Record<string, number> = { "10 A": 35, "16 A": 35, "20 A": 35, "32 A": 42 };
+const NC_FIXED_COST  = 6;   // Settings H9 — fixed per circuit
+const NC_ISOLATOR    = 35;  // Settings H10
+
+function rcboFromSize(size: CableSize): string {
+  if (size === "1.5 mm²") return "10 A";
+  if (size === "2.5 mm²") return "16 A";
+  if (size === "4 mm²")   return "20 A";
+  return "32 A";
+}
+
+function resolveCircuitRoute(
+  c: NewCircuit,
+  setup: Pick<GpoJobSetup, "quoteType" | "storeys" | "underfloor" | "openFrame">,
+): ResolvedRoute {
+  if (c.cableRun === 0) return "CONDUIT";
+  const ov = c.routeOverride;
+  if (ov === "MANUAL / SITE CHECK") return "MANUAL / SITE CHECK";
+  if ((ov === "UNDERFLOOR" || ov === "FLOOR") && setup.underfloor !== "Yes") {
+    return "INVALID - NO FLOOR ACCESS";
+  }
+  if (ov !== "AUTO") return ov as ResolvedRoute;
+  const isNewBuild    = setup.quoteType === "New Build";
+  const circOpenFrame = c.accessOverride === "Open frame";
+  const siteOpenFrame = c.accessOverride === "Use site default" && setup.openFrame === "Yes";
+  if (isNewBuild || circOpenFrame || siteOpenFrame) return "OPEN FRAME";
+  if (setup.storeys === "Two storey") return "CONDUIT";
+  if (setup.underfloor === "Yes") return "UNDERFLOOR";
+  return "ROOF";
+}
+
+function circuitLabour(
+  c: NewCircuit,
+  setup: GpoJobSetup,
+  route: ResolvedRoute,
+): number {
+  if (c.cableRun === 0) return 0;
+  if (route === "INVALID - NO FLOOR ACCESS" || route === "MANUAL / SITE CHECK") return 0;
+
+  const sf   = NC_SIZE_FACTOR[c.cableSize];
+  const rr   = routeRate(route);
+  const cr   = clippingRate(route);
+  const pull = setup.roofAccess === "Pull sheets";
+  const two  = setup.storeys === "Two storey";
+  const isNewBuild  = setup.quoteType === "New Build";
+  const isOpenFrame = route === "OPEN FRAME";
+
+  return (
+    ANC.E25 + ANC.E26                                                    // connect + wire
+    + c.cableRun * sf * (rr + cr)                                        // routing
+    + (route === "CONDUIT" ? ANC.E22 : 0)                                // conduit setup
+    + (route === "ROOF" && pull ? c.cableRun * sf * ANC.H48 : 0)        // pull sheets
+    + (two && !isOpenFrame && !isNewBuild                                 // two-storey existing
+        ? NC_E23 + c.cableRun * sf * ANC.E33 : 0)
+    + (two && (isNewBuild || isOpenFrame)                                 // two-storey new build
+        ? ANC.H70 + c.cableRun * ANC.H71 : 0)
+    + (isOpenFrame && !isNewBuild ? ANC.H66 : 0)                         // reno open-frame
+    + (c.isolator === "Yes" ? 0.5 : 0)
+    + (isOpenFrame ? ANC.E27 : 0)                                        // open-frame circuit extra
+  );
+}
+
+function circuitMaterials(c: NewCircuit, route: ResolvedRoute): number {
+  if (c.cableRun === 0) return 0;
+  if (route.startsWith("INVALID") || route === "MANUAL / SITE CHECK") return 0;
+
+  const rcboKey = c.rcboOverride === "AUTO" ? rcboFromSize(c.cableSize) : c.rcboOverride;
+  const cableCost = NC_CABLE_COST[c.cableSize] ?? 0;
+
+  return (
+    c.cableRun * cableCost
+    + (route === "CONDUIT" ? c.cableRun * S.E8 : 0)
+    + (RCBO_COST[rcboKey] ?? 35)
+    + NC_FIXED_COST
+    + (c.isolator === "Yes" ? NC_ISOLATOR : 0)
+  );
+}
+
+export function calculateNewCircuitJob(
+  setup: GpoJobSetup,
+  circuits: NewCircuit[],
+  settings: EngineSettings,
+): NewCircuitResult {
+  const active = circuits.filter(c => c.cableRun > 0);
+
+  const circuitResults = circuits.map(c => {
+    const route     = resolveCircuitRoute(c, setup);
+    const rcbo      = c.rcboOverride === "AUTO" ? rcboFromSize(c.cableSize) : c.rcboOverride;
+    const labourHrs = circuitLabour(c, setup, route);
+    const materials = circuitMaterials(c, route);
+    return { route, rcbo, labourHrs, materials };
+  });
+
+  const sumCircuitHrs = circuitResults.reduce((s, r) => s + r.labourHrs, 0);
+  const moduleLabourHrs = active.length === 0 ? 0 : ANC.E24 + sumCircuitHrs;
+  const rawMaterials    = circuitResults.reduce((s, r) => s + r.materials, 0)
+    + (setup.extraMaterials ?? 0);
+
+  const setupHrs =
+    active.length === 0  ? 0
+    : moduleLabourHrs <= 4  ? SETUP_SMALL
+    : moduleLabourHrs <= 10 ? SETUP_MEDIUM
+    : SETUP_LARGE;
+
+  const totalHrs       = moduleLabourHrs + setupHrs + (setup.extraLabour ?? 0);
+  const labourSellValue = totalHrs * settings.labourSellRate;
+  const materialMarkup  = progressiveMarkup(rawMaterials);
+
+  const effectiveTravel = (setup.travelOverride ?? 0) > 0
+    ? (setup.travelOverride ?? 0)
+    : settings.travelCallout;
+  const travelCallout = active.length > 0 ? effectiveTravel : 0;
+
+  const baseBeforeOverhead = labourSellValue + rawMaterials + materialMarkup + travelCallout;
+  const overheadAmount     = baseBeforeOverhead * settings.overheadAllowance;
+  const contingencyAmount  = baseBeforeOverhead * settings.contingencyAllowance;
+
+  const subtotalExGst = active.length === 0 ? 0
+    : Math.max(settings.minimumJobCharge, baseBeforeOverhead + overheadAmount + contingencyAmount);
+
+  const gst         = subtotalExGst * 0.10;
+  const totalIncGst = active.length === 0 ? 0
+    : Math.ceil((subtotalExGst + gst) / settings.quoteRounding) * settings.quoteRounding;
+
+  const hasRouteIssue = circuitResults.some(
+    r => r.route === "INVALID - NO FLOOR ACCESS" || r.route === "MANUAL / SITE CHECK",
+  );
+
+  return {
+    circuits: circuitResults,
+    moduleSetupHrs: ANC.E24,
+    moduleLabourHrs,
+    setupHrs,
+    totalHrs,
+    rawMaterials,
+    labourSellValue,
+    materialMarkup,
+    travelCallout,
+    baseBeforeOverhead,
+    overheadAmount,
+    contingencyAmount,
+    subtotalExGst,
+    gst,
+    totalIncGst,
+    hasRouteIssue,
+  };
+}
+
+export const DEFAULT_CIRCUIT: NewCircuit = {
+  cableRun:      0,
+  cableSize:     "2.5 mm²",
+  rcboOverride:  "AUTO",
+  isolator:      "No",
+  routeOverride: "AUTO",
+  accessOverride: "Use site default",
+};
+
+export function defaultCircuits(count = 10): NewCircuit[] {
+  return Array.from({ length: count }, () => ({ ...DEFAULT_CIRCUIT }));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LIGHT INSTALL MODULE
+// ═══════════════════════════════════════════════════════════════════════════
+
+export type LightType = "Downlight" | "Pendant" | "Batten" | "Other" | "Ceiling fan" | "IXL";
+export type LightPosition = "New position" | "Existing/replacement";
+export type LightSupply = "Supply & Install" | "Customer supplied";
+
+export interface LightPoint {
+  /** 0 = inactive row */
+  qty:           number;
+  type:          LightType;
+  position:      LightPosition;
+  supply:        LightSupply;
+  /** Cable run metres */
+  cableRun:      number;
+  timberSupport: "Yes" | "No";
+  /** "Exterior" triggers exterior-difficulty extra */
+  exterior:      "Yes" | "No";
+}
+
+export interface LightControl {
+  /** Number of switch locations (wall plates) */
+  locations:    number;
+  mechs1way:    number;
+  mechs2way:    number;
+  mechsIntermediate: number;
+  dimmers:      number;
+  fanControls:  number;
+  otherMechs:   number;
+}
+
+export interface LightJobResult {
+  pointLabourHrs:    number;
+  controlLabourHrs:  number;
+  moduleLabourHrs:   number;
+  setupHrs:          number;
+  totalHrs:          number;
+  rawMaterials:      number;
+  labourSellValue:   number;
+  materialMarkup:    number;
+  travelCallout:     number;
+  baseBeforeOverhead: number;
+  overheadAmount:    number;
+  contingencyAmount: number;
+  subtotalExGst:     number;
+  gst:               number;
+  totalIncGst:       number;
+}
+
+// Light Install Assumptions (v10 Stage 25)
+const ALT = {
+  H5: 0.38,  // Other light base hrs
+  H6: 0.32,  // Downlight base hrs
+  H8: 0.32,  // Pendant base hrs
+  H9: 0.32,  // Batten base hrs
+  H10: 1.00, // Ceiling fan: first fan hrs
+  H11: 0.55, // Ceiling fan: additional fan hrs
+  H12: 0.75, // Timber support hrs per fan
+  H15: 1.65, // Roof routing factor for lights (multiplier)
+  H57: 0.60, // Open-frame Other hrs
+  H58: 0.50, // Open-frame Downlight hrs
+  H59: 0.70, // Open-frame Pendant hrs
+  H60: 0.55, // Open-frame Batten hrs
+  H61: 0.15, // Open-frame exterior difficulty per light
+  H62: 0.55, // Open-frame Ceiling fan hrs
+  H76: 0.65, // Controls: existing-frame location hrs
+  H77: 0.40, // Controls: open-frame location hrs
+  H78: 0.10, // Controls: additional mech hrs (beyond first per location)
+  H79: 0.08, // Controls: 2-way mech extra
+  H80: 0.15, // Controls: intermediate mech extra
+  H81: 0.12, // Controls: dimmer extra
+  H82: 0.12, // Controls: fan control extra
+  H83: 0.15, // Controls: open-frame renovation extra (per control group)
+  H103: 2.00, // IXL new-position hrs
+  H104: 1.25, // IXL replacement hrs
+  H105: 1.25, // IXL open-frame hrs
+  H106: 10,   // IXL cable allowance per unit (m)
+  K8: 0.12,   // New-position cable allowance hrs
+  B9: A.B9,   // Roof routing rate (existing/replacement)
+  B10: 0.032, // Roof routing rate for lights (new position)
+  B13: A.B13, // Open-frame routing rate
+  B16: A.B16, // Securing rate
+  E15: 0.50,  // Exterior difficulty per light
+  H48: A.H48, // Pull-sheets extra hrs/m
+  H66: A.H66, // Open-frame reno return visit
+} as const;
+
+// Material Library values (ML sheet, not Settings)
+const ML = {
+  E7:  1.15, // 1.5mm² TPS cable per m
+  E24: 20,   // Timber support cost per fan
+  E25: 6,    // Switch plate per location
+  E26: 8,    // 1-way mech
+  E27: 10,   // 2-way mech
+  E28: 18,   // Intermediate mech
+  E29: 55,   // Dimmer
+  E30: 45,   // Fan control
+  E31: 15,   // Other mech
+  E56: 1.15, // 1.5mm² cable for IXL (same as E7)
+} as const;
+
+// Light fixture material cost (S&I supply; "Customer supplied" = 0)
+const LIGHT_COST: Record<LightType, number> = {
+  "Downlight":   22,
+  "Pendant":     45,
+  "Batten":      18,
+  "Other":       25,
+  "Ceiling fan": 10, // base hardware only (fan unit = customer supplied or B62)
+  "IXL":         0,  // IXL cost from Settings B64 — using 0 as placeholder
+};
+
+function lightBaseHrs(type: LightType): number {
+  switch (type) {
+    case "Downlight":   return ALT.H6;
+    case "Pendant":     return ALT.H8;
+    case "Batten":      return ALT.H9;
+    default:            return ALT.H5;
+  }
+}
+
+function lightOpenFrameHrs(type: LightType): number {
+  switch (type) {
+    case "Downlight":   return ALT.H58;
+    case "Pendant":     return ALT.H59;
+    case "Batten":      return ALT.H60;
+    case "Ceiling fan": return ALT.H62;
+    default:            return ALT.H57;
+  }
+}
+
+function lightPointLabour(
+  p: LightPoint,
+  setup: GpoJobSetup,
+): number {
+  if (p.qty === 0) return 0;
+
+  const openFrame  = setup.openFrame === "Yes" || setup.quoteType === "New Build";
+  const isReno     = setup.quoteType === "Renovation";
+  const pullSheets = setup.roofAccess === "Pull sheets";
+  const newPos     = p.position === "New position";
+  const exterior   = p.exterior === "Yes";
+  const timber     = p.timberSupport === "Yes";
+
+  if (p.type === "Ceiling fan") {
+    if (openFrame) {
+      return (
+        p.qty * ALT.H62
+        + (timber ? p.qty * ALT.H12 : 0)
+        + p.cableRun * ALT.B13
+        + (isReno ? ALT.H66 : 0)
+      );
+    }
+    return (
+      ALT.H10
+      + Math.max(p.qty - 1, 0) * ALT.H11
+      + (newPos ? p.qty * 0.35 : 0)
+      + (timber ? p.qty * ALT.H12 : 0)
+      + p.cableRun * ALT.B9
+    );
+  }
+
+  if (p.type === "IXL") {
+    if (openFrame) {
+      return (
+        p.qty * ALT.H105
+        + Math.max(p.cableRun - p.qty * ALT.H106, 0) * ALT.B13
+        + (isReno ? ALT.H66 : 0)
+      );
+    }
+    const hrs  = newPos ? ALT.H103 : ALT.H104;
+    const excl = newPos ? p.qty * ALT.H106 : 0;
+    const cableRate = pullSheets ? ALT.H48 : ALT.B9;
+    return p.qty * hrs + Math.max(p.cableRun - excl, 0) * cableRate;
+  }
+
+  // Standard lights (Downlight, Pendant, Batten, Other)
+  if (openFrame) {
+    return (
+      p.qty * lightOpenFrameHrs(p.type)
+      + p.cableRun * ALT.B13
+      + (exterior ? p.qty * ALT.H61 : 0)
+      + (isReno ? ALT.H66 : 0)
+    );
+  }
+
+  if (newPos) {
+    return (
+      p.qty * Math.max(0.85, lightBaseHrs(p.type) + ALT.K8)
+      + p.cableRun * ALT.B10 * ALT.H15
+      + p.cableRun * ALT.B16
+      + (exterior ? ALT.E15 : 0)
+      + (pullSheets ? p.cableRun * ALT.H48 : 0)
+    );
+  }
+
+  // Existing/replacement
+  return (
+    p.qty * lightBaseHrs(p.type)
+    + p.cableRun * ALT.B9 * 0.25
+    + (exterior ? ALT.E15 : 0)
+  );
+}
+
+function lightControlLabour(ctrl: LightControl, setup: GpoJobSetup): number {
+  if (ctrl.locations === 0) return 0;
+  const openFrame = setup.openFrame === "Yes" || setup.quoteType === "New Build";
+  const isReno    = setup.quoteType === "Renovation";
+  const totalMechs = ctrl.mechs1way + ctrl.mechs2way + ctrl.mechsIntermediate
+    + ctrl.dimmers + ctrl.fanControls + ctrl.otherMechs;
+
+  return (
+    ctrl.locations * (openFrame ? ALT.H77 : ALT.H76)
+    + Math.max(totalMechs - ctrl.locations, 0) * ALT.H78
+    + ctrl.mechs2way * ALT.H79
+    + ctrl.mechsIntermediate * ALT.H80
+    + ctrl.dimmers * ALT.H81
+    + ctrl.fanControls * ALT.H82
+    + (openFrame && isReno ? ALT.H83 : 0)
+  );
+}
+
+function lightPointMaterials(p: LightPoint): number {
+  if (p.qty === 0) return 0;
+  if (p.type === "IXL") {
+    return (p.supply === "Supply & Install" ? 0 : 0) + p.cableRun * ML.E56;
+  }
+  if (p.type === "Ceiling fan") {
+    return (
+      p.qty * LIGHT_COST["Ceiling fan"]
+      + (p.timberSupport === "Yes" ? p.qty * ML.E24 : 0)
+      + p.cableRun * ML.E7
+    );
+  }
+  return (
+    (p.supply === "Supply & Install" ? p.qty * LIGHT_COST[p.type] : 0)
+    + p.cableRun * ML.E7
+  );
+}
+
+function lightControlMaterials(ctrl: LightControl): number {
+  return (
+    ctrl.locations * ML.E25
+    + ctrl.mechs1way * ML.E26
+    + ctrl.mechs2way * ML.E27
+    + ctrl.mechsIntermediate * ML.E28
+    + ctrl.dimmers * ML.E29
+    + ctrl.fanControls * ML.E30
+    + ctrl.otherMechs * ML.E31
+  );
+}
+
+export function calculateLightJob(
+  setup: GpoJobSetup,
+  points: LightPoint[],
+  controls: LightControl[],
+  settings: EngineSettings,
+): LightJobResult {
+  const activePoints = points.filter(p => p.qty > 0);
+  const activeControls = controls.filter(c => c.locations > 0);
+
+  const pointLabourHrs   = points.reduce((s, p) => s + lightPointLabour(p, setup), 0);
+  const controlLabourHrs = controls.reduce((s, c) => s + lightControlLabour(c, setup), 0);
+  const moduleLabourHrs  = pointLabourHrs + controlLabourHrs;
+
+  const pointMat   = points.reduce((s, p) => s + lightPointMaterials(p), 0);
+  const controlMat = controls.reduce((s, c) => s + lightControlMaterials(c), 0);
+  const rawMaterials = pointMat + controlMat + (setup.extraMaterials ?? 0);
+
+  const anyActive = activePoints.length > 0 || activeControls.length > 0;
+
+  const setupHrs =
+    !anyActive           ? 0
+    : moduleLabourHrs <= 4  ? SETUP_SMALL
+    : moduleLabourHrs <= 10 ? SETUP_MEDIUM
+    : SETUP_LARGE;
+
+  const totalHrs        = moduleLabourHrs + setupHrs + (setup.extraLabour ?? 0);
+  const labourSellValue = totalHrs * settings.labourSellRate;
+  const materialMarkup  = progressiveMarkup(rawMaterials);
+
+  const effectiveTravel = (setup.travelOverride ?? 0) > 0
+    ? (setup.travelOverride ?? 0)
+    : settings.travelCallout;
+  const travelCallout = anyActive ? effectiveTravel : 0;
+
+  const baseBeforeOverhead = labourSellValue + rawMaterials + materialMarkup + travelCallout;
+  const overheadAmount     = baseBeforeOverhead * settings.overheadAllowance;
+  const contingencyAmount  = baseBeforeOverhead * settings.contingencyAllowance;
+
+  const subtotalExGst = !anyActive ? 0
+    : Math.max(settings.minimumJobCharge, baseBeforeOverhead + overheadAmount + contingencyAmount);
+
+  const gst         = subtotalExGst * 0.10;
+  const totalIncGst = !anyActive ? 0
+    : Math.ceil((subtotalExGst + gst) / settings.quoteRounding) * settings.quoteRounding;
+
+  return {
+    pointLabourHrs, controlLabourHrs, moduleLabourHrs,
+    setupHrs, totalHrs,
+    rawMaterials, labourSellValue, materialMarkup, travelCallout,
+    baseBeforeOverhead, overheadAmount, contingencyAmount,
+    subtotalExGst, gst, totalIncGst,
+  };
+}
+
+export const DEFAULT_LIGHT_POINT: LightPoint = {
+  qty:           0,
+  type:          "Downlight",
+  position:      "New position",
+  supply:        "Supply & Install",
+  cableRun:      0,
+  timberSupport: "No",
+  exterior:      "No",
+};
+
+export const DEFAULT_LIGHT_CONTROL: LightControl = {
+  locations:          0,
+  mechs1way:          0,
+  mechs2way:          0,
+  mechsIntermediate:  0,
+  dimmers:            0,
+  fanControls:        0,
+  otherMechs:         0,
+};
+
+export function defaultLightPoints(count = 10): LightPoint[] {
+  return Array.from({ length: count }, () => ({ ...DEFAULT_LIGHT_POINT }));
+}
+
+export function defaultLightControls(count = 5): LightControl[] {
+  return Array.from({ length: count }, () => ({ ...DEFAULT_LIGHT_CONTROL }));
 }
