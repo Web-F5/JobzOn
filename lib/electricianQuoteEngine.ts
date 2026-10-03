@@ -1540,7 +1540,7 @@ export function calculateUndergroundJob(
 
   // Final price
   const labourSellValue   = totalHrs * settings.labourSellRate;
-  const materialMarkup    = progressiveMaterialMarkup(rawMaterials);
+  const materialMarkup    = progressiveMarkup(rawMaterials);
   const travelCallout     = settings.travelCallout;
   const baseBeforeOverhead = labourSellValue + rawMaterials + materialMarkup + externalCost + travelCallout;
   const overheadAmount    = baseBeforeOverhead * settings.overheadAllowance;
@@ -1813,7 +1813,7 @@ export function calculateDataTvJob(
   const totalHrs = moduleLabourHrs + setupHrs;
 
   const labourSellValue    = totalHrs * settings.labourSellRate;
-  const materialMarkup     = progressiveMaterialMarkup(rawMaterials);
+  const materialMarkup     = progressiveMarkup(rawMaterials);
   const travelCallout      = settings.travelCallout;
   const baseBeforeOverhead = labourSellValue + rawMaterials + materialMarkup + travelCallout;
   const overheadAmount     = baseBeforeOverhead * settings.overheadAllowance;
@@ -1839,4 +1839,225 @@ export const DEFAULT_DTV_GROUP: DataTvGroup = {
 export const DEFAULT_DTV_ANTENNA: DataTvAntennaSystem = {
   active: "No", newAntenna: "No", mast: "No", amplifier: "No",
   splitterCount: 0, antennaCableRun: 0, extraLabour: 0, extraMaterial: 0,
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CREW / LABOUR ENGINE  (Phase 5)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Ported from Labour Engine V4 — Scalable Experience-Tier Crew Modeller.
+// Activates automatically whenever headcount exceeds one.
+// Single-sparky mode (crew total = 1) returns the same sell value as the
+// standard module-sum calculation.
+
+// ── Crew constants (K column) ────────────────────────────────────────────────
+
+const CK = {
+  K5:  0.90,  // 2nd qualified adds this raw productivity
+  K6:  0.70,  // 3rd qualified
+  K7:  0.55,  // 4th qualified
+  K8:  0.35,  // each 5th+ qualified
+  K9:  0.12,  // crowding taper per person above 4
+  K10: 3.50,  // assistability cap multiplier
+  K11: 0.12,  // coordination hrs per extra person (base)
+  K12: 0.08,  // additional coordination hrs per person above 4
+};
+
+// Default productivity per tier (D column, row 5-10)
+const CREW_PRODUCTIVITY = { Q: 1.0, Y4: 0.8, Y3: 0.65, Y2: 0.5, Y1: 0.35, WE: 0.2 } as const;
+
+// Default hourly sell rates (E column, row 5-10)
+export const CREW_DEFAULT_SELL = { Q: 140, Y4: 112, Y3: 98, Y2: 84, Y1: 70, WE: 42 } as const;
+
+// Default internal cost rates (C column, row 5-10)
+export const CREW_DEFAULT_COST = { Q: 65, Y4: 45, Y3: 40, Y2: 34, Y1: 28, WE: 25 } as const;
+
+// ── Types ────────────────────────────────────────────────────────────────────
+
+/** Headcount per experience tier. */
+export interface CrewComposition {
+  qualified:    number;  // B5
+  fourthYear:   number;  // B6
+  thirdYear:    number;  // B7
+  secondYear:   number;  // B8
+  firstYear:    number;  // B9
+  workExp:      number;  // B10
+}
+
+/** Hourly sell / cost rates for each tier — defaults are CREW_DEFAULT_SELL/COST. */
+export interface CrewRates {
+  sell: { Q: number; Y4: number; Y3: number; Y2: number; Y1: number; WE: number };
+  cost: { Q: number; Y4: number; Y3: number; Y2: number; Y1: number; WE: number };
+}
+
+/**
+ * One task-family row (B16:B25 in the Labour Engine).
+ * baseHrs = the module's hours that feed column B.
+ * assistability = fraction of those hours that can be parallelised (C column).
+ */
+export interface CrewTaskFamily {
+  name:          string;
+  baseHrs:       number;
+  assistability: number;
+}
+
+export interface CrewEngineResult {
+  /** G5 in Job Summary — single-sparky total hrs (input, returned for convenience) */
+  baselineTotalHrs:      number;
+  /** H5 — re-expressed baseline (= baselineTotalHrs for single sparky, same input) */
+  totalCrew:             number;
+  /** H6 — estimated elapsed site hrs */
+  elapsedSiteHrs:        number;
+  /** H7 — total crew labour-hours billable */
+  totalCrewLabourHrs:    number;
+  /** H8 — potential site time saved vs single sparky */
+  timeSaved:             number;
+  /** H9 — estimated crew labour cost */
+  crewLabourCost:        number;
+  /** H10 — single-sparky internal cost baseline */
+  singleSparkyCost:      number;
+  /** H11 — labour cost difference */
+  labourCostDiff:        number;
+  /** H12 — quote labour sell value (replaces totalHrs*sellRate in price calc) */
+  quoteSellValue:        number;
+  /** Per-family detail for UI breakdown */
+  families:              Array<{
+    name:          string;
+    baseHrs:       number;
+    assistability: number;
+    teamProd:      number;
+    elapsedHrs:    number;
+    crewHrs:       number;
+    cost:          number;
+    sell:          number;
+  }>;
+}
+
+// ── Assistability presets per task family ────────────────────────────────────
+
+/** Returns the correct assistability for each task family given job context. */
+export function crewAssistability(
+  family:      "gpo" | "lighting" | "fans" | "circuit" | "custom" | "switchboard"
+             | "underground" | "setup" | "extras" | "dataTv",
+  isOpenFrame: boolean,
+): number {
+  switch (family) {
+    case "gpo":          return isOpenFrame ? 0.82 : 0.55;
+    case "lighting":     return isOpenFrame ? 0.78 : 0.50;
+    case "fans":         return isOpenFrame ? 0.72 : 0.45;
+    case "circuit":      return isOpenFrame ? 0.82 : 0.60;
+    case "custom":       return isOpenFrame ? 0.55 : 0.40;
+    case "switchboard":  return isOpenFrame ? 0.25 : 0.20;
+    case "underground":  return isOpenFrame ? 0.86 : 0.80;
+    case "setup":        return isOpenFrame ? 0.35 : 0.20;
+    case "extras":       return isOpenFrame ? 0.68 : 0.45;
+    case "dataTv":       return isOpenFrame ? 0.72 : 0.55;
+  }
+}
+
+// ── Core crew engine ─────────────────────────────────────────────────────────
+
+export function calculateCrewJob(
+  families:  CrewTaskFamily[],
+  crew:      CrewComposition,
+  rates:     CrewRates = { sell: { ...CREW_DEFAULT_SELL }, cost: { ...CREW_DEFAULT_COST } },
+): CrewEngineResult {
+  const { Q, Y4, Y3, Y2, Y1, WE } = crew;
+  const totalCrew = Q + Y4 + Y3 + Y2 + Y1 + WE;
+  const baselineTotalHrs = families.reduce((s, f) => s + f.baseHrs, 0);
+
+  if (totalCrew <= 1) {
+    // Single sparky: no crew adjustment
+    const sell = baselineTotalHrs * rates.sell.Q;
+    const cost = baselineTotalHrs * rates.cost.Q;
+    const familyDetail = families.map(f => ({
+      name: f.name, baseHrs: f.baseHrs, assistability: f.assistability,
+      teamProd: 1, elapsedHrs: f.baseHrs, crewHrs: f.baseHrs,
+      cost: f.baseHrs * rates.cost.Q, sell: f.baseHrs * rates.sell.Q,
+    }));
+    return {
+      baselineTotalHrs, totalCrew, elapsedSiteHrs: baselineTotalHrs,
+      totalCrewLabourHrs: baselineTotalHrs, timeSaved: 0,
+      crewLabourCost: cost, singleSparkyCost: cost, labourCostDiff: 0,
+      quoteSellValue: sell, families: familyDetail,
+    };
+  }
+
+  // ── Raw team productivity (D formula) ─────────────────────────────────────
+  // = lead qual + each qual tier's marginal contribution + apprentice contributions
+  const rawTeamProd =
+    CREW_PRODUCTIVITY.Q                             // D5 = 1.0 (lead)
+    + Math.min(Math.max(Q - 1, 0), 1) * CK.K5       // 2nd qual
+    + Math.min(Math.max(Q - 2, 0), 1) * CK.K6       // 3rd qual
+    + Math.min(Math.max(Q - 3, 0), 1) * CK.K7       // 4th qual
+    + Math.max(Q - 4, 0) * CK.K8                    // 5th+ qual each
+    + Y4 * CREW_PRODUCTIVITY.Y4
+    + Y3 * CREW_PRODUCTIVITY.Y3
+    + Y2 * CREW_PRODUCTIVITY.Y2
+    + Y1 * CREW_PRODUCTIVITY.Y1
+    + WE * CREW_PRODUCTIVITY.WE;
+
+  // Crew sell/cost per hour (sum across all members)
+  const crewSellHr = Q*rates.sell.Q + Y4*rates.sell.Y4 + Y3*rates.sell.Y3
+    + Y2*rates.sell.Y2 + Y1*rates.sell.Y1 + WE*rates.sell.WE;
+  const crewCostHr = Q*rates.cost.Q + Y4*rates.cost.Y4 + Y3*rates.cost.Y3
+    + Y2*rates.cost.Y2 + Y1*rates.cost.Y1 + WE*rates.cost.WE;
+
+  // Coordination overhead: (totalCrew-1)*K11 + MAX(totalCrew-4,0)*K12
+  const coordHrs =
+    (totalCrew - 1) * CK.K11
+    + Math.max(totalCrew - 4, 0) * CK.K12;
+
+  // ── Per-family calculations ────────────────────────────────────────────────
+  let totalElapsed = 0, totalCrewHrs = 0, totalCost = 0, totalSell = 0;
+
+  const familyDetail = families.map(f => {
+    if (f.baseHrs === 0) return {
+      name: f.name, baseHrs: 0, assistability: f.assistability,
+      teamProd: 1, elapsedHrs: 0, crewHrs: 0, cost: 0, sell: 0,
+    };
+
+    // Team productivity for this family:
+    // capped by assistability cap, and tapered for crowding
+    const assistCap = 1 + f.assistability * CK.K10;
+    const crowdTaper = 1 + Math.max(totalCrew - 4, 0) * CK.K9;
+    const teamProd = Math.min(assistCap, 1 + (rawTeamProd - 1) / crowdTaper);
+
+    const nonAssist  = f.baseHrs * (1 - f.assistability);
+    const assistHrs  = f.baseHrs * f.assistability;
+    const elapsedHrs = nonAssist + assistHrs / teamProd;
+    const crewHrs    = nonAssist + (assistHrs / teamProd) * totalCrew;
+
+    // Sell: non-assist portion at lead qual rate; assist portion at blended crew rate
+    const sell = nonAssist * rates.sell.Q + (assistHrs / teamProd) * crewSellHr;
+    // Cost: same structure but at cost rates
+    const cost = nonAssist * rates.cost.Q + (assistHrs / teamProd) * crewCostHr;
+
+    totalElapsed  += elapsedHrs;
+    totalCrewHrs  += crewHrs;
+    totalCost     += cost;
+    totalSell     += sell;
+
+    return { name: f.name, baseHrs: f.baseHrs, assistability: f.assistability,
+      teamProd, elapsedHrs, crewHrs, cost, sell };
+  });
+
+  // Add coordination overhead
+  const elapsedSiteHrs     = totalElapsed + coordHrs;
+  const totalCrewLabourHrs = totalCrewHrs + coordHrs * totalCrew;
+  const crewLabourCost     = totalCost + coordHrs * crewCostHr;
+  const quoteSellValue     = totalSell + coordHrs * crewSellHr;
+
+  const singleSparkyCost = baselineTotalHrs * rates.cost.Q;
+  const timeSaved = Math.max(0, baselineTotalHrs - elapsedSiteHrs);
+
+  return {
+    baselineTotalHrs, totalCrew, elapsedSiteHrs, totalCrewLabourHrs, timeSaved,
+    crewLabourCost, singleSparkyCost, labourCostDiff: crewLabourCost - singleSparkyCost,
+    quoteSellValue, families: familyDetail,
+  };
+}
+
+export const DEFAULT_CREW: CrewComposition = {
+  qualified: 1, fourthYear: 0, thirdYear: 0, secondYear: 0, firstYear: 0, workExp: 0,
 };

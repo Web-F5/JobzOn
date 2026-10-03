@@ -4,6 +4,23 @@ All notable changes to JobzOn are documented here.
 
 ---
 
+## [0.7.0] — 2026-10-03
+
+### Added
+- **Electrical Quote Builder — Crew / Labour Engine (Phase 5)** — ported from Labour Engine V4 (Scalable Experience-Tier Crew Modeller) in Ben's Aussie Sparky Quote Builder v10 (Stage 25).
+  - Six experience tiers: Qualified (×1.0 productivity, $140 sell), 4th Year (×0.8, $112), 3rd Year (×0.65, $98), 2nd Year (×0.5, $84), 1st Year (×0.35, $70), Work Experience (×0.2, $42).
+  - Raw team productivity calculated with marginal contribution per qual tier (K5=0.9, K6=0.7, K7=0.55, K8=0.35) and apprentice tier flat contributions.
+  - Per-task-family assistability: fraction of hours that can be parallelised. Two contexts — standard installation vs open-frame/new-build — with distinct values per family (GPO 0.55/0.82, Lighting 0.50/0.78, Underground 0.80/0.86, Switchboard 0.20/0.25, etc.).
+  - Crowding taper: diminishing returns for crews larger than 4 (K9=0.12 per person above 4).
+  - Assistability cap: teamProd ≤ 1 + assistability × K10 (K10=3.5).
+  - Coordination overhead: (n−1)×K11 + max(n−4,0)×K12 elapsed hours added on top.
+  - Single-sparky mode (totalCrew=1): engine bypasses crew math and returns standard labour sell = totalHrs × sellRate.
+  - Multi-crew mode: labour sell value replaces the simple `totalHrs × sellRate` in the job price formula; setup hours priced at lead-qual rate.
+  - Exported: `calculateCrewJob`, `crewAssistability`, `CrewComposition`, `CrewTaskFamily`, `CrewEngineResult`, `DEFAULT_CREW`, `CREW_DEFAULT_SELL`, `CREW_DEFAULT_COST`.
+  - **Benchmark validation**: B26/B27/B28 REVERIFY (Stage 24 reference, ~20% deviation expected — awaiting Stage 25 locked values); S25-06 SATURATION TEST passes qualitatively (elapsed hrs plateau as crew grows, low-assistability jobs barely benefit, high-assistability jobs scale >40%).
+
+---
+
 ## [0.6.0] — 2026-10-02
 
 ### Added
