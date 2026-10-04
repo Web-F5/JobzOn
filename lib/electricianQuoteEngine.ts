@@ -1962,7 +1962,12 @@ export function calculateCrewJob(
   crew:      CrewComposition,
   rates:     CrewRates = { sell: { ...CREW_DEFAULT_SELL }, cost: { ...CREW_DEFAULT_COST } },
 ): CrewEngineResult {
-  const { Q, Y4, Y3, Y2, Y1, WE } = crew;
+  const Q  = crew.qualified;
+  const Y4 = crew.fourthYear;
+  const Y3 = crew.thirdYear;
+  const Y2 = crew.secondYear;
+  const Y1 = crew.firstYear;
+  const WE = crew.workExp;
   const totalCrew = Q + Y4 + Y3 + Y2 + Y1 + WE;
   const baselineTotalHrs = families.reduce((s, f) => s + f.baseHrs, 0);
 

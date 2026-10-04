@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { TopBar } from "@/components/nav/TopBar";
 import { getElectricianSettings } from "@/lib/actions/settings";
-import { GpoCalculator } from "@/components/quotes/electrician/GpoCalculator";
+import { ElectricianQuoteBuilder } from "@/components/quotes/electrician/ElectricianQuoteBuilder";
 import { type EngineSettings } from "@/lib/electricianQuoteEngine";
 
 export const metadata: Metadata = { title: "Electrical Quote Builder" };
@@ -25,10 +25,10 @@ export default async function ElectricianQuotePage() {
     <>
       <TopBar
         title="Electrical Quote Builder"
-        description="GPO module — configure job setup and outlet groups to generate a price"
+        description="Select a module to build your quote"
       />
-      <main className="flex-1 p-6 max-w-4xl">
-        <GpoCalculator initialSettings={engineSettings} />
+      <main className="flex-1 p-6 max-w-5xl">
+        <ElectricianQuoteBuilder initialSettings={engineSettings} />
       </main>
     </>
   );
