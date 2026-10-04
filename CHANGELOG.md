@@ -4,6 +4,23 @@ All notable changes to JobzOn are documented here.
 
 ---
 
+## [0.8.0] — 2026-10-05
+
+### Added
+- **Electrical Quote Builder — Full Job / Multi-Module (Phase 7)** — Job Setup + Job Summary sheet ported from Ben's Aussie Sparky Quote Builder v10 (Stage 25).
+  - New "Full Job" tab combines all 7 modules (GPO, Lighting, New Circuit, Switchboard, Custom Job, Underground, Data/TV) into a single quote with one shared job setup and one final price.
+  - Module selector: toggle any combination of modules on/off; active modules show their labour hours in the button.
+  - Shared job setup (quote type, storeys, access conditions) propagates to all active modules.
+  - Single progressive material markup pass across all modules' combined raw materials.
+  - Whole-job setup hours: standard SMALL/MEDIUM/LARGE thresholds on combined module labour hrs; switchboard-only path uses 0.50 hrs.
+  - Job-wide extra labour: user input + open-frame renovation extra (0.5 hrs) + pull-sheets extra (0.25 hrs) when applicable.
+  - Crew engine integration: when crew total > 1, per-family assistability-weighted sell value replaces the flat `hrs × rate` calculation.
+  - Module breakdown table in summary: labour hrs, materials, and external costs per module.
+  - Quote status: "Quote ready" / "Review before sending" based on route issues across all modules.
+  - `lib/multiModuleQuoteEngine.ts` — standalone aggregation engine (zero UI dependencies); mirrors Job Summary G5–G24 formula chain exactly.
+
+---
+
 ## [0.7.0] — 2026-10-03
 
 ### Added

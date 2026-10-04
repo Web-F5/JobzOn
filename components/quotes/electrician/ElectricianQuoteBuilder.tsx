@@ -9,13 +9,15 @@ import { SwitchboardCalculator } from "./SwitchboardCalculator";
 import { CustomJobCalculator } from "./CustomJobCalculator";
 import { UndergroundCalculator } from "./UndergroundCalculator";
 import { DataTvCalculator } from "./DataTvCalculator";
+import { MultiModuleBuilder } from "./MultiModuleBuilder";
 
 interface Props {
   initialSettings?: Partial<EngineSettings>;
 }
 
 const TABS = [
-  { id: "gpo",         label: "GPO",          emoji: "🔌" },
+  { id: "full",        label: "Full Job",      emoji: "📋" },
+  { id: "gpo",         label: "GPO",           emoji: "🔌" },
   { id: "light",       label: "Lighting",      emoji: "💡" },
   { id: "circuit",     label: "New Circuit",   emoji: "⚡" },
   { id: "switchboard", label: "Switchboard",   emoji: "🗂" },
@@ -27,7 +29,7 @@ const TABS = [
 type TabId = typeof TABS[number]["id"];
 
 export function ElectricianQuoteBuilder({ initialSettings }: Props) {
-  const [active, setActive] = useState<TabId>("gpo");
+  const [active, setActive] = useState<TabId>("full");
 
   return (
     <div className="space-y-0">
@@ -51,6 +53,7 @@ export function ElectricianQuoteBuilder({ initialSettings }: Props) {
       </div>
 
       {/* Active module */}
+      {active === "full"        && <MultiModuleBuilder    initialSettings={initialSettings} />}
       {active === "gpo"         && <GpoCalculator         initialSettings={initialSettings} />}
       {active === "light"       && <LightCalculator        initialSettings={initialSettings} />}
       {active === "circuit"     && <NewCircuitCalculator   initialSettings={initialSettings} />}
