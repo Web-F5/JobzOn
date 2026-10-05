@@ -99,8 +99,8 @@ export async function saveOnboardingRates(
   const data = {
     labourSellRate:       num("labourSellRate",       170),
     labourCostRate:       num("labourCostRate",        65),
-    overheadAllowance:    num("overheadAllowance",    0.1),
-    contingencyAllowance: num("contingencyAllowance", 0.05),
+    overheadAllowance:    num("overheadAllowance",    10) / 100,
+    contingencyAllowance: num("contingencyAllowance",  5) / 100,
     minimumJobCharge:     num("minimumJobCharge",     500),
     travelCallout:        num("travelCallout",          0),
     quoteRounding:        int("quoteRounding",          10),

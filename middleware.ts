@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
 // Public routes — no login required
 const isPublicRoute = createRouteMatcher([
@@ -9,6 +10,9 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
+  // Skip auth in local development
+  if (process.env.NODE_ENV === "development") return NextResponse.next();
+
   if (!isPublicRoute(request)) {
     await auth.protect();
   }

@@ -10,11 +10,15 @@ export const dynamic = "force-dynamic";
 export default async function ElectricianQuotePage() {
   const es = await getElectricianSettings();
 
+  // Normalize percentage fields: DB may store 0.10 (decimal) or 10 (whole number)
+  // depending on which save path was used. If value is > 1, treat as whole-number percent.
+  const normPct = (v: number) => v > 1 ? v / 100 : v;
+
   const engineSettings: Partial<EngineSettings> = es
     ? {
         labourSellRate:       es.labourSellRate,
-        overheadAllowance:    es.overheadAllowance,
-        contingencyAllowance: es.contingencyAllowance,
+        overheadAllowance:    normPct(es.overheadAllowance),
+        contingencyAllowance: normPct(es.contingencyAllowance),
         minimumJobCharge:     es.minimumJobCharge,
         travelCallout:        es.travelCallout,
         quoteRounding:        es.quoteRounding,

@@ -70,7 +70,12 @@ const MODULE_LABELS: Record<ModuleId, string> = {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function MultiModuleBuilder({ initialSettings }: Props) {
-  const settings: EngineSettings = { ...DEFAULT_SETTINGS, ...initialSettings };
+  // Memoize settings so the object reference is stable across renders
+  const settings: EngineSettings = useMemo(
+    () => ({ ...DEFAULT_SETTINGS, ...initialSettings }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(initialSettings)],
+  );
 
   // Shared job setup
   const [setup, setSetup] = useState<GpoJobSetup>({ ...DEFAULT_JOB_SETUP });
