@@ -1,8 +1,8 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { requireUserId } from "@/lib/auth";
 import { parseMiddysCSV, parseMiddysTradeCSV, parseVoltexCSV } from "@/lib/parseSupplierCSV";
 
 export type PriceListSummary = {
@@ -15,8 +15,8 @@ export type PriceListSummary = {
 };
 
 export async function getSupplierPriceLists(): Promise<PriceListSummary[]> {
-  const { userId } = await auth();
-  if (!userId) return [];
+  let userId: string;
+  try { userId = await requireUserId(); } catch { return []; }
 
   const lists = await prisma.supplierPriceList.findMany({
     where: { userId },
@@ -40,8 +40,8 @@ export async function importSupplierPriceList(
   supplierName: string,
   csvText: string
 ): Promise<{ success: boolean; itemCount?: number; error?: string }> {
-  const { userId } = await auth();
-  if (!userId) return { success: false, error: "Not authenticated" };
+  let userId: string;
+  try { userId = await requireUserId(); } catch { return { success: false, error: "Not authenticated" }; }
 
   let rows: ReturnType<typeof parseMiddysCSV>;
   try {
@@ -88,8 +88,8 @@ export async function importSupplierPriceList(
 }
 
 export async function deleteSupplierPriceList(priceListId: string): Promise<void> {
-  const { userId } = await auth();
-  if (!userId) return;
+  let userId: string;
+  try { userId = await requireUserId(); } catch { return; }
   await prisma.supplierPriceList.deleteMany({ where: { id: priceListId, userId } });
   revalidatePath("/settings");
 }

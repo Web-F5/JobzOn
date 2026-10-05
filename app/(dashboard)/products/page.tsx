@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { auth } from "@clerk/nextjs/server";
+import { requireUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { TopBar } from "@/components/nav/TopBar";
 import { formatAUD } from "@/lib/gst";
@@ -14,19 +14,19 @@ export const dynamic = "force-dynamic";
 
 
 export default async function ProductsPage() {
-  const { userId } = await auth();
+  const userId = await requireUserId();
 
   const [settings, priceLists, [products, clientCount, quotesCount, serviceCount]] = await Promise.all([
     getBusinessSettings(),
     getSupplierPriceLists(),
     Promise.all([
     prisma.product.findMany({
-      where: { userId: userId ?? "" },
+      where: { userId },
       orderBy: { name: "asc" },
     }),
-    prisma.client.count({ where: { userId: userId ?? "" } }),
-    prisma.quote.count({ where: { userId: userId ?? "" } }),
-      prisma.serviceCatalogueItem.count({ where: { userId: userId ?? "" } }),
+    prisma.client.count({ where: { userId } }),
+    prisma.quote.count({ where: { userId } }),
+      prisma.serviceCatalogueItem.count({ where: { userId } }),
     ]),
   ]);
 
@@ -45,17 +45,17 @@ export default async function ProductsPage() {
         )}
 
         {/* Supplier price lists */}
-        {priceLists.length > 0 && (
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm p-5">
-            <div className="mb-4">
-              <h2 className="text-sm font-semibold text-[var(--color-text)]">Supplier Price Lists</h2>
-              <p className="text-xs text-[var(--color-muted)] mt-0.5">
-                Available for material lookups when building quotes.
-              </p>
-            </div>
-            <SupplierPriceListManager initial={priceLists} />
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm p-5">
+          <div className="mb-4">
+            <h2 className="text-sm font-semibold text-[var(--color-text)]">Supplier Price Lists</h2>
+            <p className="text-xs text-[var(--color-muted)] mt-0.5">
+              {priceLists.length > 0
+                ? "Available for material lookups when building quotes."
+                : "Import a CSV price list from your supplier to use when building material quotes."}
+            </p>
           </div>
-        )}
+          <SupplierPriceListManager initial={priceLists} />
+        </div>
 
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
