@@ -39,6 +39,14 @@ export async function acceptQuoteByToken(
       },
     });
 
+    // Sync status to linked ElectricianQuoteJob (if any)
+    if (quote.electricianJobId) {
+      await prisma.electricianQuoteJob.updateMany({
+        where: { id: quote.electricianJobId },
+        data:  { status: "ACCEPTED", acceptedAt: new Date(), acceptedByName: fullName.trim() },
+      });
+    }
+
     // Fire-and-forget notification to business owner
     notifyAccepted(quote.id, quote.quoteNumber, quote.client.name, fullName.trim(), ipAddress).catch(console.error);
 

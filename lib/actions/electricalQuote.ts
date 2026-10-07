@@ -101,6 +101,78 @@ export async function saveElectricalQuoteWizard(p: SavePayload): Promise<{ ok: b
   return { ok: true };
 }
 
+// ── Publish (create/update linked Quote record) ───────────────────────────────
+
+export async function publishElectricalQuote(
+  jobId: string
+): Promise<{ ok: boolean; quoteId?: string; error?: string }> {
+  const userId = await requireUserId();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const j = (v: unknown) => v as any;
+
+  const job = await prisma.electricianQuoteJob.findFirst({ where: { id: jobId, userId } });
+  if (!job) return { ok: false, error: "Quote not found" };
+  if (!job.clientId) return { ok: false, error: "Please select a client before publishing" };
+
+  // Build line items: Labour, Materials, Travel
+  const labourExGst    = Math.round(job.totalExGst * 0.7 * 100) / 100;
+  const materialsExGst = Math.round(job.totalExGst * 0.3 * 100) / 100;
+  const totalExGst     = job.totalExGst;
+  const gst            = Math.round(totalExGst * 0.1 * 100) / 100;
+  const amountTotal    = Math.round((totalExGst + gst) * 100) / 100;
+
+  const lineItems = [
+    { description: "Labour",    quantity: 1, unitPrice: labourExGst,    subtotal: labourExGst,    sortOrder: 0 },
+    { description: "Materials", quantity: 1, unitPrice: materialsExGst, subtotal: materialsExGst, sortOrder: 1 },
+  ];
+
+  let quoteId = job.quoteId ?? undefined;
+
+  if (quoteId) {
+    // Update existing Quote record
+    await prisma.quote.update({
+      where: { id: quoteId },
+      data: {
+        amountExGst: totalExGst,
+        gst,
+        amountTotal,
+      },
+    });
+    // Replace line items
+    await prisma.quoteLineItem.deleteMany({ where: { quoteId } });
+    await prisma.quoteLineItem.createMany({
+      data: lineItems.map(li => ({ ...li, quoteId: quoteId! })),
+    });
+  } else {
+    // Generate quote number for Quote model (reuse EQ- number)
+    const linked = await prisma.quote.create({
+      data: {
+        id:           crypto.randomUUID(),
+        userId,
+        quoteNumber:  job.quoteNumber ?? `EQ-${Date.now()}`,
+        clientId:     job.clientId,
+        electricianJobId: jobId,
+        status:       "READY",
+        amountExGst:  totalExGst,
+        gst,
+        amountTotal,
+        clientNotes:  job.jobDescription ?? undefined,
+        lineItems: {
+          create: lineItems,
+        },
+      },
+    });
+    quoteId = linked.id;
+    // Write quoteId back to the job
+    await prisma.electricianQuoteJob.updateMany({
+      where: { id: jobId, userId },
+      data:  { quoteId, status: "READY" },
+    });
+  }
+
+  return { ok: true, quoteId };
+}
+
 // ── Read ──────────────────────────────────────────────────────────────────────
 
 export async function getElectricalQuote(id: string) {

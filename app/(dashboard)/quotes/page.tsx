@@ -8,6 +8,7 @@ import { formatAUD }       from "@/lib/gst";
 import { formatDate }      from "@/lib/dates";
 import { QuoteRowActions } from "@/components/quotes/QuoteRowActions";
 import { SpinningBorderButton } from "@/components/ui/SpinningBorderButton";
+import { ElectricalQuotesList } from "@/components/quotes/electrician/ElectricalQuotesList";
 
 export const metadata: Metadata = { title: "Quotes" };
 export const dynamic = "force-dynamic";
@@ -55,7 +56,49 @@ export default async function QuotesPage({
   const activeStatus = (status?.toUpperCase() ?? "ALL") as QuoteStatus | "ALL";
   const { userId } = await auth();
 
-  const [quotes, clientCount, catalogueCount, productCount, bizSettings] = await Promise.all([
+  const bizSettings = await prisma.businessSettings.findUnique({
+    where: { id: userId ?? "" },
+    select: { trade: true },
+  });
+  const isElectrician = bizSettings?.trade === "electrician";
+
+  // Electricians see their ElectricianQuoteJob list
+  if (isElectrician) {
+    const jobs = await prisma.electricianQuoteJob.findMany({
+      where:   { userId: userId ?? "" },
+      orderBy: { updatedAt: "desc" },
+    });
+
+    const clientIds = [...new Set(jobs.map(j => j.clientId).filter(Boolean))] as string[];
+    const clients = await prisma.client.findMany({
+      where:  { id: { in: clientIds } },
+      select: { id: true, name: true },
+    });
+    const clientMap = Object.fromEntries(clients.map(c => [c.id, c.name]));
+
+    return (
+      <>
+        <TopBar
+          title="Quotes"
+          description="Manage electrical quotes"
+          actions={
+            <Link
+              href="/quotes/electrician/new"
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              ⚡ New Electrical Quote
+            </Link>
+          }
+        />
+        <main className="flex-1 p-6">
+          <ElectricalQuotesList jobs={jobs} clientMap={clientMap} />
+        </main>
+      </>
+    );
+  }
+
+  // Non-electricians see the standard Quote list
+  const [quotes, clientCount, catalogueCount, productCount] = await Promise.all([
     prisma.quote.findMany({
       where: activeStatus === "ALL" ? { userId: userId ?? "" } : { userId: userId ?? "", status: activeStatus as QuoteStatus },
       include: { client: { select: { name: true } } },
@@ -64,9 +107,7 @@ export default async function QuotesPage({
     prisma.client.count({ where: { userId: userId ?? "" } }),
     prisma.serviceCatalogueItem.count({ where: { userId: userId ?? "", active: true } }),
     prisma.product.count({ where: { userId: userId ?? "", active: true } }),
-    prisma.businessSettings.findUnique({ where: { id: userId ?? "" }, select: { trade: true } }),
   ]);
-  const isElectrician = bizSettings?.trade === "electrician";
 
   const hasCatalogue = catalogueCount > 0 || productCount > 0;
 
@@ -76,22 +117,12 @@ export default async function QuotesPage({
         title="Quotes"
         description="Manage client quotes and proposals"
         actions={
-          <div className="flex items-center gap-2">
-            {isElectrician && (
-              <Link
-                href="/quotes/electrician"
-                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors"
-              >
-                ⚡ Electrical Quote
-              </Link>
-            )}
-            <Link
-              href="/quotes/new"
-              className="px-4 py-2 bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white text-sm font-medium rounded-lg transition-colors"
-            >
-              + New Quote
-            </Link>
-          </div>
+          <Link
+            href="/quotes/new"
+            className="px-4 py-2 bg-[var(--color-brand)] hover:bg-[var(--color-brand-hover)] text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            + New Quote
+          </Link>
         }
       />
 
