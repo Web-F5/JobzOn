@@ -135,7 +135,7 @@ function SectionForm({ section, initial, hidden, dirty, onDirtyChange }: {
       <div className="flex items-center gap-3 pt-2">
         <button type="submit" disabled={isPending}
           className="px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50">
-          {isPending ? "Saving…" : `Save ${section.label}`}
+          {isPending ? "Saving…" : "Save"}
         </button>
         {dirty && !isPending && <span className="text-xs text-amber-700">Unsaved changes</span>}
         {state.success && !dirty && !isPending && <span className="text-xs text-green-700">{section.label} assumptions saved.</span>}
