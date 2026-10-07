@@ -222,39 +222,22 @@ export async function saveElectricianAssumptions(
   formData: FormData,
 ): Promise<SettingsState> {
   const userId = await requireUserId();
-  const num = (key: string, def: number) => {
-    const v = parseFloat(formData.get(key) as string ?? "");
-    return isNaN(v) ? def : v;
-  };
 
-  const data: ElectricianAssumptions = {
-    gpoSetupHrs:        num("gpoSetupHrs",        DEFAULT_ASSUMPTIONS.gpoSetupHrs),
-    gpoOutletSepRate:   num("gpoOutletSepRate",    DEFAULT_ASSUMPTIONS.gpoOutletSepRate),
-    gpoOutletOpenFrame: num("gpoOutletOpenFrame",  DEFAULT_ASSUMPTIONS.gpoOutletOpenFrame),
-    ltDownlightHrs:     num("ltDownlightHrs",      DEFAULT_ASSUMPTIONS.ltDownlightHrs),
-    ltOtherHrs:         num("ltOtherHrs",          DEFAULT_ASSUMPTIONS.ltOtherHrs),
-    ltCeilingFanHrs:    num("ltCeilingFanHrs",     DEFAULT_ASSUMPTIONS.ltCeilingFanHrs),
-    ltIxlHrs:           num("ltIxlHrs",            DEFAULT_ASSUMPTIONS.ltIxlHrs),
-    ltExteriorDiff:     num("ltExteriorDiff",       DEFAULT_ASSUMPTIONS.ltExteriorDiff),
-    ncConnectHrs:       num("ncConnectHrs",         DEFAULT_ASSUMPTIONS.ncConnectHrs),
-    ncWireHrs:          num("ncWireHrs",            DEFAULT_ASSUMPTIONS.ncWireHrs),
-    sbRcboHrs:          num("sbRcboHrs",            DEFAULT_ASSUMPTIONS.sbRcboHrs),
-    sbNewHrs:           num("sbNewHrs",             DEFAULT_ASSUMPTIONS.sbNewHrs),
-    sbUpgradeHrs:       num("sbUpgradeHrs",         DEFAULT_ASSUMPTIONS.sbUpgradeHrs),
-    sbModHrs:           num("sbModHrs",             DEFAULT_ASSUMPTIONS.sbModHrs),
-    sbInspectorCost:    num("sbInspectorCost",      DEFAULT_ASSUMPTIONS.sbInspectorCost),
-    ugHandDigRate:      num("ugHandDigRate",         DEFAULT_ASSUMPTIONS.ugHandDigRate),
-    ugCablePullRate:    num("ugCablePullRate",       DEFAULT_ASSUMPTIONS.ugCablePullRate),
-    dtvDataNewHrs:      num("dtvDataNewHrs",         DEFAULT_ASSUMPTIONS.dtvDataNewHrs),
-    dtvTvNewHrs:        num("dtvTvNewHrs",           DEFAULT_ASSUMPTIONS.dtvTvNewHrs),
-    matGpoCost:         num("matGpoCost",            DEFAULT_ASSUMPTIONS.matGpoCost),
-    matCable25Cost:     num("matCable25Cost",         DEFAULT_ASSUMPTIONS.matCable25Cost),
-    matRcboCost:        num("matRcboCost",            DEFAULT_ASSUMPTIONS.matRcboCost),
-  };
+  // Each section tab submits only its own fields, so merge the submitted keys
+  // over what is already stored rather than rebuilding the whole object.
+  const updates: Partial<ElectricianAssumptions> = {};
+  for (const key of Object.keys(DEFAULT_ASSUMPTIONS) as (keyof ElectricianAssumptions)[]) {
+    if (!formData.has(key)) continue;
+    const v = parseFloat(formData.get(key) as string ?? "");
+    updates[key] = isNaN(v) ? DEFAULT_ASSUMPTIONS[key] : v;
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const j = (v: unknown) => v as any;
   try {
+    const row = await prisma.electricianSettings.findUnique({ where: { id: userId } });
+    const stored = (row?.assumptions ?? {}) as Partial<ElectricianAssumptions>;
+    const data = { ...stored, ...updates };
     await prisma.electricianSettings.upsert({
       where:  { id: userId },
       update: { assumptions: j(data) },

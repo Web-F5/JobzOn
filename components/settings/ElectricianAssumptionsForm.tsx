@@ -5,11 +5,10 @@ import {
   saveElectricianAssumptions, resetElectricianAssumptions,
   type SettingsState,
 } from "@/lib/actions/settings";
-import { DEFAULT_ASSUMPTIONS, type ElectricianAssumptions } from "@/lib/electricianAssumptions";
+import { type ElectricianAssumptions } from "@/lib/electricianAssumptions";
 
 interface Props { initial: ElectricianAssumptions }
 
-const inp  = "w-full px-3 py-2 text-sm rounded-lg border border-[var(--color-border)] bg-white focus:outline-none focus:ring-2 focus:ring-orange-200";
 const wrap = "flex items-center rounded-lg border border-[var(--color-border)] bg-white overflow-hidden focus-within:ring-2 focus-within:ring-orange-200";
 const fix  = "px-3 py-2 text-sm text-[var(--color-muted)] bg-[var(--color-surface-raised)] border-r border-[var(--color-border)] select-none shrink-0";
 const bare = "flex-1 px-3 py-2 text-sm bg-transparent focus:outline-none";
@@ -40,21 +39,115 @@ function DollarField({ name, label, value, hint }: { name: string; label: string
   );
 }
 
-function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+type FieldDef = { name: keyof ElectricianAssumptions; label: string; hint?: string; kind?: "dollar" };
+
+interface SectionDef { id: string; icon: string; label: string; description: string; fields: FieldDef[] }
+
+const SECTIONS: SectionDef[] = [
+  {
+    id: "gpo", icon: "🔌", label: "GPO", description: "Power outlet installation assumptions",
+    fields: [
+      { name: "gpoSetupHrs",        label: "Group setup / run",        hint: "hrs per group" },
+      { name: "gpoOutletSepRate",   label: "Separate-location outlet", hint: "hrs ea (beyond first)" },
+      { name: "gpoOutletOpenFrame", label: "Open-frame rough-in",      hint: "hrs per outlet" },
+    ],
+  },
+  {
+    id: "lighting", icon: "💡", label: "Lighting", description: "Labour hours per light type",
+    fields: [
+      { name: "ltDownlightHrs",  label: "Downlight / batten / pendant", hint: "hrs ea" },
+      { name: "ltOtherHrs",      label: "Other light type",             hint: "hrs ea" },
+      { name: "ltCeilingFanHrs", label: "Ceiling fan (first)",          hint: "hrs ea" },
+      { name: "ltIxlHrs",        label: "IXL new position",             hint: "hrs ea" },
+      { name: "ltExteriorDiff",  label: "Exterior difficulty",          hint: "extra hrs per exterior light" },
+    ],
+  },
+  {
+    id: "circuit", icon: "⚡", label: "New Circuit", description: "Per-circuit labour",
+    fields: [
+      { name: "ncConnectHrs", label: "Connect / terminate", hint: "hrs per circuit" },
+      { name: "ncWireHrs",    label: "Wire / pull",         hint: "hrs per circuit" },
+    ],
+  },
+  {
+    id: "switchboard", icon: "🗂", label: "Switchboard", description: "Board work labour and costs",
+    fields: [
+      { name: "sbRcboHrs",       label: "Per RCBO / RCD",    hint: "hrs ea" },
+      { name: "sbNewHrs",        label: "New board base",    hint: "hrs" },
+      { name: "sbUpgradeHrs",    label: "Upgrade base",      hint: "hrs" },
+      { name: "sbModHrs",        label: "Modification base", hint: "hrs" },
+      { name: "sbInspectorCost", label: "Inspector fee",     hint: "added when inspector required", kind: "dollar" },
+    ],
+  },
+  {
+    id: "underground", icon: "⛏", label: "Underground", description: "Trenching and cable installation",
+    fields: [
+      { name: "ugHandDigRate",   label: "Hand dig rate",   hint: "hrs per metre" },
+      { name: "ugCablePullRate", label: "Cable pull rate", hint: "hrs per cable-metre" },
+    ],
+  },
+  {
+    id: "datatv", icon: "📡", label: "Data / TV", description: "Base labour per outlet location",
+    fields: [
+      { name: "dtvDataNewHrs", label: "Data (Cat6) new location", hint: "hrs per location" },
+      { name: "dtvTvNewHrs",   label: "TV coax new location",     hint: "hrs per location" },
+    ],
+  },
+  {
+    id: "materials", icon: "🧰", label: "Material Costs", description: "Default material unit costs used in calculations",
+    fields: [
+      { name: "matGpoCost",     label: "Standard double GPO", hint: "cost per outlet", kind: "dollar" },
+      { name: "matCable25Cost", label: "2.5 mm² TPS cable",   hint: "cost per metre",  kind: "dollar" },
+      { name: "matRcboCost",    label: "RCBO (10–20 A)",      hint: "cost per unit",   kind: "dollar" },
+    ],
+  },
+];
+
+// One form per section so each tab saves only its own fields.
+function SectionForm({ section, initial, hidden, dirty, onDirtyChange }: {
+  section: SectionDef;
+  initial: ElectricianAssumptions;
+  hidden: boolean;
+  dirty: boolean;
+  onDirtyChange: (dirty: boolean) => void;
+}) {
+  const [state, formAction, isPending] = useActionState<SettingsState, FormData>(
+    async (prev, formData) => {
+      const result = await saveElectricianAssumptions(prev, formData);
+      if (result.success) onDirtyChange(false);
+      return result;
+    },
+    {},
+  );
+
   return (
-    <div className="space-y-3">
-      <div>
-        <h3 className="text-sm font-semibold text-[var(--color-text)]">{title}</h3>
-        {description && <p className="text-xs text-[var(--color-muted)] mt-0.5">{description}</p>}
+    <form action={formAction} onChange={() => onDirtyChange(true)} hidden={hidden} className="space-y-5">
+      <p className="text-xs text-[var(--color-muted)]">{section.description}</p>
+
+      {state.error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">{state.error}</div>}
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {section.fields.map(f => f.kind === "dollar"
+          ? <DollarField key={f.name} name={f.name} label={f.label} value={initial[f.name]} hint={f.hint} />
+          : <HrsField    key={f.name} name={f.name} label={f.label} value={initial[f.name]} hint={f.hint} />)}
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">{children}</div>
-    </div>
+
+      <div className="flex items-center gap-3 pt-2">
+        <button type="submit" disabled={isPending}
+          className="px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50">
+          {isPending ? "Saving…" : `Save ${section.label}`}
+        </button>
+        {dirty && !isPending && <span className="text-xs text-amber-700">Unsaved changes</span>}
+        {state.success && !dirty && !isPending && <span className="text-xs text-green-700">{section.label} assumptions saved.</span>}
+      </div>
+    </form>
   );
 }
 
 export function ElectricianAssumptionsForm({ initial }: Props) {
-  const [state, formAction, isPending] = useActionState<SettingsState, FormData>(saveElectricianAssumptions, {});
-  const [resetPending, startReset]     = useTransition();
+  const [resetPending, startReset] = useTransition();
+  const [active, setActive]        = useState(SECTIONS[0].id);
+  const [dirty, setDirty]          = useState<Record<string, boolean>>({});
 
   // Reset-to-default confirmation
   const [resetPhase, setResetPhase] = useState<"idle" | "confirm">("idle");
@@ -72,6 +165,7 @@ export function ElectricianAssumptionsForm({ initial }: Props) {
         setResetPhase("idle");
         setResetInput("");
         setKey(k => k + 1);
+        setDirty({});
         setTimeout(() => setResetMsg(null), 3000);
       }
     });
@@ -85,81 +179,35 @@ export function ElectricianAssumptionsForm({ initial }: Props) {
         Only change these if you have firm data for your own crew and market.
       </div>
 
-      {state.error  && <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">{state.error}</div>}
-      {state.success && <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg">Assumptions saved.</div>}
       {resetMsg     && <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg">{resetMsg}</div>}
 
-      <form key={key} action={formAction} className="space-y-8">
-
-        {/* GPO */}
-        <Section title="🔌 GPO" description="Power outlet installation assumptions">
-          <HrsField name="gpoSetupHrs"        label="Group setup / run"    value={initial.gpoSetupHrs}        hint="hrs per group" />
-          <HrsField name="gpoOutletSepRate"   label="Separate-location outlet" value={initial.gpoOutletSepRate} hint="hrs ea (beyond first)" />
-          <HrsField name="gpoOutletOpenFrame" label="Open-frame rough-in" value={initial.gpoOutletOpenFrame} hint="hrs per outlet" />
-        </Section>
-
-        <div className="border-t border-[var(--color-border)]" />
-
-        {/* Lighting */}
-        <Section title="💡 Lighting" description="Labour hours per light type">
-          <HrsField name="ltDownlightHrs"  label="Downlight / batten / pendant" value={initial.ltDownlightHrs}  hint="hrs ea" />
-          <HrsField name="ltOtherHrs"      label="Other light type"              value={initial.ltOtherHrs}      hint="hrs ea" />
-          <HrsField name="ltCeilingFanHrs" label="Ceiling fan (first)"           value={initial.ltCeilingFanHrs} hint="hrs ea" />
-          <HrsField name="ltIxlHrs"        label="IXL new position"              value={initial.ltIxlHrs}        hint="hrs ea" />
-          <HrsField name="ltExteriorDiff"  label="Exterior difficulty"           value={initial.ltExteriorDiff}  hint="extra hrs per exterior light" />
-        </Section>
-
-        <div className="border-t border-[var(--color-border)]" />
-
-        {/* New Circuit */}
-        <Section title="⚡ New Circuit" description="Per-circuit labour">
-          <HrsField name="ncConnectHrs" label="Connect / terminate" value={initial.ncConnectHrs} hint="hrs per circuit" />
-          <HrsField name="ncWireHrs"    label="Wire / pull"         value={initial.ncWireHrs}    hint="hrs per circuit" />
-        </Section>
-
-        <div className="border-t border-[var(--color-border)]" />
-
-        {/* Switchboard */}
-        <Section title="🗂 Switchboard" description="Board work labour and costs">
-          <HrsField    name="sbRcboHrs"       label="Per RCBO / RCD"     value={initial.sbRcboHrs}       hint="hrs ea" />
-          <HrsField    name="sbNewHrs"        label="New board base"     value={initial.sbNewHrs}        hint="hrs" />
-          <HrsField    name="sbUpgradeHrs"    label="Upgrade base"       value={initial.sbUpgradeHrs}    hint="hrs" />
-          <HrsField    name="sbModHrs"        label="Modification base"  value={initial.sbModHrs}        hint="hrs" />
-          <DollarField name="sbInspectorCost" label="Inspector fee"      value={initial.sbInspectorCost} hint="added when inspector required" />
-        </Section>
-
-        <div className="border-t border-[var(--color-border)]" />
-
-        {/* Underground */}
-        <Section title="⛏ Underground" description="Trenching and cable installation">
-          <HrsField name="ugHandDigRate"   label="Hand dig rate"     value={initial.ugHandDigRate}   hint="hrs per metre" />
-          <HrsField name="ugCablePullRate" label="Cable pull rate"   value={initial.ugCablePullRate} hint="hrs per cable-metre" />
-        </Section>
-
-        <div className="border-t border-[var(--color-border)]" />
-
-        {/* Data / TV */}
-        <Section title="📡 Data / TV" description="Base labour per outlet location">
-          <HrsField name="dtvDataNewHrs" label="Data (Cat6) new location" value={initial.dtvDataNewHrs} hint="hrs per location" />
-          <HrsField name="dtvTvNewHrs"   label="TV coax new location"     value={initial.dtvTvNewHrs}   hint="hrs per location" />
-        </Section>
-
-        <div className="border-t border-[var(--color-border)]" />
-
-        {/* Materials */}
-        <Section title="🧰 Material Costs" description="Default material unit costs used in calculations">
-          <DollarField name="matGpoCost"      label="Standard double GPO"  value={initial.matGpoCost}      hint="cost per outlet" />
-          <DollarField name="matCable25Cost"  label="2.5 mm² TPS cable"    value={initial.matCable25Cost}  hint="cost per metre" />
-          <DollarField name="matRcboCost"     label="RCBO (10–20 A)"        value={initial.matRcboCost}     hint="cost per unit" />
-        </Section>
-
-        <div className="flex items-center justify-between pt-2">
-          <button type="submit" disabled={isPending}
-            className="px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50">
-            {isPending ? "Saving…" : "Save Assumptions"}
-          </button>
+      <div>
+        {/* Section tabs */}
+        <div role="tablist" className="flex flex-wrap gap-x-1 border-b border-[var(--color-border)] mb-5">
+          {SECTIONS.map(sec => (
+            <button key={sec.id} type="button" role="tab" aria-selected={sec.id === active}
+              onClick={() => setActive(sec.id)}
+              className={[
+                "px-3 py-2 -mb-px text-sm border-b-2 whitespace-nowrap transition-colors",
+                sec.id === active
+                  ? "border-orange-500 text-orange-600 font-semibold"
+                  : "border-transparent text-[var(--color-muted)] hover:text-[var(--color-text)]",
+              ].join(" ")}>
+              {sec.icon} {sec.label}
+              {dirty[sec.id] && <span title="Unsaved changes" className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-amber-500 align-middle" />}
+            </button>
+          ))}
         </div>
-      </form>
+
+        {/* All sections stay mounted so unsaved edits survive switching tabs */}
+        <div key={key}>
+          {SECTIONS.map(sec => (
+            <SectionForm key={sec.id} section={sec} initial={initial} hidden={sec.id !== active}
+              dirty={!!dirty[sec.id]}
+              onDirtyChange={d => setDirty(prev => ({ ...prev, [sec.id]: d }))} />
+          ))}
+        </div>
+      </div>
 
       {/* Reset to default */}
       <div className="pt-4 border-t border-[var(--color-border)]">
