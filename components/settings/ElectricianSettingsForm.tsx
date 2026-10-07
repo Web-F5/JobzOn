@@ -40,10 +40,10 @@ function RateField({ label, hint, prefix, suffix, children }: {
 export function ElectricianSettingsForm({ initial }: { initial: ElectricianSettingsData | null }) {
   const [state, action, pending] = useActionState(saveElectricianSettings, {});
 
-  const d = initial ?? {
-    labourSellRate: 170, labourCostRate: 65, overheadAllowance: 0.1,
-    contingencyAllowance: 0.05, minimumJobCharge: 500, travelCallout: 0, quoteRounding: 10,
-  };
+  const normPct = (v: number) => v > 1 ? v / 100 : v;
+  const d = initial
+    ? { ...initial, overheadAllowance: normPct(initial.overheadAllowance), contingencyAllowance: normPct(initial.contingencyAllowance) }
+    : { labourSellRate: 170, labourCostRate: 65, overheadAllowance: 0.1, contingencyAllowance: 0.05, minimumJobCharge: 500, travelCallout: 0, quoteRounding: 10 };
 
   return (
     <form action={action} className="space-y-5">

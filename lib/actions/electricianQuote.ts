@@ -122,9 +122,6 @@ export async function convertToQuote(
     underfloor:     job.underfloor as "Yes" | "No",
     roofAccess:     job.roofAccess as GpoJobSetup["roofAccess"],
     openFrame:      job.openFrame  as "Yes" | "No",
-    extraLabour:    job.extraLabour,
-    extraMaterials: job.extraMaterials,
-    travelOverride: job.travelOverride,
   };
 
   const groups = (job.gpoGroups as unknown as GpoGroup[]) || [];

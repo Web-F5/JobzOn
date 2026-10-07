@@ -395,9 +395,21 @@ model SupplierProduct {
 // ─── ELECTRICIAN QUOTE JOBS ───────────────────────────────────────────────────
 
 model ElectricianQuoteJob {
-  id      String  @id @default(cuid())
-  userId  String
-  quoteId String? @unique  // linked Quote once "saved as quote"
+  id          String  @id @default(cuid())
+  userId      String
+  quoteNumber String? @unique
+
+  // Client & job details
+  clientId       String?
+  jobAddress     String?
+  jobDescription String?
+
+  // Status: DRAFT | READY | SENT | ACCEPTED | REJECTED | INVOICED
+  status String @default("DRAFT")
+
+  // Wizard navigation
+  wizardStep    Int  @default(0)
+  unlockedSteps Json @default("[0]")
 
   // Job Setup
   quoteType  String @default("Existing Home")
@@ -406,17 +418,26 @@ model ElectricianQuoteJob {
   roofAccess String @default("Manhole")
   openFrame  String @default("No")
 
-  extraLabour    Float @default(0)
-  extraMaterials Float @default(0)
-  travelOverride Float @default(0)
+  // Module data (JSON)
+  gpoGroups       Json @default("[]")
+  lightingData    Json @default("{}")
+  circuitData     Json @default("[]")
+  switchboardData Json @default("[]")
+  customData      Json @default("{}")
+  undergroundData Json @default("{}")
+  dataTvData      Json @default("{}")
+  crewData        Json @default("{}")
+  extrasData      Json @default("{}")
 
-  // GPO groups stored as JSON array of GpoGroup objects
-  gpoGroups Json @default("[]")
-
-  // Cached totals (updated on save)
+  // Cached totals
   totalHrs    Float @default(0)
   totalExGst  Float @default(0)
   totalIncGst Float @default(0)
+
+  // Legacy / future fields
+  acceptedByName String?
+  acceptedAt     DateTime?
+  quoteId        String? @unique  // linked Quote model once invoiced
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
