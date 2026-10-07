@@ -4,6 +4,38 @@ All notable changes to JobzOn are documented here.
 
 ---
 
+## [0.9.0] — 2026-10-07
+
+### Added
+- **Electrical Quote Wizard** — multi-step wizard replaces the single-page builder for electrical quotes.
+  - New URL structure: `/quotes/electrician` (list), `/quotes/electrician/new` (auto-create + redirect), `/quotes/electrician/[id]` (wizard).
+  - Auto-generated quote numbers in `EQ-YYYY-NNN` format via `SequenceCounter`.
+  - 8 progressive steps: Job Setup, GPO, Lighting, New Circuit, Switchboard, Underground, Data/TV, Custom Job. Next unlocks the following step; the wizard resumes from the last saved step.
+  - Job Setup: client autocomplete search, quote number, job address, description, site conditions, crew, job-wide extras.
+  - Dynamic accordion groups per module with Add/Remove; cable run labels on GPO, Lighting and New Circuit; light controls using the `LightControl` schema fields.
+  - Custom Job: product + service autocomplete description search, with links to `/products` and `/services`.
+  - Live quote calculation via `calculateMultiModuleJob`; saved to the database on every Next/Back/Save Draft.
+  - `ElectricianQuoteJob` Prisma model extended with wizard fields and JSON module columns.
+- **Electrical quote draft/publish pipeline** — electrical quotes now appear on the Quotes page.
+  - Electricians see their electrical quote jobs with a Drafts section (Continue button) and active quotes with Publish/PDF/Send actions.
+  - `publishElectricalQuote()` creates or updates a linked `Quote` with Labour + Materials line items and sets the job status to READY.
+  - `Quote.electricianJobId` (unique) links a quote to its electrical job; accepting a quote syncs the status back to the linked job.
+- **Settings reorganised into tabs** — sidebar-tab layout with 9 tabs: Business Identity, Business Address, Contact Emails, Payment Details, Business Logo, Electrician Rates, Business Preferences, Supplier Price Lists, Electrician Quote Assumptions. Business details split into four panels, each with its own Save button.
+- **Electrician Quote Assumptions** — editable labour-hour and material-cost assumptions per module (GPO, Lighting, New Circuit, Switchboard, Underground, Data/TV, Material Costs), with defaults from Ben's estimating spreadsheet and a reset-to-default that requires typing `YES`. Stored in a new `assumptions` JSON column on `ElectricianSettings`.
+  - Each section has its own tab and its own Save button, so the save control is always visible. Saving a tab updates only that tab's fields; tabs with unsaved edits are flagged.
+- **Local development auth bypass** — with `NODE_ENV=development`, middleware and `requireUserId` no longer require a Clerk session.
+
+### Changed
+- Products page always shows the Supplier Price Lists section, with an upload prompt when no lists exist (previously hidden until the first list was imported).
+
+### Fixed
+- Onboarding rates save storing overhead/contingency as whole-number percentages instead of decimals; legacy rows are corrected at read time in the quote page loader and the Electrician Rates form (which displayed e.g. 500%).
+- Supplier price list upload returning "Not authenticated" — actions and Products page queries now use `requireUserId()`.
+- New electrical quotes opening with an all-zero crew — stored JSON is now merged over `DEFAULT_CREW`, `DEFAULT_UG_SETUP` and `DEFAULT_JOB_SETUP`.
+- Stale re-renders in `MultiModuleBuilder` when the initial settings reference changed.
+
+---
+
 ## [0.8.0] — 2026-10-05
 
 ### Added
