@@ -203,3 +203,83 @@ export async function saveBusinessPreferences(
   revalidatePath("/");
   return { success: true };
 }
+
+// ── Electrician Quote Assumptions ─────────────────────────────────────────────
+
+export type { ElectricianAssumptions } from "@/lib/electricianAssumptions";
+import { DEFAULT_ASSUMPTIONS } from "@/lib/electricianAssumptions";
+import type { ElectricianAssumptions } from "@/lib/electricianAssumptions";
+
+export async function getElectricianAssumptions(): Promise<ElectricianAssumptions> {
+  const userId = await requireUserId();
+  const row = await prisma.electricianSettings.findUnique({ where: { id: userId } });
+  const stored = (row?.assumptions ?? {}) as Partial<ElectricianAssumptions>;
+  return { ...DEFAULT_ASSUMPTIONS, ...stored };
+}
+
+export async function saveElectricianAssumptions(
+  _prev: SettingsState,
+  formData: FormData,
+): Promise<SettingsState> {
+  const userId = await requireUserId();
+  const num = (key: string, def: number) => {
+    const v = parseFloat(formData.get(key) as string ?? "");
+    return isNaN(v) ? def : v;
+  };
+
+  const data: ElectricianAssumptions = {
+    gpoSetupHrs:        num("gpoSetupHrs",        DEFAULT_ASSUMPTIONS.gpoSetupHrs),
+    gpoOutletSepRate:   num("gpoOutletSepRate",    DEFAULT_ASSUMPTIONS.gpoOutletSepRate),
+    gpoOutletOpenFrame: num("gpoOutletOpenFrame",  DEFAULT_ASSUMPTIONS.gpoOutletOpenFrame),
+    ltDownlightHrs:     num("ltDownlightHrs",      DEFAULT_ASSUMPTIONS.ltDownlightHrs),
+    ltOtherHrs:         num("ltOtherHrs",          DEFAULT_ASSUMPTIONS.ltOtherHrs),
+    ltCeilingFanHrs:    num("ltCeilingFanHrs",     DEFAULT_ASSUMPTIONS.ltCeilingFanHrs),
+    ltIxlHrs:           num("ltIxlHrs",            DEFAULT_ASSUMPTIONS.ltIxlHrs),
+    ltExteriorDiff:     num("ltExteriorDiff",       DEFAULT_ASSUMPTIONS.ltExteriorDiff),
+    ncConnectHrs:       num("ncConnectHrs",         DEFAULT_ASSUMPTIONS.ncConnectHrs),
+    ncWireHrs:          num("ncWireHrs",            DEFAULT_ASSUMPTIONS.ncWireHrs),
+    sbRcboHrs:          num("sbRcboHrs",            DEFAULT_ASSUMPTIONS.sbRcboHrs),
+    sbNewHrs:           num("sbNewHrs",             DEFAULT_ASSUMPTIONS.sbNewHrs),
+    sbUpgradeHrs:       num("sbUpgradeHrs",         DEFAULT_ASSUMPTIONS.sbUpgradeHrs),
+    sbModHrs:           num("sbModHrs",             DEFAULT_ASSUMPTIONS.sbModHrs),
+    sbInspectorCost:    num("sbInspectorCost",      DEFAULT_ASSUMPTIONS.sbInspectorCost),
+    ugHandDigRate:      num("ugHandDigRate",         DEFAULT_ASSUMPTIONS.ugHandDigRate),
+    ugCablePullRate:    num("ugCablePullRate",       DEFAULT_ASSUMPTIONS.ugCablePullRate),
+    dtvDataNewHrs:      num("dtvDataNewHrs",         DEFAULT_ASSUMPTIONS.dtvDataNewHrs),
+    dtvTvNewHrs:        num("dtvTvNewHrs",           DEFAULT_ASSUMPTIONS.dtvTvNewHrs),
+    matGpoCost:         num("matGpoCost",            DEFAULT_ASSUMPTIONS.matGpoCost),
+    matCable25Cost:     num("matCable25Cost",         DEFAULT_ASSUMPTIONS.matCable25Cost),
+    matRcboCost:        num("matRcboCost",            DEFAULT_ASSUMPTIONS.matRcboCost),
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const j = (v: unknown) => v as any;
+  try {
+    await prisma.electricianSettings.upsert({
+      where:  { id: userId },
+      update: { assumptions: j(data) },
+      create: { id: userId, assumptions: j(data) },
+    });
+  } catch (err: unknown) {
+    return { error: `Failed to save: ${err instanceof Error ? err.message : String(err)}` };
+  }
+  revalidatePath("/settings");
+  return { success: true };
+}
+
+export async function resetElectricianAssumptions(): Promise<SettingsState> {
+  const userId = await requireUserId();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const j = (v: unknown) => v as any;
+  try {
+    await prisma.electricianSettings.upsert({
+      where:  { id: userId },
+      update: { assumptions: j({}) },
+      create: { id: userId, assumptions: j({}) },
+    });
+  } catch (err: unknown) {
+    return { error: `Failed to reset: ${err instanceof Error ? err.message : String(err)}` };
+  }
+  revalidatePath("/settings");
+  return { success: true };
+}

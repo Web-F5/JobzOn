@@ -1,83 +1,30 @@
-import { Metadata } from "next";
-import { TopBar } from "@/components/nav/TopBar";
-import { getBusinessSettings, getElectricianSettings } from "@/lib/actions/settings";
-import { getSupplierPriceLists } from "@/lib/actions/supplierPriceList";
-import { LogoUploadForm } from "@/components/settings/LogoUploadForm";
-import { BusinessDetailsForm } from "@/components/settings/BusinessDetailsForm";
-import { BusinessPreferencesForm } from "@/components/settings/BusinessPreferencesForm";
-import { ElectricianSettingsForm } from "@/components/settings/ElectricianSettingsForm";
-import { SupplierPriceListManager } from "@/components/settings/SupplierPriceListManager";
+import { Metadata }                  from "next";
+import { TopBar }                    from "@/components/nav/TopBar";
+import { getBusinessSettings, getElectricianSettings, getElectricianAssumptions } from "@/lib/actions/settings";
+import { getSupplierPriceLists }     from "@/lib/actions/supplierPriceList";
+import { SettingsTabs }              from "@/components/settings/SettingsTabs";
 
 export const metadata: Metadata = { title: "Settings" };
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const [settings, priceLists, electricianSettings] = await Promise.all([
+  const [settings, priceLists, electricianSettings, assumptions] = await Promise.all([
     getBusinessSettings(),
     getSupplierPriceLists(),
     getElectricianSettings(),
+    getElectricianAssumptions(),
   ]);
 
   return (
     <>
       <TopBar title="Settings" description="Business details, branding and configuration" />
-      <main className="flex-1 p-6 max-w-3xl space-y-6">
-
-        {/* Business details */}
-        <BusinessDetailsForm
-          initial={{
-            businessName:    settings.businessName,
-            abn:             settings.abn,
-            phone:           settings.phone,
-            address:         settings.address,
-            suburb:          settings.suburb,
-            state:           settings.state,
-            postcode:        settings.postcode,
-            emailOutgoing:   settings.emailOutgoing,
-            emailQuotes:     settings.emailQuotes,
-            bankName:        settings.bankName,
-            bsb:             settings.bsb,
-            bankAccount:     settings.bankAccount,
-            bankAccountName: settings.bankAccountName,
-            paymentTermsDays: settings.paymentTermsDays,
-          }}
+      <main className="flex-1 p-6">
+        <SettingsTabs
+          settings={settings}
+          electricianSettings={electricianSettings}
+          assumptions={assumptions}
+          priceLists={priceLists}
         />
-
-        {/* Logo */}
-        <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm p-6">
-          <h2 className="font-semibold text-[var(--color-text)] mb-1">Business Logo</h2>
-          <p className="text-sm text-[var(--color-muted)] mb-5">
-            Appears on invoice PDFs, quote PDFs, and the client payment portal.
-            PNG or SVG with a transparent background works best. Max 2 MB.
-          </p>
-          <LogoUploadForm currentLogoUrl={settings.logoUrl} />
-        </section>
-
-        {/* Electrician rates — only shown for electrician accounts */}
-        {settings.trade === "electrician" && (
-          <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm p-6">
-            <h2 className="font-semibold text-[var(--color-text)] mb-1">Electrician Rates</h2>
-            <p className="text-sm text-[var(--color-muted)] mb-5">
-              These rates are used when calculating job quotes and pre-populating your service catalogue prices.
-              Changing your labour sell rate here will not automatically update existing catalogue items.
-            </p>
-            <ElectricianSettingsForm initial={electricianSettings} />
-          </section>
-        )}
-
-        {/* Business preferences */}
-        <BusinessPreferencesForm hideProducts={settings.hideProducts} trainingWheels={settings.trainingWheels} />
-
-        {/* Supplier price lists */}
-        <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm p-6">
-          <h2 className="font-semibold text-[var(--color-text)] mb-1">Supplier Price Lists</h2>
-          <p className="text-sm text-[var(--color-muted)] mb-5">
-            Import CSV price lists from your suppliers. Used when building material quotes.
-            Price lists older than 30 days will be flagged as potentially out of date.
-          </p>
-          <SupplierPriceListManager initial={priceLists} />
-        </section>
-
       </main>
     </>
   );

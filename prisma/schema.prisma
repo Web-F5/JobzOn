@@ -354,6 +354,8 @@ model ElectricianSettings {
   travelCallout        Float  @default(0)
   quoteRounding        Int    @default(10)
 
+  assumptions          Json   @default("{}")
+
   updatedAt DateTime @updatedAt
 }
 
