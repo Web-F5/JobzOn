@@ -84,13 +84,13 @@ export default async function ElectricalQuoteWizardPage({
   const cd           = obj<{ items?: unknown; extraLabour?: number; extraMaterials?: number }>(quote.customData, {});
   const customItems  = arr<CustomJobItem>(cd.items,        [{ ...DEFAULT_CUSTOM_ITEM }]);
   const ud           = obj<{ setup?: unknown; cables?: unknown }>(quote.undergroundData, {});
-  const ugSetup      = obj<UndergroundJobSetup>(ud.setup,  { ...DEFAULT_UG_SETUP });
+  const ugSetup: UndergroundJobSetup = { ...DEFAULT_UG_SETUP, ...obj<Partial<UndergroundJobSetup>>(ud.setup, {}) };
   const ugCables     = arr<UndergroundCable>(ud.cables,    [{ ...DEFAULT_UG_CABLE }]);
   const dd           = obj<{ setup?: unknown; groups?: unknown; antenna?: unknown }>(quote.dataTvData, {});
-  const dtvSetup     = obj<DataTvJobSetup>(dd.setup,        { ...DEFAULT_JOB_SETUP });
+  const dtvSetup: DataTvJobSetup = { ...DEFAULT_JOB_SETUP, ...obj<Partial<DataTvJobSetup>>(dd.setup, {}) };
   const dtvGroups    = arr<DataTvGroup>(dd.groups,         [{ ...DEFAULT_DTV_GROUP }]);
   const antenna      = obj<DataTvAntennaSystem>(dd.antenna, { ...DEFAULT_DTV_ANTENNA });
-  const crew         = obj<CrewComposition>(quote.crewData, { ...DEFAULT_CREW });
+  const crew: CrewComposition = { ...DEFAULT_CREW, ...obj<Partial<CrewComposition>>(quote.crewData, {}) };
   const ed           = obj<Partial<JobExtras>>(quote.extrasData, {});
   const extras: JobExtras = {
     extraLabourHrs:    ed.extraLabourHrs    ?? 0,
