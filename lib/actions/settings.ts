@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { put }            from "@vercel/blob";
 import { prisma }         from "@/lib/prisma";
 import { requireUserId }  from "@/lib/auth";
+import { validateRequiredBusinessDetails, validateBusinessLocation } from "@/lib/businessDetails";
 
 export type SettingsState = { error?: string; success?: boolean };
 
@@ -100,22 +101,35 @@ export async function saveBusinessDetails(
     return isNaN(v) ? null : v;
   };
 
-  const data = {
-    businessName:     str("businessName"),
-    abn:              str("abn"),
-    phone:            str("phone"),
-    address:          str("address"),
-    suburb:           str("suburb"),
-    state:            str("state"),
-    postcode:         str("postcode"),
-    emailOutgoing:    str("emailOutgoing"),
-    emailQuotes:      str("emailQuotes"),
-    bankName:         str("bankName"),
-    bsb:              str("bsb"),
-    bankAccount:      str("bankAccount"),
-    bankAccountName:  str("bankAccountName"),
-    paymentTermsDays: int("paymentTermsDays") ?? 14,
-  };
+  // Each Settings tab submits only its own fields, so update just the fields
+  // that were submitted; anything else would be blanked.
+  const TEXT_FIELDS = [
+    "businessName", "abn", "phone", "address", "suburb", "state", "postcode",
+    "emailOutgoing", "emailQuotes", "bankName", "bsb", "bankAccount", "bankAccountName",
+  ] as const;
+  const data: Partial<Record<(typeof TEXT_FIELDS)[number], string | null>> & { paymentTermsDays?: number } = {};
+  for (const key of TEXT_FIELDS) {
+    if (formData.has(key)) data[key] = str(key);
+  }
+  if (formData.has("paymentTermsDays")) data.paymentTermsDays = int("paymentTermsDays") ?? 14;
+
+  // Business Identity tab: name, ABN and phone are required for quotes and invoices
+  if (formData.has("businessName") || formData.has("abn") || formData.has("phone")) {
+    const invalid = validateRequiredBusinessDetails({
+      businessName: str("businessName"), abn: str("abn"), phone: str("phone"),
+    });
+    if (invalid) return { error: invalid };
+  }
+  // Business Address tab: town, state and postcode are printed on quotes and invoices
+  if (formData.has("suburb") || formData.has("state") || formData.has("postcode")) {
+    const invalid = validateBusinessLocation({
+      suburb: str("suburb"), state: str("state"), postcode: str("postcode"),
+    });
+    if (invalid) return { error: invalid };
+  }
+  if (formData.has("emailOutgoing") && !str("emailOutgoing")) {
+    return { error: "Business email is required." };
+  }
 
   try {
     await prisma.businessSettings.upsert({

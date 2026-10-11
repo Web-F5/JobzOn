@@ -34,10 +34,10 @@ export function BusinessIdentityPanel({ initial }: Props) {
           <input name="businessName" defaultValue={initial.businessName ?? ""} required className={inp} placeholder="Acme Electrical" />
         </Field>
         <Field label="ABN" hint="Format: XX XXX XXX XXX">
-          <input name="abn" defaultValue={initial.abn ?? ""} className={inp} placeholder="12 345 678 901" />
+          <input name="abn" defaultValue={initial.abn ?? ""} required pattern="\s*(\d\s*){11}" title="ABN must be 11 digits" className={inp} placeholder="12 345 678 901" />
         </Field>
         <Field label="Business Phone">
-          <input name="phone" type="tel" defaultValue={initial.phone ?? ""} className={inp} placeholder="0400 000 000" />
+          <input name="phone" type="tel" defaultValue={initial.phone ?? ""} required className={inp} placeholder="0400 000 000" />
         </Field>
       </div>
 

@@ -22,7 +22,8 @@ export function BusinessAddressPanel({ initial }: Props) {
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    fd.set("suburb",   suburb);
+    // The town field is the second "address" input; use what was typed if no suggestion was picked
+    fd.set("suburb",   suburb || String(fd.getAll("address")[1] ?? "").trim());
     fd.set("state",    stateVal);
     fd.set("postcode", postcode);
     action(fd);
@@ -33,7 +34,7 @@ export function BusinessAddressPanel({ initial }: Props) {
       {state.error   && <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">{state.error}</div>}
       {state.success && <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg">Saved.</div>}
 
-      <p className="text-sm text-[var(--color-muted)]">Town and postcode is sufficient for invoices and quotes.</p>
+      <p className="text-sm text-[var(--color-muted)]">Town, state and postcode are printed under your business name on quotes and invoices. Your street address is not.</p>
 
       <div className="space-y-4">
         <div className="space-y-1">
@@ -63,7 +64,7 @@ export function BusinessAddressPanel({ initial }: Props) {
           </div>
           <div className="space-y-1">
             <label className="block text-xs font-medium text-[var(--color-muted)]">State</label>
-            <select value={stateVal} onChange={e => setStateVal(e.target.value)} className={inp + " cursor-pointer"}>
+            <select value={stateVal} onChange={e => setStateVal(e.target.value)} required className={inp + " cursor-pointer"}>
               <option value="">—</option>
               {AUS_STATES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
@@ -75,6 +76,9 @@ export function BusinessAddressPanel({ initial }: Props) {
               value={postcode}
               onChange={e => setPostcode(e.target.value)}
               maxLength={4}
+              required
+              pattern="\d{4}"
+              title="Postcode must be 4 digits"
               className={inp}
               placeholder="3000"
             />

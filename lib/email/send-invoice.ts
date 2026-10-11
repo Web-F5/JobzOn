@@ -43,8 +43,12 @@ async function getPortalUrl(clientId: string): Promise<string | null> {
   return client?.portalToken ? portalUrl(client.portalToken) : null;
 }
 
-async function getBusinessDetails() {
-  const settings = await prisma.businessSettings.findUnique({ where: { id: "default" } });
+/** Sender details from the settings of the user who owns the invoice. */
+async function getBusinessDetails(invoiceId: string) {
+  const owner = await prisma.invoice.findUnique({ where: { id: invoiceId }, select: { userId: true } });
+  const settings = owner
+    ? await prisma.businessSettings.findUnique({ where: { id: owner.userId } })
+    : null;
   return {
     bizName:  settings?.businessName  ?? process.env.NEXT_PUBLIC_BUSINESS_NAME    ?? "Web F5",
     bizEmail: settings?.emailOutgoing ?? process.env.NEXT_PUBLIC_BUSINESS_EMAIL   ?? FROM,
@@ -56,7 +60,7 @@ async function getBusinessDetails() {
 // ─── Send initial invoice ─────────────────────────────────────────────────────
 
 export async function sendInvoiceEmail(invoiceId: string): Promise<string> {
-  const [data, biz] = await Promise.all([getInvoicePdfData(invoiceId), getBusinessDetails()]);
+  const [data, biz] = await Promise.all([getInvoicePdfData(invoiceId), getBusinessDetails(invoiceId)]);
   if (!data) throw new Error(`Invoice not found: ${invoiceId}`);
 
   const attachment      = await buildAttachment(invoiceId, data.invoiceNumber);
@@ -91,7 +95,7 @@ export async function sendInvoiceEmail(invoiceId: string): Promise<string> {
 // ─── Send first reminder ──────────────────────────────────────────────────────
 
 export async function sendReminderOneEmail(invoiceId: string): Promise<string> {
-  const [data, biz] = await Promise.all([getInvoicePdfData(invoiceId), getBusinessDetails()]);
+  const [data, biz] = await Promise.all([getInvoicePdfData(invoiceId), getBusinessDetails(invoiceId)]);
   if (!data) throw new Error(`Invoice not found: ${invoiceId}`);
 
   const daysOverdue     = daysBetween(new Date(data.dueDate), new Date());
@@ -128,7 +132,7 @@ export async function sendReminderOneEmail(invoiceId: string): Promise<string> {
 // ─── Send second (final) reminder ─────────────────────────────────────────────
 
 export async function sendReminderTwoEmail(invoiceId: string): Promise<string> {
-  const [data, biz] = await Promise.all([getInvoicePdfData(invoiceId), getBusinessDetails()]);
+  const [data, biz] = await Promise.all([getInvoicePdfData(invoiceId), getBusinessDetails(invoiceId)]);
   if (!data) throw new Error(`Invoice not found: ${invoiceId}`);
 
   const daysOverdue     = daysBetween(new Date(data.dueDate), new Date());

@@ -3,28 +3,34 @@ import { prisma } from "@/lib/prisma";
 import { TopBar } from "@/components/nav/TopBar";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatDate } from "@/lib/dates";
+import { requireUserId } from "@/lib/auth";
+import { ensureJobsForAcceptedQuotes } from "@/lib/jobs";
 
 export const metadata: Metadata = { title: "Jobs" };
 export const dynamic = "force-dynamic";
 
 export default async function JobsPage() {
+  const userId = await requireUserId();
+
+  // Catch up on accepted quotes that have no job yet
+  await ensureJobsForAcceptedQuotes(userId);
+
+  // Jobs belong to a user through their quote
+  const quotes = await prisma.quote.findMany({
+    where:  { userId, status: { in: ["ACCEPTED", "INVOICED"] } },
+    select: { id: true, client: { select: { name: true } } },
+  });
+  const clientByQuote = new Map(quotes.map(q => [q.id, q.client]));
+
   const jobs = await prisma.job.findMany({
+    where:   { quoteId: { in: quotes.map(q => q.id) } },
     include: {
       _count: { select: { additionalTasks: true } },
     },
     orderBy: { createdAt: "desc" },
   });
 
-  // Get client names via quoteId → quote → client
-  const jobsWithClients = await Promise.all(
-    jobs.map(async (job) => {
-      const quote = await prisma.quote.findUnique({
-        where: { id: job.quoteId },
-        include: { client: true },
-      });
-      return { ...job, client: quote?.client };
-    })
-  );
+  const jobsWithClients = jobs.map(job => ({ ...job, client: clientByQuote.get(job.quoteId) }));
 
   return (
     <>

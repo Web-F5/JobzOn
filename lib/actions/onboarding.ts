@@ -4,6 +4,7 @@ import { prisma }                      from "@/lib/prisma";
 import { requireUserId }               from "@/lib/auth";
 import { put }                         from "@vercel/blob";
 import { ELECTRICIAN_SERVICE_SEEDS }   from "@/lib/electricianServiceSeed";
+import { validateRequiredBusinessDetails, validateBusinessLocation } from "@/lib/businessDetails";
 
 export type OnboardingState = { error?: string; success?: boolean };
 
@@ -47,6 +48,11 @@ export async function saveOnboardingDetails(
     emailOutgoing: str("emailOutgoing"),
     emailQuotes:   str("emailQuotes"),
   };
+
+  // Required for quotes and invoices
+  const invalid = validateRequiredBusinessDetails(data) ?? validateBusinessLocation(data);
+  if (invalid) return { error: invalid };
+  if (!data.emailOutgoing) return { error: "Business email is required." };
 
   try {
     await prisma.businessSettings.upsert({

@@ -20,7 +20,9 @@ function clientFirstName(fullName: string): string {
 
 export async function sendQuoteEmail(quoteId: string): Promise<string> {
   // Load business settings first — all sender details come from here
-  const settings = await prisma.businessSettings.findUnique({ where: { id: "default" } });
+  const owner = await prisma.quote.findUnique({ where: { id: quoteId }, select: { userId: true } });
+  if (!owner) throw new Error(`Quote not found: ${quoteId}`);
+  const settings = await prisma.businessSettings.findUnique({ where: { id: owner.userId } });
 
   const fromEmail = process.env.RESEND_FROM_EMAIL ?? "jobzon@webf5.com.au";
   const replyTo   = settings?.emailOutgoing ?? fromEmail;

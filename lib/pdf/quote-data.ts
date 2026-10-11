@@ -4,6 +4,7 @@
  */
 
 import { prisma }     from "@/lib/prisma";
+import { businessLocationLine } from "@/lib/businessDetails";
 import { formatAUD, formatAmount } from "@/lib/gst";
 import { formatDate } from "@/lib/dates";
 
@@ -21,6 +22,7 @@ export interface QuotePdfData {
   businessEmail:   string;
   businessPhone:   string;
   businessAddress: string;
+  businessLocation: string; // "Seymour VIC 3660", printed under the business name
   businessLogoUrl: string | null;
 
   // Quote meta
@@ -55,24 +57,24 @@ export interface QuotePdfData {
 }
 
 export async function getQuotePdfData(quoteId: string, acceptUrl?: string): Promise<QuotePdfData | null> {
-  const [quote, settings] = await Promise.all([
-    prisma.quote.findUnique({
-      where: { id: quoteId },
-      include: {
-        client: {
-          select: {
-            name: true, email: true, phone: true,
-            abn: true, address: true, suburb: true,
-            state: true, postcode: true,
-          },
+  const quote = await prisma.quote.findUnique({
+    where: { id: quoteId },
+    include: {
+      client: {
+        select: {
+          name: true, email: true, phone: true,
+          abn: true, address: true, suburb: true,
+          state: true, postcode: true,
         },
-        lineItems: { orderBy: { sortOrder: "asc" } },
       },
-    }),
-    prisma.businessSettings.findUnique({ where: { id: "default" } }),
-  ]);
+      lineItems: { orderBy: { sortOrder: "asc" } },
+    },
+  });
 
   if (!quote) return null;
+
+  // Business details come from the settings of the user who owns this quote
+  const settings = await prisma.businessSettings.findUnique({ where: { id: quote.userId } });
 
   const clientAddressParts = [
     quote.client.address,
@@ -95,6 +97,7 @@ export async function getQuotePdfData(quoteId: string, acceptUrl?: string): Prom
     businessEmail:   settings?.emailOutgoing ?? process.env.NEXT_PUBLIC_BUSINESS_EMAIL  ?? "",
     businessPhone:   settings?.phone         ?? process.env.NEXT_PUBLIC_BUSINESS_PHONE  ?? "",
     businessAddress: bizAddressParts.join(", ") || (process.env.NEXT_PUBLIC_BUSINESS_ADDRESS ?? ""),
+    businessLocation: businessLocationLine(settings),
     businessLogoUrl: settings?.logoUrl ?? null,
 
     // Quote

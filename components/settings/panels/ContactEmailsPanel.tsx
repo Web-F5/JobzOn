@@ -24,7 +24,7 @@ export function ContactEmailsPanel({ initial }: Props) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1">
           <label className="block text-xs font-medium text-[var(--color-muted)]">Outgoing (From) email</label>
-          <input name="emailOutgoing" type="email" defaultValue={initial.emailOutgoing ?? ""} className={inp} placeholder="invoices@yourbusiness.com.au" />
+          <input name="emailOutgoing" type="email" required defaultValue={initial.emailOutgoing ?? ""} className={inp} placeholder="invoices@yourbusiness.com.au" />
           <p className="text-xs text-[var(--color-muted)]">Used as the sender on invoice and quote emails.</p>
         </div>
         <div className="space-y-1">

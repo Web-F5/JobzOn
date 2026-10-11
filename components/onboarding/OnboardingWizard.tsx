@@ -194,7 +194,8 @@ function DetailsStep({ initial, onNext, onBack }: {
     const fd = new FormData(e.currentTarget);
     fd.set("businessName", businessName);
     fd.set("abn",          abn);
-    fd.set("suburb",       suburb);
+    // The town field is the second "address" input; use what was typed if no suggestion was picked
+    fd.set("suburb",       suburb || String(fd.getAll("address")[1] ?? "").trim());
     fd.set("state",        stateVal);
     fd.set("postcode",     postcode);
 
@@ -247,16 +248,17 @@ function DetailsStep({ initial, onNext, onBack }: {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-slate-400 uppercase tracking-wide">ABN</label>
-            <input value={abn} onChange={(e) => setAbn(e.target.value)} placeholder="XX XXX XXX XXX" className={inp} />
+            <label className="text-xs font-medium text-slate-400 uppercase tracking-wide">ABN <span className="text-red-400">*</span></label>
+            <input value={abn} onChange={(e) => setAbn(e.target.value)} placeholder="XX XXX XXX XXX" required
+              pattern="\s*(\d\s*){11}" title="ABN must be 11 digits" className={inp} />
           </div>
         </div>
 
         {/* Phone */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-slate-400 uppercase tracking-wide">Business Phone</label>
-            <input name="phone" type="tel" defaultValue={initial.phone} placeholder="0400 000 000" className={inp} />
+            <label className="text-xs font-medium text-slate-400 uppercase tracking-wide">Business Phone <span className="text-red-400">*</span></label>
+            <input name="phone" type="tel" required defaultValue={initial.phone} placeholder="0400 000 000" className={inp} />
           </div>
         </div>
 
@@ -276,7 +278,7 @@ function DetailsStep({ initial, onNext, onBack }: {
 
         <div className="grid grid-cols-[1fr_80px_90px] gap-3">
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-slate-400 uppercase tracking-wide">Suburb / Town</label>
+            <label className="text-xs font-medium text-slate-400 uppercase tracking-wide">Suburb / Town <span className="text-red-400">*</span></label>
             <AddressAutocomplete
               searchType="locality"
               value={suburb}
@@ -289,15 +291,16 @@ function DetailsStep({ initial, onNext, onBack }: {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-slate-400 uppercase tracking-wide">State</label>
-            <select value={stateVal} onChange={(e) => setStateVal(e.target.value)} className={inp + " cursor-pointer"}>
+            <label className="text-xs font-medium text-slate-400 uppercase tracking-wide">State <span className="text-red-400">*</span></label>
+            <select value={stateVal} onChange={(e) => setStateVal(e.target.value)} required className={inp + " cursor-pointer"}>
               <option value="">—</option>
               {AUS_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-slate-400 uppercase tracking-wide">Postcode</label>
-            <input value={postcode} onChange={(e) => setPostcode(e.target.value)} placeholder="3660" maxLength={4} className={inp} />
+            <label className="text-xs font-medium text-slate-400 uppercase tracking-wide">Postcode <span className="text-red-400">*</span></label>
+            <input value={postcode} onChange={(e) => setPostcode(e.target.value)} placeholder="3660" maxLength={4} required
+              pattern="\d{4}" title="Postcode must be 4 digits" className={inp} />
           </div>
         </div>
 

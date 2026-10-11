@@ -4,6 +4,23 @@ All notable changes to JobzOn are documented here.
 
 ---
 
+## [0.12.0] — 2026-10-12
+
+### Added
+- **Accepted quotes create a job.** When a quote is accepted — by the client through the acceptance link or with Mark Accepted — a job (`JOB-YYYY-NNN`) is created for it and appears on the Jobs page (`createJobForQuote` in `lib/jobs.ts`). Works for regular and electrical quotes; the job title comes from the electrical job description or address, else the client notes or first line item. Accepted quotes that have no job yet are caught up when the Jobs page is opened.
+- **Business town, state and postcode on PDFs** — printed under the business name (or logo) on quote and invoice PDFs, e.g. "Seymour VIC 3660". The street address is not printed.
+
+### Changed
+- **ABN, Business Phone, Suburb / Town, State and Postcode are now mandatory**, alongside Business Name and Business Email, in onboarding step 2 and in Settings. ABN must be 11 digits and postcode 4 digits. The rules are enforced when saving (`lib/businessDetails.ts`), not only by the form. Street address, logo and quote enquiries email stay optional.
+- Jobs page shows only the signed-in user's jobs (it previously listed every user's jobs).
+
+### Fixed
+- **Saving one Settings tab blanked the fields on the other tabs.** Business Identity, Business Address, Contact Emails and Payment Details share `saveBusinessDetails`, which rebuilt every field from the submitted form, so saving e.g. Contact Emails wiped the business name, ABN, phone, address and bank details. It now updates only the fields that were submitted.
+- **Client documents used a fixed `default` business settings row instead of the owner's settings.** Quote PDFs, quote emails, invoice PDFs, invoice and reminder emails, and the client payment portal now read business details from the settings of the user who owns the quote, invoice or client (`lib/pdf/quote-data.ts`, `lib/pdf/invoice-data.ts`, `lib/email/send-quote.ts`, `lib/email/send-invoice.ts`, `app/portal/[token]/page.tsx`).
+- Client payment portal showed the business name, email, phone and ABN from environment variables; it now shows the owner's settings.
+
+---
+
 ## [0.11.1] — 2026-10-11
 
 ### Fixed

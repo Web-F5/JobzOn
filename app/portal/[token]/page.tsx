@@ -25,25 +25,25 @@ export default async function PortalPage({ params, searchParams }: Props) {
   const { token } = await params;
   const { success, cancelled, invoice: paidInvoiceNumber } = await searchParams;
 
-  const [client, settings] = await Promise.all([
-    prisma.client.findUnique({
-      where: { portalToken: token },
-      include: {
-        invoices: {
-          include: { lineItems: { orderBy: { sortOrder: "asc" } } },
-          orderBy: { issueDate: "desc" },
-        },
+  const client = await prisma.client.findUnique({
+    where: { portalToken: token },
+    include: {
+      invoices: {
+        include: { lineItems: { orderBy: { sortOrder: "asc" } } },
+        orderBy: { issueDate: "desc" },
       },
-    }),
-    prisma.businessSettings.findUnique({ where: { id: "default" } }),
-  ]);
+    },
+  });
 
   if (!client) notFound();
 
-  const businessName    = process.env.NEXT_PUBLIC_BUSINESS_NAME    ?? "Web F5";
-  const businessEmail   = process.env.NEXT_PUBLIC_BUSINESS_EMAIL   ?? "";
-  const businessPhone   = process.env.NEXT_PUBLIC_BUSINESS_PHONE   ?? "";
-  const businessAbn     = process.env.NEXT_PUBLIC_BUSINESS_ABN     ?? "";
+  // Business details come from the settings of the user who owns this client
+  const settings = await prisma.businessSettings.findUnique({ where: { id: client.userId } });
+
+  const businessName    = settings?.businessName  ?? process.env.NEXT_PUBLIC_BUSINESS_NAME    ?? "Web F5";
+  const businessEmail   = settings?.emailOutgoing ?? process.env.NEXT_PUBLIC_BUSINESS_EMAIL   ?? "";
+  const businessPhone   = settings?.phone         ?? process.env.NEXT_PUBLIC_BUSINESS_PHONE   ?? "";
+  const businessAbn     = settings?.abn           ?? process.env.NEXT_PUBLIC_BUSINESS_ABN     ?? "";
   const businessLogoUrl = settings?.logoUrl ?? null;
 
   const outstanding = client.invoices

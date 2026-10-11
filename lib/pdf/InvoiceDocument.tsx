@@ -286,6 +286,9 @@ export function InvoiceDocument({ data }: { data: InvoicePdfData }) {
             ) : (
               <Text style={s.businessName}>{data.businessName}</Text>
             )}
+            {data.businessLocation ? (
+              <Text style={{ fontSize: 9, color: MUTED, marginTop: 4 }}>{data.businessLocation}</Text>
+            ) : null}
           </View>
           <Text style={s.invoiceLabel}>TAX INVOICE</Text>
         </View>

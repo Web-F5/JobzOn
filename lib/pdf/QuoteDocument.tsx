@@ -229,6 +229,9 @@ export function QuoteDocument({ data }: { data: QuotePdfData }) {
             ) : (
               <Text style={s.businessName}>{data.businessName}</Text>
             )}
+            {data.businessLocation ? (
+              <Text style={{ fontSize: 9, color: MUTED, marginTop: 4 }}>{data.businessLocation}</Text>
+            ) : null}
           </View>
           <Text style={s.quoteLabel}>QUOTE</Text>
         </View>

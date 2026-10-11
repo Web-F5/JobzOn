@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { createJobForQuote } from "@/lib/jobs";
 
 export type AcceptResult =
   | { status: "ok";      quoteNumber: string; businessName: string }
@@ -46,6 +47,10 @@ export async function acceptQuoteByToken(
         data:  { status: "ACCEPTED", acceptedAt: new Date(), acceptedByName: fullName.trim() },
       });
     }
+
+    // An accepted quote becomes a job. Best-effort: the acceptance stands even if
+    // this fails, and the Jobs page catches up on any accepted quote without a job.
+    await createJobForQuote(quote.id).catch((err) => console.error("[acceptQuoteByToken] job creation failed", err));
 
     // Fire-and-forget notification to business owner
     notifyAccepted(quote.userId, quote.quoteNumber, quote.client.name, fullName.trim(), ipAddress).catch(console.error);

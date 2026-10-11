@@ -5,6 +5,7 @@ import { prisma }         from "@/lib/prisma";
 import { requireUserId }  from "@/lib/auth";
 import { nextSequenceNumber } from "@/lib/sequence";
 import { calcGst }        from "@/lib/gst";
+import { createJobForQuote } from "@/lib/jobs";
 
 export type QuoteFormState = {
   error?:   string;
@@ -252,6 +253,9 @@ export async function acceptQuote(id: string): Promise<QuoteFormState> {
       where: { id, userId },
       data: { status: "ACCEPTED", acceptedAt: new Date() },
     });
+    // An accepted quote becomes a job (best-effort; the Jobs page catches up if this fails)
+    await createJobForQuote(id).catch((err) => console.error("[acceptQuote] job creation failed", err));
+    revalidatePath("/jobs");
     revalidatePath("/quotes");
     revalidatePath(`/quotes/${id}`);
     return { success: true };

@@ -5,6 +5,7 @@
  */
 
 import { prisma }                 from "@/lib/prisma";
+import { businessLocationLine } from "@/lib/businessDetails";
 import { formatAUD, formatAmount } from "@/lib/gst";
 import { formatDate }             from "@/lib/dates";
 
@@ -22,6 +23,7 @@ export interface InvoicePdfData {
   businessEmail: string;
   businessPhone: string;
   businessAddress: string;
+  businessLocation: string; // "Seymour VIC 3660", printed under the business name
   businessLogoUrl: string | null;
 
   // Internal IDs (not shown on PDF — used by send-invoice.ts)
@@ -67,22 +69,22 @@ function buildStripeUrl(invoiceId: string, token: string | null): string | null 
 }
 
 export async function getInvoicePdfData(invoiceId: string): Promise<InvoicePdfData | null> {
-  const [invoice, settings] = await Promise.all([
-    prisma.invoice.findUnique({
-      where: { id: invoiceId },
-      include: {
-        client: { select: {
-          id: true, name: true, email: true, phone: true,
-          abn: true, address: true, suburb: true, state: true,
-          postcode: true, portalToken: true,
-        }},
-        lineItems: { orderBy: { sortOrder: "asc" } },
-      },
-    }),
-    prisma.businessSettings.findUnique({ where: { id: "default" } }),
-  ]);
+  const invoice = await prisma.invoice.findUnique({
+    where: { id: invoiceId },
+    include: {
+      client: { select: {
+        id: true, name: true, email: true, phone: true,
+        abn: true, address: true, suburb: true, state: true,
+        postcode: true, portalToken: true,
+      }},
+      lineItems: { orderBy: { sortOrder: "asc" } },
+    },
+  });
 
   if (!invoice) return null;
+
+  // Business details come from the settings of the user who owns this invoice
+  const settings = await prisma.businessSettings.findUnique({ where: { id: invoice.userId } });
 
   const clientAddressParts = [
     invoice.client.address,
@@ -122,6 +124,7 @@ export async function getInvoicePdfData(invoiceId: string): Promise<InvoicePdfDa
     businessEmail:   settings?.emailOutgoing ?? process.env.NEXT_PUBLIC_BUSINESS_EMAIL   ?? "",
     businessPhone:   settings?.phone         ?? process.env.NEXT_PUBLIC_BUSINESS_PHONE   ?? "",
     businessAddress: bizAddressParts.join(", ") || (process.env.NEXT_PUBLIC_BUSINESS_ADDRESS ?? ""),
+    businessLocation: businessLocationLine(settings),
     businessLogoUrl: settings?.logoUrl ?? null,
 
     // Invoice
