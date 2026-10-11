@@ -2,10 +2,12 @@
  * POST /api/quote/[id]/send
  *
  * Sends the quote email to the client, then marks the quote as SENT.
+ * Only the quote's owner can send it.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma }           from "@/lib/prisma";
+import { requireUserId }    from "@/lib/auth";
 import { sendQuoteEmail }   from "@/lib/email/send-quote";
 
 export async function POST(
@@ -14,7 +16,14 @@ export async function POST(
 ) {
   const { id } = await params;
 
-  const quote = await prisma.quote.findUnique({ where: { id } });
+  let userId: string;
+  try {
+    userId = await requireUserId();
+  } catch {
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
+
+  const quote = await prisma.quote.findFirst({ where: { id, userId } });
   if (!quote) {
     return NextResponse.json({ error: "Quote not found" }, { status: 404 });
   }

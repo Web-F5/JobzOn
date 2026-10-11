@@ -4,6 +4,16 @@ All notable changes to JobzOn are documented here.
 
 ---
 
+## [0.11.1] — 2026-10-11
+
+### Fixed
+- **Quote send route had no ownership check** — `POST /api/quote/[id]/send` looked the quote up by ID only, so any signed-in user could send another user's quote. It now requires the quote to belong to the signed-in user.
+- **Quote PDF route had no ownership check** — `GET /api/quote/[id]/pdf` now serves the PDF only to the quote's owner, or to a request carrying the quote's current acceptance token.
+- **"Download Quote PDF" link in the quote email required a login** — the link now carries the acceptance token and the route is public in middleware (it does its own check), so clients can open it. The link stops working when the quote is withdrawn or re-sent, like the acceptance link.
+- Quote-accepted notification email now uses the quote owner's business settings instead of the `default` settings row.
+
+---
+
 ## [0.11.0] — 2026-10-11
 
 ### Added

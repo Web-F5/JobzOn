@@ -6,6 +6,7 @@ const isPublicRoute = createRouteMatcher([
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/q/(.*)",           // client quote acceptance pages
+  "/api/quote/(.*)/pdf", // client PDF link from the quote email — route checks owner or acceptance token itself
   "/api/stripe/(.*)",  // Stripe webhooks
 ]);
 

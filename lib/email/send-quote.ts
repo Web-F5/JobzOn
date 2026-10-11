@@ -37,7 +37,7 @@ export async function sendQuoteEmail(quoteId: string): Promise<string> {
   });
 
   const acceptUrl = `${APP_URL}/q/${token}`;
-  const pdfUrl    = `${APP_URL}/api/quote/${quoteId}/pdf`;
+  const pdfUrl    = `${APP_URL}/api/quote/${quoteId}/pdf?token=${token}`; // token lets the client open it without signing in
 
   // Pass acceptUrl into PDF so the "How to Accept" section references the email button
   const data = await getQuotePdfData(quoteId, acceptUrl);

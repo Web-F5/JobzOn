@@ -48,7 +48,7 @@ export async function acceptQuoteByToken(
     }
 
     // Fire-and-forget notification to business owner
-    notifyAccepted(quote.id, quote.quoteNumber, quote.client.name, fullName.trim(), ipAddress).catch(console.error);
+    notifyAccepted(quote.userId, quote.quoteNumber, quote.client.name, fullName.trim(), ipAddress).catch(console.error);
 
     return { status: "ok", quoteNumber: quote.quoteNumber, businessName: "Web F5" };
   } catch (err) {
@@ -68,7 +68,7 @@ export async function getQuoteByToken(token: string) {
 }
 
 async function notifyAccepted(
-  _quoteId: string,
+  userId: string,
   quoteNumber: string,
   clientName: string,
   acceptedByName: string,
@@ -78,7 +78,7 @@ async function notifyAccepted(
   const FROM       = process.env.RESEND_FROM_EMAIL         ?? "invoices@webf5.com.au";
   const BIZ        = process.env.NEXT_PUBLIC_BUSINESS_NAME ?? "Web F5";
 
-  const settings    = await prisma.businessSettings.findUnique({ where: { id: "default" } });
+  const settings    = await prisma.businessSettings.findUnique({ where: { id: userId } });
   const notifyEmail = settings?.emailQuotes ?? settings?.emailOutgoing ?? FROM;
 
   await resend.emails.send({
