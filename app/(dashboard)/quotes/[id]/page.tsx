@@ -1,7 +1,7 @@
 import { Metadata }    from "next";
 import { notFound }    from "next/navigation";
 import Link            from "next/link";
-import { auth }        from "@clerk/nextjs/server";
+import { requireUserId }         from "@/lib/auth";
 import { prisma }      from "@/lib/prisma";
 import { TopBar }      from "@/components/nav/TopBar";
 import { formatAUD }   from "@/lib/gst";
@@ -18,18 +18,18 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const { userId } = await auth();
-  const q = await prisma.quote.findUnique({ where: { id, userId: userId ?? "" } });
+  const userId = await requireUserId();
+  const q = await prisma.quote.findUnique({ where: { id, userId: userId } });
   if (!q) return { title: "Quote not found" };
   return { title: `${q.quoteNumber}` };
 }
 
 export default async function QuoteDetailPage({ params }: Props) {
   const { id } = await params;
-  const { userId } = await auth();
+  const userId = await requireUserId();
 
   const quote = await prisma.quote.findUnique({
-    where: { id, userId: userId ?? "" },
+    where: { id, userId: userId },
     include: {
       client:    { select: { id: true, name: true, email: true } },
       lineItems: { orderBy: { sortOrder: "asc" } },
@@ -40,16 +40,18 @@ export default async function QuoteDetailPage({ params }: Props) {
   if (!quote) notFound();
 
   const [clients, catalogueItems, products] = await Promise.all([
-    prisma.client.findMany({ where: { userId: userId ?? "" }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
-    prisma.serviceCatalogueItem.findMany({ where: { userId: userId ?? "", active: true }, orderBy: [{ type: "asc" }, { name: "asc" }] }),
-    prisma.product.findMany({ where: { userId: userId ?? "", active: true }, orderBy: { name: "asc" }, select: { id: true, name: true, description: true, unit: true, defaultPrice: true } }),
+    prisma.client.findMany({ where: { userId: userId }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.serviceCatalogueItem.findMany({ where: { userId: userId, active: true }, orderBy: [{ type: "asc" }, { name: "asc" }] }),
+    prisma.product.findMany({ where: { userId: userId, active: true }, orderBy: { name: "asc" }, select: { id: true, name: true, description: true, unit: true, defaultPrice: true } }),
   ]);
 
   // Bind the update action to this quote ID
   const boundUpdate = updateQuote.bind(null, id);
 
   // Editable if not yet sent/accepted/invoiced/rejected
-  const editable = ["DRAFT", "READY"].includes(quote.status);
+  // Electrical quotes are built in the wizard, so their line items are read-only here
+  const isElectrical = !!quote.electricianJobId;
+  const editable = ["DRAFT", "READY"].includes(quote.status) && !isElectrical;
 
   const statusColour: Record<string, string> = {
     DRAFT:         "bg-slate-100  text-slate-600",
@@ -145,6 +147,15 @@ export default async function QuoteDetailPage({ params }: Props) {
             invoiceId={quote.invoice?.id ?? null}
           />
         </div>
+
+        {isElectrical && ["DRAFT", "READY", "SENT"].includes(quote.status) && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 text-sm text-amber-800 flex items-center justify-between gap-4">
+            <span>This quote was built in the Electrical Quote Wizard. Changes are made there and apply when you click Finish.</span>
+            <Link href={`/quotes/electrician/${quote.electricianJobId}`} className="shrink-0 font-semibold text-amber-700 hover:underline">
+              Edit in wizard →
+            </Link>
+          </div>
+        )}
 
         {/* Line items (read-only when not editable) */}
         {!editable && (

@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useTransition, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { saveElectricalQuoteWizard } from "@/lib/actions/electricalQuote";
+import { saveElectricalQuoteWizard, publishElectricalQuote } from "@/lib/actions/electricalQuote";
 import {
   DEFAULT_SETTINGS,
   DEFAULT_GROUP, DEFAULT_LIGHT_POINT, DEFAULT_LIGHT_CONTROL,
@@ -107,6 +107,7 @@ export function ElectricalWizard(p: Props) {
   const [step, setStep]       = useState(p.initialWizardStep);
   const [unlocked, setUnlocked] = useState(p.initialUnlockedSteps);
   const [saveMsg, setSaveMsg]  = useState<string | null>(null);
+  const [finishError, setFinishError] = useState<string | null>(null);
 
   // Job setup
   const [clientId,    setClientId]    = useState(p.initialClientId);
@@ -202,9 +203,14 @@ export function ElectricalWizard(p: Props) {
 
   const handleNext = () => {
     if (step >= LAST_STEP) {
-      const nextUnlocked = [...new Set([...unlocked])];
-      save(step, nextUnlocked, "Quote saved");
-      router.push("/quotes/electrician");
+      // Finish: save, then hand the quote to the regular send/approval pipeline
+      setFinishError(null);
+      startTransition(async () => {
+        await saveElectricalQuoteWizard(buildPayload(step, [...new Set([...unlocked])]));
+        const res = await publishElectricalQuote(p.quoteId);
+        if (!res.ok) { setFinishError(res.error ?? "Could not finish the quote."); return; }
+        router.push("/quotes");
+      });
       return;
     }
     const nextStep     = step + 1;
@@ -761,6 +767,10 @@ export function ElectricalWizard(p: Props) {
 
       {/* ── Job Summary ───────────────────────────────────────────────────── */}
       <JobSummary result={result} settings={settings} />
+
+      {finishError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">{finishError}</div>
+      )}
 
       {/* ── Action buttons ────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 justify-between pt-2 pb-6">

@@ -1,6 +1,6 @@
 import { Metadata }        from "next";
 import Link                from "next/link";
-import { auth }            from "@clerk/nextjs/server";
+import { requireUserId }             from "@/lib/auth";
 import { QuoteStatus }     from "@prisma/client";
 import { prisma }          from "@/lib/prisma";
 import { TopBar }          from "@/components/nav/TopBar";
@@ -54,10 +54,10 @@ export default async function QuotesPage({
 }) {
   const { status } = await searchParams;
   const activeStatus = (status?.toUpperCase() ?? "ALL") as QuoteStatus | "ALL";
-  const { userId } = await auth();
+  const userId = await requireUserId();
 
   const bizSettings = await prisma.businessSettings.findUnique({
-    where: { id: userId ?? "" },
+    where: { id: userId },
     select: { trade: true },
   });
   const isElectrician = bizSettings?.trade === "electrician";
@@ -65,7 +65,7 @@ export default async function QuotesPage({
   // Electricians see their ElectricianQuoteJob list
   if (isElectrician) {
     const jobs = await prisma.electricianQuoteJob.findMany({
-      where:   { userId: userId ?? "" },
+      where:   { userId: userId },
       orderBy: { updatedAt: "desc" },
     });
 
@@ -75,6 +75,14 @@ export default async function QuotesPage({
       select: { id: true, name: true },
     });
     const clientMap = Object.fromEntries(clients.map(c => [c.id, c.name]));
+
+    // The linked Quote record drives status and total once a job is finished
+    const quoteIds = jobs.map(j => j.quoteId).filter(Boolean) as string[];
+    const linkedQuotes = await prisma.quote.findMany({
+      where:  { id: { in: quoteIds }, userId: userId },
+      select: { id: true, status: true, amountTotal: true },
+    });
+    const quoteMap = Object.fromEntries(linkedQuotes.map(q => [q.id, { status: q.status, amountTotal: q.amountTotal }]));
 
     return (
       <>
@@ -91,7 +99,7 @@ export default async function QuotesPage({
           }
         />
         <main className="flex-1 p-6">
-          <ElectricalQuotesList jobs={jobs} clientMap={clientMap} />
+          <ElectricalQuotesList jobs={jobs} clientMap={clientMap} quoteMap={quoteMap} />
         </main>
       </>
     );
@@ -100,13 +108,13 @@ export default async function QuotesPage({
   // Non-electricians see the standard Quote list
   const [quotes, clientCount, catalogueCount, productCount] = await Promise.all([
     prisma.quote.findMany({
-      where: activeStatus === "ALL" ? { userId: userId ?? "" } : { userId: userId ?? "", status: activeStatus as QuoteStatus },
+      where: activeStatus === "ALL" ? { userId: userId } : { userId: userId, status: activeStatus as QuoteStatus },
       include: { client: { select: { name: true } } },
       orderBy: { createdAt: "desc" },
     }),
-    prisma.client.count({ where: { userId: userId ?? "" } }),
-    prisma.serviceCatalogueItem.count({ where: { userId: userId ?? "", active: true } }),
-    prisma.product.count({ where: { userId: userId ?? "", active: true } }),
+    prisma.client.count({ where: { userId: userId } }),
+    prisma.serviceCatalogueItem.count({ where: { userId: userId, active: true } }),
+    prisma.product.count({ where: { userId: userId, active: true } }),
   ]);
 
   const hasCatalogue = catalogueCount > 0 || productCount > 0;

@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect }      from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { prisma }        from "@/lib/prisma";
 import { requireUserId } from "@/lib/auth";
 import type {
@@ -103,48 +104,62 @@ export async function saveElectricalQuoteWizard(p: SavePayload): Promise<{ ok: b
 
 // ── Publish (create/update linked Quote record) ───────────────────────────────
 
+/**
+ * Finishes an electrical quote: creates (or refreshes) the linked Quote record
+ * and marks it READY, so it goes through the same send → accept → invoice
+ * pipeline as a regular quote.
+ */
 export async function publishElectricalQuote(
   jobId: string
 ): Promise<{ ok: boolean; quoteId?: string; error?: string }> {
   const userId = await requireUserId();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const j = (v: unknown) => v as any;
 
   const job = await prisma.electricianQuoteJob.findFirst({ where: { id: jobId, userId } });
   if (!job) return { ok: false, error: "Quote not found" };
-  if (!job.clientId) return { ok: false, error: "Please select a client before publishing" };
+  if (!job.clientId) return { ok: false, error: "Select a client in Job Setup before finishing the quote." };
+  if (job.totalIncGst <= 0) return { ok: false, error: "Add at least one item before finishing the quote." };
 
-  // Build line items: Labour, Materials, Travel
-  const labourExGst    = Math.round(job.totalExGst * 0.7 * 100) / 100;
-  const materialsExGst = Math.round(job.totalExGst * 0.3 * 100) / 100;
-  const totalExGst     = job.totalExGst;
-  const gst            = Math.round(totalExGst * 0.1 * 100) / 100;
-  const amountTotal    = Math.round((totalExGst + gst) * 100) / 100;
+  const existing = job.quoteId
+    ? await prisma.quote.findFirst({ where: { id: job.quoteId, userId }, select: { id: true, status: true } })
+    : null;
+  if (existing && ["ACCEPTED", "INVOICED"].includes(existing.status)) {
+    return { ok: false, error: "This quote has already been accepted and can no longer be changed." };
+  }
+
+  // The wizard rounds the inc-GST total (quoteRounding), so work back from it
+  // to keep the published quote equal to the price shown in the wizard.
+  const amountTotal    = job.totalIncGst;
+  const totalExGst     = Math.round((amountTotal / 1.1) * 100) / 100;
+  const gst            = Math.round((amountTotal - totalExGst) * 100) / 100;
+  const labourExGst    = Math.round(totalExGst * 0.7 * 100) / 100;
+  const materialsExGst = Math.round((totalExGst - labourExGst) * 100) / 100;
 
   const lineItems = [
     { description: "Labour",    quantity: 1, unitPrice: labourExGst,    subtotal: labourExGst,    sortOrder: 0 },
     { description: "Materials", quantity: 1, unitPrice: materialsExGst, subtotal: materialsExGst, sortOrder: 1 },
   ];
 
-  let quoteId = job.quoteId ?? undefined;
+  let quoteId: string;
 
-  if (quoteId) {
-    // Update existing Quote record
-    await prisma.quote.update({
-      where: { id: quoteId },
-      data: {
-        amountExGst: totalExGst,
-        gst,
-        amountTotal,
-      },
-    });
-    // Replace line items
-    await prisma.quoteLineItem.deleteMany({ where: { quoteId } });
-    await prisma.quoteLineItem.createMany({
-      data: lineItems.map(li => ({ ...li, quoteId: quoteId! })),
-    });
+  if (existing) {
+    // Re-finishing an edited quote: refresh the linked Quote and send it back to READY
+    quoteId = existing.id;
+    await prisma.$transaction([
+      prisma.quoteLineItem.deleteMany({ where: { quoteId } }),
+      prisma.quote.update({
+        where: { id: quoteId },
+        data: {
+          clientId:    job.clientId,
+          status:      "READY",
+          amountExGst: totalExGst,
+          gst,
+          amountTotal,
+          clientNotes: job.jobDescription ?? null,
+          lineItems:   { create: lineItems },
+        },
+      }),
+    ]);
   } else {
-    // Generate quote number for Quote model (reuse EQ- number)
     const linked = await prisma.quote.create({
       data: {
         id:           crypto.randomUUID(),
@@ -163,13 +178,15 @@ export async function publishElectricalQuote(
       },
     });
     quoteId = linked.id;
-    // Write quoteId back to the job
-    await prisma.electricianQuoteJob.updateMany({
-      where: { id: jobId, userId },
-      data:  { quoteId, status: "READY" },
-    });
   }
 
+  await prisma.electricianQuoteJob.updateMany({
+    where: { id: jobId, userId },
+    data:  { quoteId, status: "READY" },
+  });
+
+  revalidatePath("/quotes");
+  revalidatePath(`/quotes/${quoteId}`);
   return { ok: true, quoteId };
 }
 

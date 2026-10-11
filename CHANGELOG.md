@@ -4,6 +4,22 @@ All notable changes to JobzOn are documented here.
 
 ---
 
+## [0.10.0] — 2026-10-11
+
+### Changed
+- **Electrical quotes use the regular quote approval process.** Clicking Finish in the Electrical Quote Wizard now publishes the quote (creates or refreshes the linked `Quote`, status READY) and returns to the Quotes page, where it has the same actions as a regular quote: Send to Client, PDF, Download, then Mark Accepted / Resend / Mark Rejected and Convert to Invoice on the quote's detail page.
+  - Quotes page: an electrical quote is a draft only until it is finished; drafts with a client and a total also get a Mark Ready button. Status and total come from the linked `Quote`, so sent/accepted/rejected/invoiced all show correctly.
+  - Quote detail page: electrical quotes show read-only line items with an "Edit in wizard" link instead of the line-item form.
+  - Re-finishing an edited quote sets it back to READY; quotes that are accepted or invoiced can no longer be re-published.
+  - `/quotes/electrician` now redirects to `/quotes` (single list).
+
+### Fixed
+- Finished electrical quotes staying in "Drafts — continue where you left off" with no way to send them (Finish saved the wizard but never published).
+- Published electrical quote total differing from the rounded total shown in the wizard — the linked quote now uses the wizard's inc-GST total.
+- Quotes list and quote detail pages now use `requireUserId()`, so they work with the local development auth bypass.
+
+---
+
 ## [0.9.0] — 2026-10-07
 
 ### Added

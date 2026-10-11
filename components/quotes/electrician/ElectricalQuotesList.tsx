@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { formatAUD } from "@/lib/gst";
 import { formatDate } from "@/lib/dates";
+import type { QuoteStatus } from "@prisma/client";
 import { publishElectricalQuote } from "@/lib/actions/electricalQuote";
+import { QuoteRowActions } from "@/components/quotes/QuoteRowActions";
 
 type Job = {
   id:             string;
@@ -12,7 +14,6 @@ type Job = {
   clientId:       string | null;
   jobAddress:     string | null;
   jobDescription: string | null;
-  status:         string;
   totalExGst:     number;
   totalIncGst:    number;
   quoteId:        string | null;
@@ -20,47 +21,49 @@ type Job = {
   createdAt:      Date;
 };
 
-const STATUS_STYLES: Record<string, string> = {
-  DRAFT:    "bg-slate-100 text-slate-600",
-  READY:    "bg-blue-100  text-blue-700",
-  SENT:     "bg-sky-100   text-sky-700",
-  ACCEPTED: "bg-green-100 text-green-700",
-  REJECTED: "bg-red-100   text-red-600",
-  INVOICED: "bg-purple-100 text-purple-700",
+type LinkedQuote = { status: QuoteStatus; amountTotal: number };
+
+const STATUS_STYLES: Record<QuoteStatus, string> = {
+  DRAFT:         "bg-slate-100  text-slate-600",
+  AWAITING_INFO: "bg-amber-100  text-amber-700",
+  READY:         "bg-blue-100   text-blue-700",
+  SENT:          "bg-sky-100    text-sky-700",
+  ACCEPTED:      "bg-green-100  text-green-700",
+  REJECTED:      "bg-red-100    text-red-600",
+  EXPIRED:       "bg-orange-100 text-orange-700",
+  INVOICED:      "bg-purple-100 text-purple-700",
 };
 
-function StatusBadge({ status }: { status: string }) {
-  const cls = STATUS_STYLES[status] ?? "bg-slate-100 text-slate-600";
-  const label = status.charAt(0) + status.slice(1).toLowerCase();
+function StatusBadge({ status }: { status: QuoteStatus }) {
+  const label = status.charAt(0) + status.slice(1).toLowerCase().replace("_", " ");
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${cls}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[status]}`}>
       {label}
     </span>
   );
 }
 
-function PublishButton({ jobId, quoteId, status }: { jobId: string; quoteId: string | null; status: string }) {
+// Finishes a draft from the list (same as Finish in the wizard)
+function MarkReadyButton({ jobId }: { jobId: string }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  if (status === "INVOICED" || status === "REJECTED") return null;
-
-  function handlePublish() {
+  function handleMarkReady() {
     setError(null);
     startTransition(async () => {
       const res = await publishElectricalQuote(jobId);
-      if (!res.ok) setError(res.error ?? "Failed to publish");
+      if (!res.ok) setError(res.error ?? "Failed to mark ready");
     });
   }
 
   return (
     <span className="flex flex-col items-start gap-0.5">
       <button
-        onClick={handlePublish}
+        onClick={handleMarkReady}
         disabled={pending}
-        className="text-xs text-blue-600 hover:text-blue-800 hover:underline disabled:opacity-50 font-medium"
+        className="px-3 py-1.5 border border-amber-500 text-amber-600 hover:bg-amber-50 rounded-lg font-medium transition-colors disabled:opacity-50"
       >
-        {pending ? "Publishing…" : quoteId ? "Re-publish" : "Publish Quote"}
+        {pending ? "Saving…" : "Mark Ready"}
       </button>
       {error && <span className="text-xs text-red-600">{error}</span>}
     </span>
@@ -70,12 +73,16 @@ function PublishButton({ jobId, quoteId, status }: { jobId: string; quoteId: str
 export function ElectricalQuotesList({
   jobs,
   clientMap,
+  quoteMap,
 }: {
   jobs:      Job[];
   clientMap: Record<string, string>;
+  quoteMap:  Record<string, LinkedQuote>;
 }) {
-  const drafts = jobs.filter(j => j.status === "DRAFT");
-  const active = jobs.filter(j => j.status !== "DRAFT");
+  // A job is a draft until it has been finished, i.e. has a linked Quote record
+  const linked = (j: Job) => (j.quoteId ? quoteMap[j.quoteId] : undefined);
+  const drafts = jobs.filter(j => !linked(j));
+  const active = jobs.filter(j => linked(j));
 
   return (
     <div className="space-y-6">
@@ -125,6 +132,7 @@ export function ElectricalQuotesList({
                           >
                             Continue →
                           </Link>
+                          {j.clientId && j.totalIncGst > 0 && <MarkReadyButton jobId={j.id} />}
                         </div>
                       </td>
                     </tr>
@@ -169,48 +177,49 @@ export function ElectricalQuotesList({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border)]">
-                  {active.map(j => (
-                    <tr key={j.id} className="hover:bg-[#e2e8f0] transition-colors">
-                      <td className="px-5 py-3 font-mono text-xs">
-                        <Link href={`/quotes/electrician/${j.id}`} className="text-amber-600 hover:underline font-medium">
-                          {j.quoteNumber ?? "—"}
-                        </Link>
-                      </td>
-                      <td className="px-5 py-3 font-medium text-[var(--color-text)]">
-                        {j.clientId ? clientMap[j.clientId] ?? "—" : "—"}
-                      </td>
-                      <td className="px-5 py-3 text-[var(--color-muted)] max-w-xs truncate">
-                        {j.jobDescription || j.jobAddress || "—"}
-                      </td>
-                      <td className="px-5 py-3 text-[var(--color-muted)]">
-                        {formatDate(j.createdAt)}
-                      </td>
-                      <td className="px-5 py-3 text-right font-semibold text-[var(--color-text)]">
-                        {formatAUD(j.totalIncGst)}
-                      </td>
-                      <td className="px-5 py-3">
-                        <StatusBadge status={j.status} />
-                      </td>
-                      <td className="px-5 py-3">
-                        <div className="flex flex-col gap-1 text-xs">
-                          <Link href={`/quotes/electrician/${j.id}`} className="text-[var(--color-muted)] hover:underline">
-                            Edit
+                  {active.map(j => {
+                    const quote = linked(j)!;
+                    return (
+                      <tr key={j.id} className="hover:bg-[#e2e8f0] transition-colors">
+                        <td className="px-5 py-3 font-mono text-xs">
+                          <Link href={`/quotes/${j.quoteId}`} className="text-amber-600 hover:underline font-medium">
+                            {j.quoteNumber ?? "—"}
                           </Link>
-                          <PublishButton jobId={j.id} quoteId={j.quoteId} status={j.status} />
-                          {j.quoteId && (
-                            <>
-                              <a href={`/api/quote/${j.quoteId}/pdf`} target="_blank" rel="noopener noreferrer" className="text-[var(--color-muted)] hover:underline">
-                                PDF
-                              </a>
-                              <Link href={`/quotes/${j.quoteId}`} className="text-[var(--color-muted)] hover:underline">
-                                Send to Client
+                        </td>
+                        <td className="px-5 py-3 font-medium text-[var(--color-text)]">
+                          {j.clientId ? clientMap[j.clientId] ?? "—" : "—"}
+                        </td>
+                        <td className="px-5 py-3 text-[var(--color-muted)] max-w-xs truncate">
+                          {j.jobDescription || j.jobAddress || "—"}
+                        </td>
+                        <td className="px-5 py-3 text-[var(--color-muted)]">
+                          {formatDate(j.createdAt)}
+                        </td>
+                        <td className="px-5 py-3 text-right font-semibold text-[var(--color-text)]">
+                          {formatAUD(quote.amountTotal)}
+                        </td>
+                        <td className="px-5 py-3">
+                          <StatusBadge status={quote.status} />
+                        </td>
+                        <td className="px-5 py-3">
+                          <div className="flex flex-wrap items-center gap-2 text-xs">
+                            <QuoteRowActions quoteId={j.quoteId!} status={quote.status} />
+                            {["DRAFT", "READY", "SENT"].includes(quote.status) && (
+                              <Link href={`/quotes/electrician/${j.id}`} className="text-[var(--color-muted)] hover:underline">
+                                Edit
                               </Link>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                            )}
+                            <a href={`/api/quote/${j.quoteId}/pdf`} target="_blank" rel="noopener noreferrer" className="text-[var(--color-muted)] hover:underline">
+                              PDF
+                            </a>
+                            <a href={`/api/quote/${j.quoteId}/pdf?download=1`} className="text-[var(--color-muted)] hover:underline">
+                              Download
+                            </a>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
