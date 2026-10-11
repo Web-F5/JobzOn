@@ -9,6 +9,7 @@ import { formatDate }  from "@/lib/dates";
 import { QuoteForm }   from "@/components/quotes/QuoteForm";
 import { QuoteActions } from "@/components/quotes/QuoteActions";
 import { updateQuote } from "@/lib/actions/quotes";
+import { EditSentQuoteButton } from "@/components/quotes/electrician/EditSentQuoteButton";
 
 export const dynamic = "force-dynamic";
 
@@ -141,19 +142,35 @@ export default async function QuoteDetailPage({ params }: Props) {
         {/* Action buttons */}
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5">
           <p className="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wide mb-3">Actions</p>
-          <QuoteActions
-            quoteId={id}
-            status={quote.status}
-            invoiceId={quote.invoice?.id ?? null}
-          />
+          {isElectrical && quote.status === "DRAFT" ? (
+            // Being revised in the wizard: the figures here are the old ones until Finish is clicked
+            <p className="text-sm text-[var(--color-muted)]">
+              This quote is being revised. Click Finish in the wizard to make it ready to send.
+            </p>
+          ) : (
+            <QuoteActions
+              quoteId={id}
+              status={quote.status}
+              invoiceId={quote.invoice?.id ?? null}
+            />
+          )}
         </div>
 
         {isElectrical && ["DRAFT", "READY", "SENT"].includes(quote.status) && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 text-sm text-amber-800 flex items-center justify-between gap-4">
-            <span>This quote was built in the Electrical Quote Wizard. Changes are made there and apply when you click Finish.</span>
-            <Link href={`/quotes/electrician/${quote.electricianJobId}`} className="shrink-0 font-semibold text-amber-700 hover:underline">
-              Edit in wizard →
-            </Link>
+            <span>
+              {quote.status === "SENT"
+                ? "This quote has been sent to the client. Editing it withdraws the sent quote and emails the client that it is no longer valid."
+                : "This quote was built in the Electrical Quote Wizard. Changes are made there and apply when you click Finish."}
+            </span>
+            {quote.status === "SENT" ? (
+              <EditSentQuoteButton quoteId={id} jobId={quote.electricianJobId!} label="Edit in wizard →"
+                className="shrink-0 font-semibold text-amber-700 hover:underline" />
+            ) : (
+              <Link href={`/quotes/electrician/${quote.electricianJobId}`} className="shrink-0 font-semibold text-amber-700 hover:underline">
+                Edit in wizard →
+              </Link>
+            )}
           </div>
         )}
 

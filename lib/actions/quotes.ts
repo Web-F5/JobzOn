@@ -199,6 +199,51 @@ export async function markQuoteSent(id: string): Promise<QuoteFormState> {
   }
 }
 
+/**
+ * Withdraw a SENT quote so it can be revised: turns off the client's
+ * acceptance link, reverts the quote to DRAFT and emails the client that the
+ * quote is no longer valid. Fails if the quote is no longer SENT (e.g. the
+ * client accepted it in the meantime).
+ */
+export async function withdrawSentQuote(id: string): Promise<QuoteFormState> {
+  const userId = await requireUserId();
+  const quote = await prisma.quote.findFirst({
+    where:  { id, userId },
+    select: { acceptToken: true, sentAt: true, electricianJobId: true },
+  });
+  if (!quote) return { error: "Quote not found." };
+
+  // Claim the quote first so the client cannot accept it while the email sends
+  const claimed = await prisma.quote.updateMany({
+    where: { id, userId, status: "SENT" },
+    data:  { status: "DRAFT", acceptToken: null },
+  });
+  if (claimed.count === 0) {
+    return { error: "This quote is no longer awaiting a response from the client, so it can't be withdrawn." };
+  }
+
+  try {
+    const { sendQuoteWithdrawnEmail } = await import("@/lib/email/send-quote-withdrawn");
+    await sendQuoteWithdrawnEmail(id, quote.sentAt);
+  } catch (err) {
+    // Client was not told, so put the quote back exactly as it was
+    await prisma.quote.update({ where: { id }, data: { status: "SENT", acceptToken: quote.acceptToken } });
+    console.error("[withdrawSentQuote]", err);
+    return { error: `The client could not be notified, so the quote was not withdrawn. ${err instanceof Error ? err.message : ""}`.trim() };
+  }
+
+  if (quote.electricianJobId) {
+    await prisma.electricianQuoteJob.updateMany({
+      where: { id: quote.electricianJobId, userId },
+      data:  { status: "DRAFT" },
+    });
+  }
+
+  revalidatePath("/quotes");
+  revalidatePath(`/quotes/${id}`);
+  return { success: true };
+}
+
 /** Accept a quote manually (dashboard button). */
 export async function acceptQuote(id: string): Promise<QuoteFormState> {
   const userId = await requireUserId();

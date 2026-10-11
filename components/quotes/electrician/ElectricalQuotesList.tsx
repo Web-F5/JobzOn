@@ -7,6 +7,7 @@ import { formatDate } from "@/lib/dates";
 import type { QuoteStatus } from "@prisma/client";
 import { publishElectricalQuote } from "@/lib/actions/electricalQuote";
 import { QuoteRowActions } from "@/components/quotes/QuoteRowActions";
+import { EditSentQuoteButton } from "./EditSentQuoteButton";
 
 type Job = {
   id:             string;
@@ -79,8 +80,12 @@ export function ElectricalQuotesList({
   clientMap: Record<string, string>;
   quoteMap:  Record<string, LinkedQuote>;
 }) {
-  // A job is a draft until it has been finished, i.e. has a linked Quote record
-  const linked = (j: Job) => (j.quoteId ? quoteMap[j.quoteId] : undefined);
+  // A job is a draft until it has been finished (has a linked Quote record),
+  // and again while a sent quote is withdrawn for editing (linked Quote is DRAFT)
+  const linked = (j: Job) => {
+    const q = j.quoteId ? quoteMap[j.quoteId] : undefined;
+    return q && q.status !== "DRAFT" ? q : undefined;
+  };
   const drafts = jobs.filter(j => !linked(j));
   const active = jobs.filter(j => linked(j));
 
@@ -204,11 +209,12 @@ export function ElectricalQuotesList({
                         <td className="px-5 py-3">
                           <div className="flex flex-wrap items-center gap-2 text-xs">
                             <QuoteRowActions quoteId={j.quoteId!} status={quote.status} />
-                            {["DRAFT", "READY", "SENT"].includes(quote.status) && (
+                            {quote.status === "READY" && (
                               <Link href={`/quotes/electrician/${j.id}`} className="text-[var(--color-muted)] hover:underline">
                                 Edit
                               </Link>
                             )}
+                            {quote.status === "SENT" && <EditSentQuoteButton quoteId={j.quoteId!} jobId={j.id} />}
                             <a href={`/api/quote/${j.quoteId}/pdf`} target="_blank" rel="noopener noreferrer" className="text-[var(--color-muted)] hover:underline">
                               PDF
                             </a>

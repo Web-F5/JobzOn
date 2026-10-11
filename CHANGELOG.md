@@ -4,6 +4,17 @@ All notable changes to JobzOn are documented here.
 
 ---
 
+## [0.11.0] — 2026-10-11
+
+### Added
+- **Withdraw a sent electrical quote to edit it** — Edit on a SENT electrical quote (Quotes page and quote detail page) now opens a warning that the quote has already been sent, including a reminder that a client who has agreed by phone, text or email may already have accepted. Confirming withdraws it:
+  - The client is emailed that the quote is no longer valid (`QuoteWithdrawnEmail`, `sendQuoteWithdrawnEmail`).
+  - The client's acceptance link is turned off (`acceptToken` cleared) and the quote reverts to DRAFT, so it reappears under Drafts until it is finished and sent again.
+  - `withdrawSentQuote()` only works while the quote is still SENT; if the client has already accepted it, or the email cannot be sent, nothing is changed.
+- Quote detail page: an electrical quote under revision shows a note instead of the Mark as Ready / Send buttons, so the old figures can't be sent by mistake.
+
+---
+
 ## [0.10.0] — 2026-10-11
 
 ### Changed
