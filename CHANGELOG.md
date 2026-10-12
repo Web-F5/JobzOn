@@ -4,6 +4,25 @@ All notable changes to JobzOn are documented here.
 
 ---
 
+## [0.13.0] — 2026-10-12
+
+### Added
+- **Job detail page** (`/jobs/[id]`) — opened from View or the job number on the Jobs page (View previously did nothing). Shows the client, the accepted quote and price, and links to the quote PDF.
+  - Electrical quotes: the full breakdown from the quote builder — site conditions, crew, every item entered in each module (GPO, Lighting, Light controls, New Circuit, Switchboard, Custom Job, Underground, Data / TV) with its labour hours and material cost, and the price build-up (labour, materials, markup, travel, overhead, contingency, GST). The build-up is recalculated with current rates and flags when it no longer matches the accepted price.
+  - Regular quotes: the quote's line items.
+- **Job address lookup in the quote builder** — the Job address field in Job Setup now uses the address autocomplete; picking a suggestion fills in the full address (street, town, state, postcode). Typing an address without picking one still works.
+- `lib/electricalQuoteData.ts` — shared loader for saved electrical quotes (`parseElectricalQuote`, `engineSettingsFrom`, `calculateElectricalQuote`), used by the wizard page and the job page.
+
+### Fixed
+- **Electrician Quote Assumptions in Settings had no effect on quotes.** The 22 values were saved but the quote engine used its built-in constants. The engine now reads them (`EngineSettings.assumptions`, loaded by every `calculate*Job`), so changing a labour-hour or material-cost assumption changes new and re-opened quotes. With the defaults, results are identical to before.
+  - 2.5 mm² cable cost applies to GPO runs, new circuits and switchboard feeds; RCBO cost applies to new-circuit RCBOs (10–20 A) and switchboard RCBOs.
+  - Downlight / batten / pendant hours only affect new-position lights once above 0.73 hrs, because the engine applies a 0.85 hr minimum per new-position light.
+- **Quote, invoice and job numbers were unique across all users.** Numbers are issued per user (every user starts at 001), but the database required them to be globally unique, so a second business's first quote, invoice, job or electrical quote would fail. They are now unique per user: `@@unique([userId, …])` on `Quote`, `Invoice`, `Job` and `ElectricianQuoteJob`.
+  - `Job` gained a `userId` column (filled in from each job's quote); the Jobs page now filters on it directly.
+  - Database change applied with `scripts/per-user-number-uniqueness.mjs` (safe to re-run).
+
+---
+
 ## [0.12.0] — 2026-10-12
 
 ### Added

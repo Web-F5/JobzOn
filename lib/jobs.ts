@@ -33,6 +33,7 @@ export async function createJobForQuote(quoteId: string): Promise<string | null>
   const jobNumber = await nextSequenceNumber("JOB", quote.userId);
   const job = await prisma.job.create({
     data: {
+      userId:   quote.userId,
       jobNumber,
       clientId: quote.clientId,
       quoteId,

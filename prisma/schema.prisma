@@ -72,7 +72,7 @@ enum BillingFrequency {
 model Invoice {
   id            String        @id @default(cuid())
   userId        String
-  invoiceNumber String        @unique
+  invoiceNumber String        // unique per user, see @@unique below
   clientId      String
   client        Client        @relation(fields: [clientId], references: [id])
   serviceId     String?
@@ -106,6 +106,9 @@ model Invoice {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Numbers are issued per user, so they are only unique within a user
+  @@unique([userId, invoiceNumber])
 }
 
 model InvoiceLineItem {
@@ -132,7 +135,7 @@ enum InvoiceStatus {
 model Quote {
   id          String      @id @default(cuid())
   userId      String
-  quoteNumber String      @unique
+  quoteNumber String      // unique per user, see @@unique below
   clientId    String
   client      Client      @relation(fields: [clientId], references: [id])
 
@@ -166,6 +169,9 @@ model Quote {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Numbers are issued per user, so they are only unique within a user
+  @@unique([userId, quoteNumber])
 }
 
 model QuoteLineItem {
@@ -200,7 +206,8 @@ enum QuoteSource {
 
 model Job {
   id        String    @id @default(cuid())
-  jobNumber String    @unique // JOB-2026-001
+  userId    String?   // owner, always set by createJobForQuote; nullable so the column could be added to a live table
+  jobNumber String    // JOB-2026-001, unique per user
   clientId  String
   quoteId   String    @unique
 
@@ -214,6 +221,9 @@ model Job {
   completedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  // Numbers are issued per user, so they are only unique within a user
+  @@unique([userId, jobNumber])
 }
 
 model JobTask {
@@ -401,7 +411,7 @@ model SupplierProduct {
 model ElectricianQuoteJob {
   id          String  @id @default(cuid())
   userId      String
-  quoteNumber String? @unique
+  quoteNumber String? // unique per user, see @@unique below
 
   // Client & job details
   clientId       String?
@@ -445,6 +455,9 @@ model ElectricianQuoteJob {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Numbers are issued per user, so they are only unique within a user
+  @@unique([userId, quoteNumber])
 }
 
 // ─── SEQUENCE COUNTERS (invoice / quote / job numbering per fiscal year) ───────

@@ -14,6 +14,8 @@ interface Props {
   /** Controlled value — when set, syncs internal input state whenever it changes */
   value?: string;
   onSelect: (fields: AddressFields) => void;
+  /** Called with the raw text as the user types (for callers that keep the text themselves) */
+  onChange?: (value: string) => void;
   inputClassName?: string;
   name?: string;
   /** "address" searches full street addresses; "locality" searches suburbs/towns only */
@@ -52,7 +54,7 @@ interface Prediction {
 
 const DEFAULT_CLS = "w-full px-3 py-2 text-sm rounded-lg border border-[var(--color-border)] bg-white focus:outline-none focus:ring-2 focus:ring-blue-300";
 
-export function AddressAutocomplete({ defaultValue = "", value: controlledValue, onSelect, inputClassName, name = "address", searchType = "address" }: Props) {
+export function AddressAutocomplete({ defaultValue = "", value: controlledValue, onSelect, onChange, inputClassName, name = "address", searchType = "address" }: Props) {
   const cls = inputClassName ?? DEFAULT_CLS;
   const [value, setValue]             = useState(controlledValue ?? defaultValue);
 
@@ -84,6 +86,7 @@ export function AddressAutocomplete({ defaultValue = "", value: controlledValue,
 
   function handleChange(val: string) {
     setValue(val);
+    onChange?.(val);
     if (timerRef.current) clearTimeout(timerRef.current);
     if (!ready || val.trim().length < 3) { setPredictions([]); setOpen(false); return; }
 
@@ -134,7 +137,8 @@ export function AddressAutocomplete({ defaultValue = "", value: controlledValue,
     return (
       <input
         name={name}
-        defaultValue={defaultValue}
+        defaultValue={controlledValue ?? defaultValue}
+        onChange={(e) => onChange?.(e.target.value)}
         placeholder="123 Main St"
         className={cls}
       />

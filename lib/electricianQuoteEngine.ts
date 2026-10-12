@@ -8,6 +8,8 @@
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
+import { DEFAULT_ASSUMPTIONS, type ElectricianAssumptions } from "./electricianAssumptions";
+
 export type QuoteType = "Existing Home" | "New Build" | "Renovation";
 export type Storeys   = "Single storey" | "Two storey";
 export type Height    = "Low" | "High";
@@ -55,6 +57,8 @@ export interface EngineSettings {
   minimumJobCharge:    number;  // $ — Settings B11
   travelCallout:       number;  // $ — Settings B12
   quoteRounding:       number;  // nearest $ — Settings B13
+  /** Overrides from Settings → Electrician Quote Assumptions (defaults used for anything missing) */
+  assumptions?: Partial<ElectricianAssumptions>;
 }
 
 export interface GpoGroupResult {
@@ -87,6 +91,17 @@ export interface GpoJobResult {
   gst:                number;
   totalIncGst:        number;
   hasRouteIssue:      boolean;
+}
+
+// ─── User-adjustable assumptions ──────────────────────────────────────────────
+
+// The values a user can change in Settings → Electrician Quote Assumptions.
+// Every calculate*Job entry point loads them from its settings before doing any
+// work. The engine is synchronous, so one calculation never sees another's values.
+let U: ElectricianAssumptions = DEFAULT_ASSUMPTIONS;
+
+function loadAssumptions(settings: EngineSettings): void {
+  U = { ...DEFAULT_ASSUMPTIONS, ...settings.assumptions };
 }
 
 // ─── Assumptions constants (v10 Stage 25) ──────────────────────────────────
@@ -235,7 +250,7 @@ function groupLabour(
   if (route === "OPEN FRAME") {
     const isNewBuild = setup.quoteType === "New Build";
     return (
-      qty * (A.H50 + A.H51)                                   // rough-in + fit-off
+      qty * (U.gpoOutletOpenFrame + A.H51)                                   // rough-in + fit-off
       + cableRun * A.B13                                       // cable routing
       + (isNewBuild ? 0 : A.H66)                              // renovation return-visit
       + (twoStorey ? qty * A.H67 + cableRun * A.H68 : 0)     // two-storey extra
@@ -246,7 +261,7 @@ function groupLabour(
   // ── New Build (not open frame route) — e.g. New Build with CONDUIT route ─
   if (setup.quoteType === "New Build") {
     return (
-      qty * (A.H50 + A.H51)
+      qty * (U.gpoOutletOpenFrame + A.H51)
       + cableRun * (routeRate(route) + clippingRate(route))
       + (route === "CONDUIT" ? A.E22 : 0)
       + (route === "ROOF" && pullSheets ? cableRun * A.H48 + qty * A.H49 : 0)
@@ -262,7 +277,7 @@ function groupLabour(
       : 1;
 
   const additionalOutletLabour = separate
-    ? Math.max(qty - 1, 0) * A.K6
+    ? Math.max(qty - 1, 0) * U.gpoOutletSepRate
     : Math.min(Math.max(qty - 1, 0), 4)  * A.H107
     + Math.min(Math.max(qty - 5, 0), 5)  * A.H108
     + Math.max(qty - 10, 0)              * A.H109;
@@ -277,7 +292,7 @@ function groupLabour(
     : 0;
 
   return (
-    A.B6                                                              // run setup
+    U.gpoSetupHrs                                                     // run setup
     + qty * (isLow ? A.H45 : 0)                                      // low-height extra
     + additionalOutletLabour                                          // scaling
     + cableRun * routeRate(route)                                     // routing
@@ -303,8 +318,8 @@ function groupMaterials(group: GpoGroup, route: ResolvedRoute): number {
   if (route === "INVALID - NO FLOOR ACCESS" || route === "MANUAL / SITE CHECK") return 0;
 
   return (
-    qty * (S.E5 + S.E6)                              // GPO + sundries
-    + cableRun * S.Q6                                // TPS 2.5 mm² cable
+    qty * (U.matGpoCost + S.E6)                              // GPO + sundries
+    + cableRun * U.matCable25Cost                                // TPS 2.5 mm² cable
     + (route === "CONDUIT" ? cableRun * S.E8 : 0)   // conduit
     + (newCircuit === "Yes" ? A.B23 : 0)             // new circuit materials
   );
@@ -317,6 +332,7 @@ export function calculateGpoJob(
   groups: GpoGroup[],
   settings: EngineSettings,
 ): GpoJobResult {
+  loadAssumptions(settings);
   const activeGroups = groups.filter(g => g.qty > 0);
 
   const groupResults: GpoGroupResult[] = groups.map(g => {
@@ -561,7 +577,7 @@ function circuitLabour(
   const isOpenFrame = route === "OPEN FRAME";
 
   return (
-    ANC.E25 + ANC.E26                                                    // connect + wire
+    U.ncConnectHrs + U.ncWireHrs                                                    // connect + wire
     + c.cableRun * sf * (rr + cr)                                        // routing
     + (route === "CONDUIT" ? ANC.E22 : 0)                                // conduit setup
     + (route === "ROOF" && pull ? c.cableRun * sf * ANC.H48 : 0)        // pull sheets
@@ -580,12 +596,12 @@ function circuitMaterials(c: NewCircuit, route: ResolvedRoute): number {
   if (route.startsWith("INVALID") || route === "MANUAL / SITE CHECK") return 0;
 
   const rcboKey = c.rcboOverride === "AUTO" ? rcboFromSize(c.cableSize) : c.rcboOverride;
-  const cableCost = NC_CABLE_COST[c.cableSize] ?? 0;
+  const cableCost = c.cableSize === "2.5 mm²" ? U.matCable25Cost : (NC_CABLE_COST[c.cableSize] ?? 0);
 
   return (
     c.cableRun * cableCost
     + (route === "CONDUIT" ? c.cableRun * S.E8 : 0)
-    + (RCBO_COST[rcboKey] ?? 35)
+    + (rcboKey === "32 A" ? RCBO_COST[rcboKey] : U.matRcboCost)
     + NC_FIXED_COST
     + (c.isolator === "Yes" ? NC_ISOLATOR : 0)
   );
@@ -596,6 +612,7 @@ export function calculateNewCircuitJob(
   circuits: NewCircuit[],
   settings: EngineSettings,
 ): NewCircuitResult {
+  loadAssumptions(settings);
   const active = circuits.filter(c => c.cableRun > 0);
 
   const circuitResults = circuits.map(c => {
@@ -788,10 +805,10 @@ const LIGHT_COST: Record<LightType, number> = {
 
 function lightBaseHrs(type: LightType): number {
   switch (type) {
-    case "Downlight":   return ALT.H6;
-    case "Pendant":     return ALT.H8;
-    case "Batten":      return ALT.H9;
-    default:            return ALT.H5;
+    case "Downlight":   return U.ltDownlightHrs;
+    case "Pendant":     return U.ltDownlightHrs;
+    case "Batten":      return U.ltDownlightHrs;
+    default:            return U.ltOtherHrs;
   }
 }
 
@@ -828,7 +845,7 @@ function lightPointLabour(
       );
     }
     return (
-      ALT.H10
+      U.ltCeilingFanHrs
       + Math.max(p.qty - 1, 0) * ALT.H11
       + (newPos ? p.qty * 0.35 : 0)
       + (timber ? p.qty * ALT.H12 : 0)
@@ -844,7 +861,7 @@ function lightPointLabour(
         + (isReno ? ALT.H66 : 0)
       );
     }
-    const hrs  = newPos ? ALT.H103 : ALT.H104;
+    const hrs  = newPos ? U.ltIxlHrs : ALT.H104;
     const excl = newPos ? p.qty * ALT.H106 : 0;
     const cableRate = pullSheets ? ALT.H48 : ALT.B9;
     return p.qty * hrs + Math.max(p.cableRun - excl, 0) * cableRate;
@@ -865,7 +882,7 @@ function lightPointLabour(
       p.qty * Math.max(0.85, lightBaseHrs(p.type) + ALT.K8)
       + p.cableRun * ALT.B10 * ALT.H15
       + p.cableRun * ALT.B16
-      + (exterior ? ALT.E15 : 0)
+      + (exterior ? U.ltExteriorDiff : 0)
       + (pullSheets ? p.cableRun * ALT.H48 : 0)
     );
   }
@@ -874,7 +891,7 @@ function lightPointLabour(
   return (
     p.qty * lightBaseHrs(p.type)
     + p.cableRun * ALT.B9 * 0.25
-    + (exterior ? ALT.E15 : 0)
+    + (exterior ? U.ltExteriorDiff : 0)
   );
 }
 
@@ -932,6 +949,7 @@ export function calculateLightJob(
   controls: LightControl[],
   settings: EngineSettings,
 ): LightJobResult {
+  loadAssumptions(settings);
   const activePoints = points.filter(p => p.qty > 0);
   const activeControls = controls.filter(c => c.locations > 0);
 
@@ -1066,17 +1084,16 @@ const ASB = {
   E21: A.E21, E22: A.E22,
 } as const;
 
-// Work type base labour hours (Settings AJ5, N12, N11)
-const SB_WORK_HRS: Record<BoardWorkType, number> = { New: 3, Upgrade: 4, Modification: 1 };
+// Work type base labour hours (Settings AJ5, N12, N11): U.sbNewHrs / sbUpgradeHrs / sbModHrs
 
 // RCBO / RCD material costs (Settings N6, N7)
-const SB_RCBO_MAT  = 35;   // Settings N6
+// RCBO material (Settings N6): U.matRcboCost
 const SB_RCD_MAT   = 45;   // Settings N7
 const SB_SUNDRIES  = 40;   // Settings N10 (board sundries / labels)
 const SB_MAIN_MAT  = 180;  // Settings AJ6 (main board enclosure)
 const SB_SUB_MAT   = 120;  // Settings AJ7 (sub-board enclosure)
 const SB_SWITCH_MAT = 45;  // Settings AJ8 (main switch / isolator)
-const SB_INSPECTOR  = 350; // Settings N5
+// Inspector fee (Settings N5): U.sbInspectorCost
 
 // SB feed cable material cost per m (Settings AC5-AC10 — heavier grades than NC)
 const SB_CABLE_COST: Partial<Record<CableSize, number>> = {
@@ -1104,8 +1121,8 @@ function resolveSbRoute(
 function sbEntryLabour(entry: SwitchboardEntry, setup: GpoJobSetup, route: string): number {
   if (entry.board === "Not used") return 0;
 
-  const base = SB_WORK_HRS[entry.workType];
-  const protectionDevices = (entry.rcboQty + entry.rcdQty) * ASB.K16;
+  const base = { New: U.sbNewHrs, Upgrade: U.sbUpgradeHrs, Modification: U.sbModHrs }[entry.workType];
+  const protectionDevices = (entry.rcboQty + entry.rcdQty) * U.sbRcboHrs;
 
   let cableHrs = 0;
   if (entry.cableLength > 0 && route !== "NONE" &&
@@ -1134,7 +1151,7 @@ function sbEntryLabour(entry: SwitchboardEntry, setup: GpoJobSetup, route: strin
 function sbEntryMaterials(entry: SwitchboardEntry, route: string): number {
   if (entry.board === "Not used") return 0;
 
-  const protectionMat = entry.rcboQty * SB_RCBO_MAT + entry.rcdQty * SB_RCD_MAT;
+  const protectionMat = entry.rcboQty * U.matRcboCost + entry.rcdQty * SB_RCD_MAT;
   const boardMat =
     (entry.workType === "New" || entry.workType === "Upgrade")
       ? (entry.board === "Main board" ? SB_MAIN_MAT : SB_SUB_MAT) + SB_SUNDRIES
@@ -1144,7 +1161,7 @@ function sbEntryMaterials(entry: SwitchboardEntry, route: string): number {
   let cableMat = 0;
   if (entry.cableLength > 0 && route !== "NONE" &&
       route !== "INVALID - NO FLOOR ACCESS" && route !== "MANUAL / SITE CHECK") {
-    const costPerM = SB_CABLE_COST[entry.cableSize] ?? 0;
+    const costPerM = entry.cableSize === "2.5 mm²" ? U.matCable25Cost : (SB_CABLE_COST[entry.cableSize] ?? 0);
     cableMat =
       entry.cableLength * costPerM
       + (route === "CONDUIT" ? entry.cableLength * S.E8 : 0);
@@ -1160,6 +1177,7 @@ export function calculateSwitchboardJob(
   /** Pass true when switchboard is the only active module (uses E18 setup hrs) */
   switchboardOnly = true,
 ): SwitchboardResult {
+  loadAssumptions(settings);
   const active = entries.filter(e => e.board !== "Not used");
 
   const entryResults = entries.map(e => {
@@ -1174,7 +1192,7 @@ export function calculateSwitchboardJob(
     + (setup.extraMaterials ?? 0);
 
   const hasInspector = entries.some(e => e.board !== "Not used" && e.inspector === "Yes");
-  const externalCosts = hasInspector ? SB_INSPECTOR : 0;
+  const externalCosts = hasInspector ? U.sbInspectorCost : 0;
 
   const setupHrs =
     active.length === 0  ? 0
@@ -1458,6 +1476,7 @@ export function calculateUndergroundJob(
   cables:   UndergroundCable[],
   settings: EngineSettings,
 ): UndergroundResult {
+  loadAssumptions(settings);
   const active = cables.filter(c => c.qty > 0 && c.length > 0);
   if (active.length === 0 || setup.runLength <= 0) {
     return {
@@ -1472,7 +1491,7 @@ export function calculateUndergroundJob(
 
   // Trench labour rate
   const trenchRate =
-    setup.trenchMethod === "Hand dig"                    ? AUG.K14 :
+    setup.trenchMethod === "Hand dig"                    ? U.ugHandDigRate :
     setup.trenchMethod === "Own machine"                 ? AUG.K15 :
     setup.trenchMethod === "Hired trencher / excavator"  ? AUG.K16 :
     AUG.K13; // customer supplied
@@ -1490,7 +1509,7 @@ export function calculateUndergroundJob(
 
   // Cable pull hrs
   const cablePullHrs = active.reduce((s, c) =>
-    s + c.qty * c.length * AUG.H64 * (UG_SIZE_FACTOR[c.size] ?? 1), 0);
+    s + c.qty * c.length * U.ugCablePullRate * (UG_SIZE_FACTOR[c.size] ?? 1), 0);
 
   const totalActiveCables = active.reduce((s, c) => s + c.qty, 0);
 
@@ -1690,8 +1709,8 @@ function dtvGroupLabour(setup: DataTvJobSetup, grp: DataTvGroup): number {
   const pull   = setup.roofAccess === "Pull sheets";
 
   const baseHrs = isOpen ? ADTV.H89
-    : (isTv ? (isNew ? ADTV.H87 : ADTV.H88)
-             : (isNew ? ADTV.H84 : ADTV.H85));
+    : (isTv ? (isNew ? U.dtvTvNewHrs : ADTV.H88)
+             : (isNew ? U.dtvDataNewHrs : ADTV.H85));
 
   const rr =
     route === "OPEN FRAME"   ? ADTV.B13 :
@@ -1765,6 +1784,7 @@ export function calculateDataTvJob(
   antenna:  DataTvAntennaSystem,
   settings: EngineSettings,
 ): DataTvResult {
+  loadAssumptions(settings);
   // Group totals
   const groupLabourHrs = groups.reduce((s, g) => s + dtvGroupLabour(setup, g), 0);
   const groupMat       = groups.reduce((s, g) => s + dtvGroupMat(g), 0);

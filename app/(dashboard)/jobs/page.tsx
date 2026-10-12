@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { TopBar } from "@/components/nav/TopBar";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -15,20 +16,19 @@ export default async function JobsPage() {
   // Catch up on accepted quotes that have no job yet
   await ensureJobsForAcceptedQuotes(userId);
 
-  // Jobs belong to a user through their quote
-  const quotes = await prisma.quote.findMany({
-    where:  { userId, status: { in: ["ACCEPTED", "INVOICED"] } },
-    select: { id: true, client: { select: { name: true } } },
-  });
-  const clientByQuote = new Map(quotes.map(q => [q.id, q.client]));
-
   const jobs = await prisma.job.findMany({
-    where:   { quoteId: { in: quotes.map(q => q.id) } },
+    where:   { userId },
     include: {
       _count: { select: { additionalTasks: true } },
     },
     orderBy: { createdAt: "desc" },
   });
+
+  const quotes = await prisma.quote.findMany({
+    where:  { id: { in: jobs.map(j => j.quoteId) }, userId },
+    select: { id: true, client: { select: { name: true } } },
+  });
+  const clientByQuote = new Map(quotes.map(q => [q.id, q.client]));
 
   const jobsWithClients = jobs.map(job => ({ ...job, client: clientByQuote.get(job.quoteId) }));
 
@@ -66,8 +66,8 @@ export default async function JobsPage() {
                 <tbody className="divide-y divide-[var(--color-border)]">
                   {jobsWithClients.map((job: typeof jobsWithClients[number]) => (
                     <tr key={job.id} className="hover:bg-[#e2e8f0] transition-colors">
-                      <td className="px-5 py-3 font-mono text-xs text-[var(--color-muted)]">
-                        {job.jobNumber}
+                      <td className="px-5 py-3 font-mono text-xs">
+                        <Link href={`/jobs/${job.id}`} className="text-[var(--color-brand)] hover:underline">{job.jobNumber}</Link>
                       </td>
                       <td className="px-5 py-3 font-medium text-[var(--color-text)]">
                         {job.client?.name ?? "—"}
@@ -87,7 +87,7 @@ export default async function JobsPage() {
                       </td>
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2 text-xs">
-                          <button className="text-[var(--color-brand)] hover:underline">View</button>
+                          <Link href={`/jobs/${job.id}`} className="text-[var(--color-brand)] hover:underline">View</Link>
                           {job.status === "COMPLETED" && (
                             <button className="text-green-600 hover:underline">Invoice</button>
                           )}

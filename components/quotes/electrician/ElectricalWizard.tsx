@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, useTransition, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AddressAutocomplete } from "@/components/clients/AddressAutocomplete";
 import { saveElectricalQuoteWizard, publishElectricalQuote } from "@/lib/actions/electricalQuote";
 import {
   DEFAULT_SETTINGS,
@@ -301,8 +302,14 @@ export function ElectricalWizard(p: Props) {
             </div>
             <div className="md:col-span-2">
               <label className="block text-xs font-medium text-[var(--color-muted)] mb-1">Job address</label>
-              <input value={jobAddress} onChange={e => setJobAddress(e.target.value)}
-                placeholder="Street address where the work will be done" className={inp} />
+              <AddressAutocomplete
+                value={jobAddress}
+                onChange={setJobAddress}
+                onSelect={({ address, suburb, state, postcode }) =>
+                  setJobAddress([address, [suburb, state, postcode].filter(Boolean).join(" ")].filter(Boolean).join(", "))}
+                inputClassName={inp}
+                name="jobAddress"
+              />
             </div>
             <div className="md:col-span-2">
               <label className="block text-xs font-medium text-[var(--color-muted)] mb-1">Job description</label>
